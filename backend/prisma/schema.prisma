@@ -106,3 +106,86 @@ model Template {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// 用户
+model User {
+  id             String         @id @default(cuid())
+  email          String         @unique
+  username       String         @unique
+  password       String
+  plans          UserPlan[]
+  petRecords     PetRecord[]
+  conversations  Conversation[]
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+// 用户计划（保存的模板）
+model UserPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId  String   // 关联的模板ID
+  name        String   // 用户自定义的计划名称
+  progress    String   @default("{}") // JSON格式的进度数据
+  isActive    Boolean  @default(false) // 是否为当前激活的计划
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// 宠物成长记录
+model PetRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  petName     String   @default("猫咪") // 宠物名称（支持多只宠物）
+  photoUrl    String   // 照片存储路径
+  ageWeeks    Int      // 年龄（周）
+  ageMonths   Int      // 年龄（月）- 用于显示
+  weight      Float    // 体重（kg）
+  notes       String?  // 备注
+
+  recordDate  DateTime @default(now()) // 记录日期
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, recordDate])
+}
+
+// AI对话会话
+model Conversation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String   @default("新对话")
+  messages    Message[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+// AI聊天消息
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role           String        // 'user' | 'assistant' | 'system'
+  content        String        // 消息内容
+  markdownContent String?      // Markdown格式（AI回复）
+
+  referencedGuides String?     // 引用的指南ID（JSON数组）
+  metadata        String?      // tokensUsed, model, latency等（JSON）
+
+  createdAt       DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}

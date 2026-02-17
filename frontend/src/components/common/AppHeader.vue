@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
+
+const authStore = useAuthStore()
 
 const navigation = [
   { name: '首页', path: '/' },
   { name: '养成时间线', path: '/timeline' },
   { name: '知识指南', path: '/guides' },
+  { name: 'AI医师', path: '/ai-chat', requiresAuth: true },
   { name: '计划模板', path: '/templates' },
   { name: '关于', path: '/about' }
 ]
@@ -15,18 +19,33 @@ const navigation = [
     <div class="header-container">
       <RouterLink to="/" class="logo">
         <span class="logo-icon">🐱</span>
-        <span class="logo-text">猫咪养成计划</span>
+        <span class="logo-text">哈吉咪养成计划</span>
       </RouterLink>
-      <nav class="nav">
+
+      <!-- 桌面端导航 -->
+      <nav class="nav desktop-nav">
         <RouterLink
           v-for="item in navigation"
           :key="item.path"
           :to="item.path"
           class="nav-link"
           active-class="nav-link-active"
+          v-show="!item.requiresAuth || authStore.isAuthenticated"
         >
           {{ item.name }}
         </RouterLink>
+        <!-- 未登录状态 -->
+        <template v-if="!authStore.isAuthenticated">
+          <RouterLink to="/login" class="nav-link nav-link-auth">登录</RouterLink>
+          <RouterLink to="/register" class="nav-link nav-link-auth">注册</RouterLink>
+        </template>
+        <!-- 已登录状态 -->
+        <template v-else>
+          <RouterLink to="/profile" class="nav-link nav-link-user">
+            {{ authStore.username }}
+          </RouterLink>
+          <a @click.prevent="authStore.logoutAction()" class="nav-link nav-link-logout">退出</a>
+        </template>
       </nav>
     </div>
   </header>
@@ -67,6 +86,7 @@ const navigation = [
 .nav {
   display: flex;
   gap: 2rem;
+  align-items: center;
 }
 
 .nav-link {
@@ -75,6 +95,7 @@ const navigation = [
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .nav-link:hover {
@@ -88,7 +109,25 @@ const navigation = [
   font-weight: 500;
 }
 
-@media (max-width: 640px) {
+.nav-link-auth {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-link-auth:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link-user {
+  background: rgba(255, 255, 255, 0.15);
+  font-weight: 500;
+}
+
+.nav-link-logout {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
   .header-container {
     flex-direction: column;
     gap: 1rem;

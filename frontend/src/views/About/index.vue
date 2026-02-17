@@ -5,7 +5,7 @@
   <div class="about-page">
     <div class="about-header">
       <span class="about-emoji">🐱</span>
-      <h1 class="about-title">关于猫咪养成计划</h1>
+      <h1 class="about-title">关于哈吉咪养成计划</h1>
       <p class="about-subtitle">帮助每一位猫友更好地照顾自己的毛孩子</p>
     </div>
 
@@ -13,7 +13,7 @@
       <section class="about-section">
         <h2 class="section-title">我们的使命</h2>
         <p class="section-text">
-          猫咪养成计划致力于为猫咪主人提供全面、科学的养护指导。
+          哈吉咪养成计划致力于为猫咪主人提供全面、科学的养护指导。
           从幼猫到成年，我们陪伴您的猫咪走过每一个重要阶段。
         </p>
       </section>

@@ -1,43 +1,33 @@
 <script setup lang="ts">
-const templates = ref([
-  {
-    id: '1',
-    name: '新手入门计划',
-    description: '适合第一次养猫的新手，涵盖前3个月的重要事项',
-    category: '新手',
-    icon: '🌟',
-    items: 6
-  },
-  {
-    id: '2',
-    name: '疫苗接种提醒',
-    description: '跟踪猫咪的疫苗接种进度',
-    category: '健康',
-    icon: '💉',
-    items: 3
-  },
-  {
-    id: '3',
-    name: '幼猫护理清单',
-    description: '3-6个月幼猫的日常护理要点',
-    category: '护理',
-    icon: '🧼',
-    items: 8
-  },
-  {
-    id: '4',
-    name: '成猫健康管理',
-    description: '成年猫咪的年度健康检查计划',
-    category: '健康',
-    icon: '🏥',
-    items: 5
-  }
-])
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useTemplateStore } from '../../stores/template'
 
-function useTemplate(template: any) {
-  // TODO: 实现模板使用功能
-  alert(`将使用模板：${template.name}`)
+const router = useRouter()
+const templateStore = useTemplateStore()
+
+// 查看模板详情
+function viewTemplate(id: string) {
+  router.push(`/templates/${id}`)
 }
+
+// 获取模板项目数量
+function getTemplateItemCount(template: any): number {
+  const content = templateStore.parseTemplateContent(template.content)
+  if (!content) return 0
+
+  // 计算所有任务数量
+  if (content.tasks) return content.tasks.length
+  if (content.schedule) return content.schedule.length
+  if (content.annual) return content.annual.length + (content.monthly?.length || 0) + (content.daily?.length || 0)
+
+  return 0
+}
+
+// 初始化数据
+onMounted(() => {
+  templateStore.fetchTemplates()
+})
 </script>
 
 <template>
@@ -47,22 +37,36 @@ function useTemplate(template: any) {
       <p class="page-subtitle">预设的养成计划，轻松管理猫咪成长</p>
     </div>
 
-    <div class="templates-grid">
+    <!-- 加载状态 -->
+    <div v-if="templateStore.loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="templateStore.error" class="error-state">
+      <p>{{ templateStore.error }}</p>
+      <button @click="templateStore.fetchTemplates()" class="retry-btn">重试</button>
+    </div>
+
+    <!-- 模板列表 -->
+    <div v-else class="templates-grid">
       <div
-        v-for="template in templates"
+        v-for="template in templateStore.templates"
         :key="template.id"
         class="template-card"
+        @click="viewTemplate(template.id)"
       >
         <div class="template-header">
-          <span class="template-icon">{{ template.icon }}</span>
+          <span class="template-icon">{{ templateStore.getCategoryIcon(template.category) }}</span>
           <span class="template-category">{{ template.category }}</span>
         </div>
         <h3 class="template-name">{{ template.name }}</h3>
         <p class="template-description">{{ template.description }}</p>
         <div class="template-footer">
-          <span class="template-items">{{ template.items }} 项任务</span>
-          <button class="use-btn" @click="useTemplate(template)">
-            使用模板
+          <span class="template-items">{{ getTemplateItemCount(template) }} 项任务</span>
+          <button class="use-btn">
+            查看详情
           </button>
         </div>
       </div>
@@ -72,9 +76,9 @@ function useTemplate(template: any) {
     <div class="create-section">
       <h2 class="section-title">创建自定义计划</h2>
       <p class="section-text">根据您猫咪的具体情况，创建个性化的养成计划</p>
-      <button class="create-btn">
+      <button class="create-btn" disabled>
         <span>+</span>
-        创建新计划
+        创建新计划（即将推出）
       </button>
     </div>
   </div>
@@ -107,6 +111,44 @@ function useTemplate(template: any) {
   margin: 0;
 }
 
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  color: #ef4444;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
 .templates-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -120,6 +162,7 @@ function useTemplate(template: any) {
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .template-card:hover {
@@ -215,11 +258,17 @@ function useTemplate(template: any) {
   border-radius: 0.75rem;
   font-size: 1.125rem;
   font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.create-btn:not(:disabled) {
   cursor: pointer;
+  opacity: 1;
   transition: all 0.3s ease;
 }
 
-.create-btn:hover {
+.create-btn:not(:disabled):hover {
   border-color: #f97316;
   background: #fff7ed;
 }

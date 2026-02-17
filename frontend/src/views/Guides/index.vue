@@ -1,51 +1,59 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useGuideStore } from '../../stores/guide'
 
 const router = useRouter()
-const guides = ref([
-  {
-    id: '1',
-    title: '新生小猫如何保暖？',
-    excerpt: '新生小猫无法自我调节体温，保持28-30°C的环境温度至关重要。',
-    category: '喂养营养',
-    icon: '🍼'
-  },
-  {
-    id: '2',
-    title: '小猫什么时候开始断奶？',
-    excerpt: '小猫在3-4周大时开始断奶，到8周左右完全断奶。',
-    category: '喂养营养',
-    icon: '🍼'
-  },
-  {
-    id: '3',
-    title: '猫咪疫苗接种时间表',
-    excerpt: '猫咪需要在6-8周开始接种猫三联疫苗，之后按照时间表完成接种。',
-    category: '健康医疗',
-    icon: '💊'
-  }
-])
-
-const categories = ref([
-  { name: '全部', icon: '📚', count: 12 },
-  { name: '喂养营养', icon: '🍼', count: 4 },
-  { name: '环境准备', icon: '🏠', count: 2 },
-  { name: '健康医疗', icon: '💊', count: 3 },
-  { name: '行为训练', icon: '🎾', count: 2 },
-  { name: '日常护理', icon: '🧼', count: 1 }
-])
+const guideStore = useGuideStore()
 
 const selectedCategory = ref('全部')
 const searchQuery = ref('')
+const searchInput = ref('')
 
-function selectCategory(category: string) {
-  selectedCategory.value = category
+// 防抖函数
+function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): T {
+  let timeoutId: ReturnType<typeof setTimeout>
+  return ((...args: any[]) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), delay)
+  }) as T
 }
 
+// 选择分类
+function selectCategory(category: string) {
+  selectedCategory.value = category
+  const categoryId = guideStore.getCategoryIdByName(category)
+  guideStore.fetchGuides(categoryId)
+}
+
+// 搜索功能（防抖）
+const debouncedSearch = debounce((query: string) => {
+  guideStore.fetchSearchGuides(query)
+}, 500)
+
+// 监听搜索输入
+watch(searchInput, (newVal) => {
+  searchQuery.value = newVal
+  if (newVal.trim()) {
+    debouncedSearch(newVal)
+  } else {
+    // 清空搜索时，恢复当前分类的指南列表
+    const categoryId = guideStore.getCategoryIdByName(selectedCategory.value)
+    guideStore.fetchGuides(categoryId)
+  }
+})
+
+// 查看指南详情
 function viewGuide(id: string) {
   router.push(`/guides/${id}`)
 }
+
+// 初始化数据
+onMounted(async () => {
+  await guideStore.initAllGuides() // 先获取所有指南用于分类计数
+  guideStore.fetchCategories()
+  guideStore.fetchGuides()
+})
 </script>
 
 <template>
@@ -58,21 +66,21 @@ function viewGuide(id: string) {
     <!-- 分类筛选 -->
     <div class="categories-bar">
       <button
-        v-for="cat in categories"
-        :key="cat.name"
+        v-for="cat in guideStore.categories"
+        :key="cat.id"
         :class="['category-btn', { active: selectedCategory === cat.name }]"
         @click="selectCategory(cat.name)"
       >
         <span class="cat-icon">{{ cat.icon }}</span>
         <span class="cat-name">{{ cat.name }}</span>
-        <span class="cat-count">{{ cat.count }}</span>
+        <span class="cat-count">{{ guideStore.categoryCounts[cat.name] || 0 }}</span>
       </button>
     </div>
 
     <!-- 搜索框 -->
     <div class="search-bar">
       <input
-        v-model="searchQuery"
+        v-model="searchInput"
         type="text"
         placeholder="搜索指南..."
         class="search-input"
@@ -80,21 +88,39 @@ function viewGuide(id: string) {
       <span class="search-icon">🔍</span>
     </div>
 
+    <!-- 加载状态 -->
+    <div v-if="guideStore.loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="guideStore.error" class="error-state">
+      <p>{{ guideStore.error }}</p>
+      <button @click="selectCategory(selectedCategory)" class="retry-btn">重试</button>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else-if="guideStore.displayGuides.length === 0" class="empty-state">
+      <p>暂无相关指南</p>
+    </div>
+
     <!-- 指南列表 -->
-    <div class="guides-grid">
+    <div v-else class="guides-grid">
       <div
-        v-for="guide in guides"
+        v-for="guide in guideStore.displayGuides"
         :key="guide.id"
         class="guide-card"
         @click="viewGuide(guide.id)"
       >
         <div class="guide-header">
-          <span class="guide-icon">{{ guide.icon }}</span>
-          <span class="guide-category">{{ guide.category }}</span>
+          <span class="guide-icon">{{ guide.category?.icon || '📖' }}</span>
+          <span class="guide-category">{{ guide.category?.name }}</span>
         </div>
         <h3 class="guide-title">{{ guide.title }}</h3>
         <p class="guide-excerpt">{{ guide.excerpt }}</p>
         <div class="guide-footer">
+          <span class="view-count">👁 {{ guide.viewCount }}</span>
           <span class="read-more">阅读全文 →</span>
         </div>
       </div>
@@ -200,6 +226,51 @@ function viewGuide(id: string) {
   font-size: 1.25rem;
 }
 
+/* 加载状态 */
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 错误状态 */
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  color: #ef4444;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: #f97316;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
 .guides-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -254,7 +325,13 @@ function viewGuide(id: string) {
 
 .guide-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.view-count {
+  color: #94a3b8;
+  font-size: 0.875rem;
 }
 
 .read-more {

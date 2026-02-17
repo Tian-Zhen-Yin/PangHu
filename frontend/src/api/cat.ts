@@ -1,5 +1,6 @@
 import api from './index'
-import type { ApiResponse, Stage, Milestone, Vaccine } from '../types'
+import type { ApiResponse } from '../types/common'
+import type { Stage, Milestone, Vaccine } from '../types/cat'
 
 /**
  * 获取所有成长阶段

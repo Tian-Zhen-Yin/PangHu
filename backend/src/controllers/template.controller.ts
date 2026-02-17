@@ -18,9 +18,10 @@ export async function getTemplates(_req: Request, res: Response) {
  */
 export async function getTemplateById(req: Request, res: Response) {
   const { id } = req.params
+  const templateId = Array.isArray(id) ? id[0] : id
 
   const template = await prisma.template.findUnique({
-    where: { id }
+    where: { id: templateId }
   })
 
   if (!template) {
@@ -35,9 +36,10 @@ export async function getTemplateById(req: Request, res: Response) {
  */
 export async function cloneTemplate(req: Request, res: Response) {
   const { id } = req.params
+  const templateId = Array.isArray(id) ? id[0] : id
 
   const template = await prisma.template.findUnique({
-    where: { id }
+    where: { id: templateId }
   })
 
   if (!template) {

@@ -1,5 +1,4 @@
 import axios from 'axios'
-import type { ApiResponse } from '../types/common'
 
 // 创建axios实例
 const api = axios.create({
@@ -13,6 +12,11 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
+    // 从 localStorage 获取 token
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {

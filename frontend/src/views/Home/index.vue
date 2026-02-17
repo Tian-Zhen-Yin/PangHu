@@ -42,7 +42,7 @@ const stages = [
       <div class="hero-content">
         <h1 class="hero-title">
           <span class="emoji">🐱</span>
-          猫咪养成计划
+          哈吉咪养成计划
         </h1>
         <p class="hero-subtitle">
           从幼猫到成年，全程陪伴您的猫咪健康成长

@@ -6,7 +6,7 @@ const year = new Date().getFullYear()
   <footer class="footer">
     <div class="footer-container">
       <p class="footer-text">
-        © {{ year }} 猫咪养成计划. 用爱陪伴每一只小猫成长 🐾
+        © {{ year }} 哈吉咪养成计划. 用爱陪伴每一只小猫成长 🐾
       </p>
       <p class="footer-links">
         <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
