@@ -142,6 +142,8 @@ model User {
   petRecords     PetRecord[]
   conversations  Conversation[]
   cats           Cat[]
+  notifications  Notification[]
+  notificationPreferences UserNotificationPreference?
 
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -284,4 +286,71 @@ model Message {
   createdAt       DateTime     @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+// 体重健康标准库
+model WeightStandard {
+  id          String   @id @default(cuid())
+  breed       String   // 品种，"通用"表示家猫通用标准
+  ageMonth    Int      // 月龄
+  gender      String   // "male" | "female" | "all"
+  neutered    Boolean  // 是否绝育
+  minWeight   Float    // 最低标准体重 (kg)
+  maxWeight   Float    // 最高标准体重 (kg)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([breed, ageMonth, gender, neutered])
+  @@index([breed])
+}
+
+// 通知消息表
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        String   // "vaccine" | "deworming" | "checkup" | "weight" | "record"
+  title       String   // 通知标题
+  content     String   // 通知内容
+  relatedId   String?  // 关联实体ID（疫苗ID、猫咪ID等）
+  relatedType String?  // "vaccine" | "cat"
+
+  isRead      Boolean  @default(false)
+  scheduledAt DateTime // 计划发送时间
+  sentAt      DateTime? // 实际发送时间
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, isRead])
+  @@index([userId, scheduledAt])
+}
+
+// 用户提醒偏好设置
+model UserNotificationPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 全局开关
+  enabled     Boolean  @default(true)
+
+  // 时段设置（允许推送的小时数，0-23）
+  allowedHours String   @default("[9,10,11,12,13,14,15,16,17,18,19,20]")
+
+  // 静音时段
+  quietStart  String   @default("22:00")
+  quietEnd    String   @default("08:00")
+
+  // 各类型开关
+  vaccineEnabled    Boolean  @default(true)
+  dewormingEnabled  Boolean  @default(true)
+  checkupEnabled    Boolean  @default(true)
+  weightEnabled     Boolean  @default(true)
+  recordEnabled     Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

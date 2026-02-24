@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import apiRoutes from './routes'
 import { errorHandler, notFoundHandler } from './middlewares/error'
+import { startReminderScheduler } from './jobs/reminderChecker'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -28,4 +29,7 @@ app.use(errorHandler)
 app.listen(PORT, () => {
   console.log(`🚀 服务器运行在 http://localhost:${PORT}`)
   console.log(`📚 API地址: http://localhost:${PORT}/api`)
+
+  // 启动定时任务
+  startReminderScheduler()
 })
