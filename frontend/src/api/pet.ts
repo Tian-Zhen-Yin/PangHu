@@ -29,8 +29,12 @@ export interface CreatePetRecordParams {
 
 /**
  * 获取用户的所有宠物记录
+ * 支持按 catId 过滤
  */
-export function getPetRecords(): Promise<ApiResponse<PetRecord[]>> {
+export function getPetRecords(catId?: string): Promise<ApiResponse<PetRecord[]>> {
+  if (catId) {
+    return api.get('/pets/records', { params: { catId } })
+  }
   return api.get('/pets/records')
 }
 

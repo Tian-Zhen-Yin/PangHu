@@ -46,6 +46,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '模板详情 - 哈吉咪养成计划' }
   },
   {
+    path: '/search',
+    name: 'Search',
+    component: () => import('../views/Search/index.vue'),
+    meta: { title: '搜索 - 哈吉咪养成计划' }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('../views/Auth/Login.vue'),
@@ -68,6 +74,36 @@ const routes: RouteRecordRaw[] = [
     name: 'About',
     component: () => import('../views/About/index.vue'),
     meta: { title: '关于 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/my-cats',
+    name: 'MyCats',
+    component: () => import('../views/MyCats/index.vue'),
+    meta: { title: '我的猫咪 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
+    path: '/my-cats/new',
+    name: 'MyCatNew',
+    component: () => import('../views/MyCats/Form.vue'),
+    meta: { title: '添加猫咪 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
+    path: '/my-cats/:id/edit',
+    name: 'MyCatEdit',
+    component: () => import('../views/MyCats/Form.vue'),
+    meta: { title: '编辑猫咪 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
+    path: '/my-cats/:id',
+    name: 'MyCatDetail',
+    component: () => import('../views/MyCats/Detail.vue'),
+    meta: { title: '猫咪详情 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
+    path: '/my-cats/:id/vaccines',
+    name: 'MyCatVaccines',
+    component: () => import('../views/MyCats/Vaccines.vue'),
+    meta: { title: '疫苗记录 - 哈吉咪养成计划', requiresAuth: true }
   }
 ]
 

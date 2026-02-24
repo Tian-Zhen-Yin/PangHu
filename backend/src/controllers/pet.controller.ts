@@ -4,17 +4,26 @@ import { successResponse } from '../utils/response'
 
 /**
  * 获取用户的所有宠物记录
+ * 支持按 catId 过滤
  */
 export async function getPetRecords(req: Request, res: Response) {
   const userId = (req as any).user?.userId
+  const catId = req.query.catId as string | undefined
 
   if (!userId) {
     return res.status(401).json({ success: false, data: null, message: '未授权', error: 'Unauthorized' })
   }
 
   try {
+    const where: any = { userId }
+
+    // 如果指定了 catId，则只返回该猫咪的记录
+    if (catId) {
+      where.catId = catId
+    }
+
     const records = await prisma.petRecord.findMany({
-      where: { userId },
+      where,
       orderBy: { recordDate: 'desc' }
     })
 

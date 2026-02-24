@@ -15,11 +15,12 @@ export const usePetStore = defineStore('pet', () => {
   const error = ref<string | null>(null)
 
   // 获取所有宠物记录
-  async function fetchRecords() {
+  // 支持按 catId 过滤，只返回指定猫咪的记录
+  async function fetchRecords(catId?: string) {
     loading.value = true
     error.value = null
     try {
-      const response = await getPetRecords()
+      const response = await getPetRecords(catId)
       if (response.success) {
         records.value = response.data
       }

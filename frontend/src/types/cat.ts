@@ -42,7 +42,7 @@ export interface Task {
 }
 
 /**
- * 疫苗接种
+ * 疫苗接种（成长阶段用）
  */
 export interface Vaccine {
   id: string
@@ -51,3 +51,102 @@ export interface Vaccine {
   description: string | null
   stageId: string
 }
+
+// ===== 猫咪档案相关类型 =====
+
+export type CatGender = 'male' | 'female' | 'unknown'
+
+/**
+ * 猫咪档案
+ */
+export interface Cat {
+  id: string
+  userId: string
+  name: string
+  avatar: string | null
+  breed: string | null
+  gender: CatGender
+  birthDate: string
+  adoptDate: string | null
+  weight: number | null
+  isNeutered: boolean
+  neuteredDate: string | null
+  color: string | null
+  features: string | null
+  allergies: string | null
+  diseases: string | null
+  isActive: boolean
+  ageMonths: number
+  ageFormatted: string
+  lastVaccine?: VaccineRecord | null
+  lastRecord?: any | null
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * 创建/更新猫咪的表单数据
+ */
+export interface CatFormData {
+  name: string
+  gender: CatGender
+  birthDate: string
+  breed?: string
+  avatar?: string
+  adoptDate?: string
+  weight?: number
+  isNeutered?: boolean
+  neuteredDate?: string
+  color?: string
+  features?: string
+  allergies?: string
+  diseases?: string
+}
+
+/**
+ * 疫苗接种记录
+ */
+export interface VaccineRecord {
+  id: string
+  catId: string
+  vaccineName: string
+  vaccineType: string
+  manufacturer: string | null
+  batchNumber: string | null
+  vaccinatedAt: string
+  nextDueDate: string | null
+  veterinarian: string | null
+  clinic: string | null
+  reaction: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  cat?: Pick<Cat, 'id' | 'name' | 'avatar'>
+}
+
+/**
+ * 创建/更新疫苗记录的表单数据
+ */
+export interface VaccineFormData {
+  catId: string
+  vaccineName: string
+  vaccineType?: string
+  manufacturer?: string
+  batchNumber?: string
+  vaccinatedAt: string
+  nextDueDate?: string
+  veterinarian?: string
+  clinic?: string
+  reaction?: string
+  notes?: string
+}
+
+/**
+ * 体重历史记录
+ */
+export interface WeightHistoryRecord {
+  date: string
+  weight: number
+  notes?: string | null
+}
+
