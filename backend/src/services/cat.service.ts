@@ -2,6 +2,21 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+/**
+ * 领养状态类型
+ */
+export type CatAdoptStatus = 'raisedFromBaby' | 'adoptedYoung' | 'adoptedAdult' | 'unknownAge'
+
+/**
+ * 领养状态配置
+ */
+export const ADOPT_STATUS_INFO: Record<CatAdoptStatus, { label: string; description: string; defaultAgeMonths: number }> = {
+  raisedFromBaby: { label: '从小养到大', description: '从小养到大，完整记录成长', defaultAgeMonths: 0 },
+  adoptedYoung: { label: '领养（幼年）', description: '领养的幼年猫咪，从领养日开始记录', defaultAgeMonths: 6 },
+  adoptedAdult: { label: '领养（成年）', description: '领养的成年猫咪，关注健康养护', defaultAgeMonths: 24 },
+  unknownAge: { label: '年龄不详', description: '不知道年龄，关注日常健康', defaultAgeMonths: 36 },
+}
+
 export function calculateAgeInMonths(birthDate: Date): number {
   const now = new Date()
   const years = now.getFullYear() - birthDate.getFullYear()
@@ -15,6 +30,31 @@ export function formatAge(months: number): string {
   if (years === 0) return `${remainingMonths}个月`
   if (remainingMonths === 0) return `${years}岁`
   return `${years}岁${remainingMonths}个月`
+}
+
+/**
+ * 获取猫咪的开始饲养日期（领养日期）
+ * 如果没有设置领养日期，返回猫咪的创建日期
+ */
+export function getStartRaisedDate(cat: { adoptDate?: Date | null; createdAt: Date }): Date {
+  return cat.adoptDate || cat.createdAt
+}
+
+/**
+ * 根据领养状态获取时间线标题
+ */
+export function getTimelineTitle(adoptStatus: CatAdoptStatus): string {
+  switch (adoptStatus) {
+    case 'raisedFromBaby':
+      return '成长记录'
+    case 'adoptedYoung':
+      return '领养后成长记录'
+    case 'adoptedAdult':
+    case 'unknownAge':
+      return '饲养记录'
+    default:
+      return '成长记录'
+  }
 }
 
 export async function getCatsByUser(userId: string) {
@@ -33,13 +73,17 @@ export async function getCatsByUser(userId: string) {
     orderBy: { createdAt: 'asc' }
   })
 
-  return cats.map(cat => ({
-    ...cat,
-    ageMonths: calculateAgeInMonths(cat.birthDate),
-    ageFormatted: formatAge(calculateAgeInMonths(cat.birthDate)),
-    lastVaccine: cat.vaccines[0] || null,
-    lastRecord: cat.records[0] || null
-  }))
+  return cats.map(cat => {
+    const ageMonths = calculateAgeInMonths(cat.birthDate)
+    return {
+      ...cat,
+      ageMonths,
+      ageFormatted: cat.birthDateEstimated ? `约${formatAge(ageMonths)}` : formatAge(ageMonths),
+      lastVaccine: cat.vaccines[0] || null,
+      lastRecord: cat.records[0] || null,
+      timelineTitle: getTimelineTitle(cat.adoptStatus as CatAdoptStatus),
+    }
+  })
 }
 
 export async function getCatById(catId: string, userId: string) {
@@ -58,10 +102,12 @@ export async function getCatById(catId: string, userId: string) {
 
   if (!cat) return null
 
+  const ageMonths = calculateAgeInMonths(cat.birthDate)
   return {
     ...cat,
-    ageMonths: calculateAgeInMonths(cat.birthDate),
-    ageFormatted: formatAge(calculateAgeInMonths(cat.birthDate))
+    ageMonths,
+    ageFormatted: cat.birthDateEstimated ? `约${formatAge(ageMonths)}` : formatAge(ageMonths),
+    timelineTitle: getTimelineTitle(cat.adoptStatus as CatAdoptStatus),
   }
 }
 
@@ -69,9 +115,11 @@ export async function createCat(userId: string, data: {
   name: string
   gender: string
   birthDate: string
+  birthDateEstimated?: boolean
   breed?: string
   avatar?: string
   adoptDate?: string
+  adoptStatus?: CatAdoptStatus
   weight?: number
   isNeutered?: boolean
   neuteredDate?: string
@@ -80,15 +128,36 @@ export async function createCat(userId: string, data: {
   allergies?: string
   diseases?: string
 }) {
+  // 如果设置了领养日期但没设置状态，自动推断状态
+  let adoptStatus = data.adoptStatus || 'raisedFromBaby'
+  let birthDateEstimated = data.birthDateEstimated || false
+
+  if (data.adoptDate && !data.adoptStatus) {
+    // 有领养日期但没有状态，根据出生日期推断
+    const birthDate = new Date(data.birthDate)
+    const adoptDate = new Date(data.adoptDate)
+    const ageAtAdopt = calculateAgeInMonths(birthDate)
+
+    if (ageAtAdopt < 3) {
+      adoptStatus = 'raisedFromBaby'
+    } else if (ageAtAdopt < 12) {
+      adoptStatus = 'adoptedYoung'
+    } else {
+      adoptStatus = 'adoptedAdult'
+    }
+  }
+
   return prisma.cat.create({
     data: {
       userId,
       name: data.name,
       gender: data.gender,
       birthDate: new Date(data.birthDate),
+      birthDateEstimated,
       breed: data.breed,
       avatar: data.avatar,
       adoptDate: data.adoptDate ? new Date(data.adoptDate) : null,
+      adoptStatus,
       weight: data.weight,
       isNeutered: data.isNeutered || false,
       neuteredDate: data.neuteredDate ? new Date(data.neuteredDate) : null,
@@ -104,9 +173,11 @@ export async function updateCat(catId: string, userId: string, data: {
   name?: string
   gender?: string
   birthDate?: string
+  birthDateEstimated?: boolean
   breed?: string
   avatar?: string
   adoptDate?: string
+  adoptStatus?: CatAdoptStatus
   weight?: number
   isNeutered?: boolean
   neuteredDate?: string
@@ -123,7 +194,7 @@ export async function updateCat(catId: string, userId: string, data: {
     data: {
       ...data,
       birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
-      adoptDate: data.adoptDate ? new Date(data.adoptDate) : undefined,
+      adoptDate: data.adoptDate ? new Date(data.adoptDate) : (data.adoptDate === null ? null : undefined),
       neuteredDate: data.neuteredDate ? new Date(data.neuteredDate) : undefined
     }
   })
@@ -226,4 +297,22 @@ export async function getCatWeightHistory(catId: string, userId: string) {
   }
 
   return records
+}
+
+export async function setWeightGoal(catId: string, userId: string, targetWeight: number, targetDate: string) {
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
+  if (!cat) return null
+  return prisma.cat.update({
+    where: { id: catId },
+    data: { weightGoalTarget: targetWeight, weightGoalDate: new Date(targetDate) }
+  })
+}
+
+export async function updateCatAvatar(catId: string, userId: string, avatarUrl: string) {
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
+  if (!cat) return null
+  return prisma.cat.update({
+    where: { id: catId },
+    data: { avatar: avatarUrl }
+  })
 }

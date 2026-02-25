@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useCatStore } from '../../stores/cat'
 import { usePetStore } from '../../stores/pet'
 import { useAuthStore } from '../../stores/auth'
+import { useMyCatStore } from '../../stores/myCat'
+import { storeToRefs } from 'pinia'
+import { toast } from '../../composables/useToast'
+import ImageLoader from '../../components/common/ImageLoader.vue'
+import CatSelector from '../../components/cat/CatSelector.vue'
 import type { Stage, Task } from '../../types/cat'
 import type { CreatePetRecordParams } from '../../api/pet'
 
@@ -24,6 +29,8 @@ interface TaskState {
 const catStore = useCatStore()
 const petStore = usePetStore()
 const authStore = useAuthStore()
+const myCatStore = useMyCatStore()
+const { currentCat } = storeToRefs(myCatStore)
 const selectedStage = ref<Stage | null>(null)
 const activeTab = ref<'overview' | 'tasks' | 'vaccines' | 'growth'>('overview')
 
@@ -32,15 +39,20 @@ const taskStates = ref<Record<string, TaskState>>({})
 
 // 宠物记录相关状态
 const showAddRecordModal = ref(false)
-const recordPhotoFile = ref<File | null>(null)
-const recordPhotoPreview = ref<string>('')
+const recordPhotoFiles = ref<File[]>([])
+const recordPhotoPreviews = ref<string[]>([])
+const recordType = ref<'daily' | 'vaccine' | 'deworm' | 'healthCheck' | 'free'>('daily')
+const isAdoptionDay = ref(false)
 const recordForm = ref({
   petName: '猫咪',
   ageWeeks: 0,
   ageMonths: 0,
   weight: 0,
   notes: '',
-  recordDate: new Date().toISOString().split('T')[0]
+  recordDate: new Date().toISOString().split('T')[0],
+  vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
+  dewormDrug: '', dewormType: '体内', dewormNextDate: '',
+  checkClinic: '', checkVet: '', checkFindings: ''
 })
 
 // 任务详情弹窗
@@ -51,9 +63,6 @@ const taskNotes = ref<string>('')
 
 onMounted(async () => {
   await catStore.fetchStages()
-  if (catStore.stages.length > 0) {
-    selectedStage.value = catStore.stages[0]!
-  }
 
   // 加载任务状态
   const saved = localStorage.getItem('catTaskStates')
@@ -65,9 +74,19 @@ onMounted(async () => {
     }
   }
 
+  // 加载猫咪列表
+  await myCatStore.fetchCats()
+
   // 如果已登录，加载宠物记录
   if (authStore.isAuthenticated) {
-    await petStore.fetchRecords()
+    await petStore.fetchRecords(currentCat.value?.id)
+  }
+})
+
+// 监听猫咪变化，重新加载记录
+watch(currentCat, async (newCat) => {
+  if (authStore.isAuthenticated) {
+    await petStore.fetchRecords(newCat?.id)
   }
 })
 
@@ -139,72 +158,84 @@ function formatDate(dateStr: string): string {
 // 宠物记录功能
 function openAddRecordModal() {
   if (!authStore.isAuthenticated) {
-    alert('请先登录')
+    toast.warning('请先登录')
     return
   }
   recordForm.value = {
-    petName: '猫咪',
-    ageWeeks: 0,
-    ageMonths: 0,
-    weight: 0,
-    notes: '',
-    recordDate: new Date().toISOString().split('T')[0]
+    petName: currentCat.value?.name || '猫咪',
+    ageWeeks: 0, ageMonths: 0, weight: 0, notes: '',
+    recordDate: new Date().toISOString().split('T')[0],
+    vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
+    dewormDrug: '', dewormType: '体内', dewormNextDate: '',
+    checkClinic: '', checkVet: '', checkFindings: ''
   }
-  recordPhotoFile.value = null
-  recordPhotoPreview.value = ''
+  recordPhotoFiles.value = []
+  recordPhotoPreviews.value = []
+  recordType.value = 'daily'
+  isAdoptionDay.value = false
   showAddRecordModal.value = true
 }
 
 function closeAddRecordModal() {
   showAddRecordModal.value = false
-  recordPhotoFile.value = null
-  recordPhotoPreview.value = ''
+  recordPhotoFiles.value = []
+  recordPhotoPreviews.value = []
 }
 
 function handlePhotoSelect(event: Event) {
   const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    recordPhotoFile.value = file
+  const files = Array.from(target.files || []).slice(0, 9)
+  recordPhotoFiles.value = files
+  recordPhotoPreviews.value = []
+  files.forEach(file => {
     const reader = new FileReader()
-    reader.onload = (e) => {
-      recordPhotoPreview.value = e.target?.result as string
-    }
+    reader.onload = (e) => recordPhotoPreviews.value.push(e.target?.result as string)
     reader.readAsDataURL(file)
-  }
+  })
 }
 
 function calculateAgeMonths(ageWeeks: number): number {
   return Math.floor(ageWeeks / 4)
 }
 
-async function savePetRecord() {
-  if (!recordPhotoFile.value) {
-    alert('请上传照片')
-    return
-  }
+function buildTemplateData(): string | undefined {
+  const f = recordForm.value
+  if (recordType.value === 'vaccine') return JSON.stringify({ vaccineName: f.vaccineName, nextDate: f.vaccineNextDate, clinic: f.vaccineClinic })
+  if (recordType.value === 'deworm') return JSON.stringify({ drug: f.dewormDrug, type: f.dewormType, nextDate: f.dewormNextDate })
+  if (recordType.value === 'healthCheck') return JSON.stringify({ clinic: f.checkClinic, vet: f.checkVet, findings: f.checkFindings })
+  return undefined
+}
 
+async function savePetRecord() {
   const params: CreatePetRecordParams = {
     petName: recordForm.value.petName,
-    photoUrl: '', // 会在上传后由服务器返回
     ageWeeks: recordForm.value.ageWeeks,
     ageMonths: recordForm.value.ageMonths || calculateAgeMonths(recordForm.value.ageWeeks),
     weight: recordForm.value.weight,
     notes: recordForm.value.notes || undefined,
-    recordDate: recordForm.value.recordDate
+    recordDate: recordForm.value.recordDate,
+    catId: currentCat.value?.id,
+    type: recordType.value,
+    isAdoptionDay: isAdoptionDay.value,
+    templateData: buildTemplateData()
   }
 
-  const success = await petStore.createRecord(params, recordPhotoFile.value)
+  const files = recordPhotoFiles.value.length > 0 ? recordPhotoFiles.value : undefined
+  const success = await petStore.createRecord(params, files)
   if (success) {
+    toast.success('记录保存成功')
     closeAddRecordModal()
   } else {
-    alert('保存失败，请重试')
+    toast.error('保存失败，请重试')
   }
 }
 
 async function deletePetRecord(recordId: string) {
   if (confirm('确定要删除这条记录吗？')) {
-    await petStore.deleteRecord(recordId)
+    const success = await petStore.deleteRecord(recordId)
+    if (success) {
+      toast.success('记录已删除')
+    }
   }
 }
 
@@ -229,22 +260,141 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
   training: { name: '训练', icon: '🎾', color: 'bg-green-100 text-green-700' },
   care: { name: '护理', icon: '🧼', color: 'bg-purple-100 text-purple-700' }
 }
+
+// 记录类型配置
+const RECORD_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+  daily:       { label: '日常', icon: '📋', color: '#4ade80' },
+  vaccine:     { label: '疫苗', icon: '💉', color: '#60a5fa' },
+  deworm:      { label: '驱虫', icon: '🐛', color: '#f97316' },
+  healthCheck: { label: '体检', icon: '🏥', color: '#a78bfa' },
+  free:        { label: '自由', icon: '✏️', color: '#94a3b8' },
+}
+
+// 按月分组记录
+const recordsByMonth = computed(() => {
+  const groups: { month: string; records: typeof petStore.sortedRecords }[] = []
+  const map = new Map<string, typeof petStore.sortedRecords>()
+  for (const r of petStore.sortedRecords) {
+    const month = r.recordDate.slice(0, 7) // YYYY-MM
+    if (!map.has(month)) map.set(month, [])
+    map.get(month)!.push(r)
+  }
+  map.forEach((records, month) => groups.push({ month, records }))
+  return groups.sort((a, b) => b.month.localeCompare(a.month))
+})
+
+// 根据猫咪来源调整页面标题和导航
+const pageSubtitle = computed(() => {
+  if (!currentCat.value) return '从新生到成年的完整成长路径'
+  switch (currentCat.value.adoptStatus) {
+    case 'raisedFromBaby':
+      return '从新生到成年的完整成长路径'
+    case 'adoptedYoung':
+      return `记录${currentCat.value.name}领养后的成长点滴`
+    case 'adoptedAdult':
+      return `关注${currentCat.value.name}的健康与养护`
+    case 'unknownAge':
+      return `记录${currentCat.value.name}的日常生活与健康`
+    default:
+      return '从新生到成年的完整成长路径'
+  }
+})
+
+const stageNavTitle = computed(() => {
+  if (!currentCat.value) return '成长阶段'
+  switch (currentCat.value.adoptStatus) {
+    case 'raisedFromBaby':
+    case 'adoptedYoung':
+      return '成长阶段'
+    case 'adoptedAdult':
+      return '养护指南'
+    case 'unknownAge':
+      return '日常护理'
+    default:
+      return '成长阶段'
+  }
+})
+
+// 对于领养（幼年/成年）和年龄不详的猫咪，隐藏年龄显示
+const shouldHideAge = computed(() => {
+  if (!currentCat.value) return false
+  return ['adoptedYoung', 'adoptedAdult', 'unknownAge'].includes(currentCat.value.adoptStatus)
+})
+
+// 获取猫咪显示文本（替代年龄）
+const catDisplayLabel = computed(() => {
+  if (!currentCat.value) return ''
+  switch (currentCat.value.adoptStatus) {
+    case 'adoptedYoung':
+      return '幼年猫'
+    case 'adoptedAdult':
+      return '成年猫'
+    case 'unknownAge':
+      return '年龄不详'
+    default:
+      return ''
+  }
+})
+
+// 根据猫咪领养状态过滤显示的阶段
+const filteredStages = computed(() => {
+  if (!currentCat.value) return catStore.stages
+
+  switch (currentCat.value.adoptStatus) {
+    case 'raisedFromBaby':
+      // 从小养大：显示所有阶段
+      return catStore.stages
+    case 'adoptedYoung':
+      // 领养幼年：只显示 2个月及以后的阶段
+      return catStore.stages.filter(s => s.minAgeWeeks >= 8)
+    case 'adoptedAdult':
+    case 'unknownAge':
+      // 成年猫或年龄不详：只显示养护相关的阶段（不含具体年龄）
+      return catStore.stages.filter(s => s.minAgeWeeks >= 52)
+    default:
+      return catStore.stages
+  }
+})
+
+// 当猫咪切换时，重置选中的阶段为第一个可用阶段
+watch(currentCat, () => {
+  if (filteredStages.value.length > 0) {
+    selectedStage.value = filteredStages.value[0]!
+  }
+})
+
+// 确保 selectedStage 始终有效
+watch(filteredStages, (stages) => {
+  if (stages.length > 0 && (!selectedStage.value || !stages.find(s => s.id === selectedStage.value!.id))) {
+    selectedStage.value = stages[0]!
+  }
+})
 </script>
 
 <template>
   <div class="timeline-page">
     <div class="page-header">
-      <h1 class="page-title">🐱 猫咪养成时间线</h1>
-      <p class="page-subtitle">从新生到成年的完整成长路径</p>
+      <h1 class="page-title">
+        🐱 {{ currentCat?.timelineTitle || '猫咪养成时间线' }}
+      </h1>
+      <p class="page-subtitle">{{ pageSubtitle }}</p>
+    </div>
+
+    <!-- 猫咪选择器 -->
+    <div class="cat-selector-section" v-if="authStore.isAuthenticated">
+      <CatSelector />
+      <p class="records-hint" v-if="currentCat">
+        正在查看 <strong>{{ currentCat.name }}</strong> 的{{ currentCat.timelineTitle || '成长记录' }}
+      </p>
     </div>
 
     <div class="timeline-container">
       <!-- 阶段导航 -->
       <aside class="stage-nav">
-        <h2 class="nav-title">成长阶段</h2>
+        <h2 class="nav-title">{{ stageNavTitle }}</h2>
         <div class="stage-list">
           <button
-            v-for="stage in catStore.stages"
+            v-for="stage in filteredStages"
             :key="stage.id"
             :class="['stage-item', { active: selectedStage?.id === stage.id }]"
             @click="selectStage(stage)"
@@ -470,40 +620,57 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
             <button @click="$router.push('/login')" class="btn-login">去登录</button>
           </div>
 
-          <!-- 记录列表 -->
+          <!-- 记录列表（按月分组） -->
           <div v-else-if="petStore.hasRecords" class="records-timeline">
-            <div
-              v-for="record in petStore.sortedRecords"
-              :key="record.id"
-              class="record-item"
-            >
-              <div class="record-date">
-                <span class="record-day">{{ new Date(record.recordDate).getDate() }}</span>
-                <span class="record-month">{{ new Date(record.recordDate).toLocaleDateString('zh-CN', { month: 'short' }) }}</span>
-              </div>
-              <div class="record-content">
-                <div class="record-photo">
-                  <img :src="`http://localhost:3000${record.photoUrl}`" :alt="record.petName" />
+            <template v-for="group in recordsByMonth" :key="group.month">
+              <div class="month-divider">{{ group.month.replace('-', '年') }}月</div>
+              <div
+                v-for="record in group.records"
+                :key="record.id"
+                class="record-item"
+              >
+                <div class="record-date">
+                  <span class="record-day">{{ new Date(record.recordDate).getDate() }}</span>
+                  <span class="record-month">{{ new Date(record.recordDate).toLocaleDateString('zh-CN', { month: 'short' }) }}</span>
                 </div>
-                <div class="record-info">
-                  <div class="record-header">
-                    <h4 class="record-pet-name">{{ record.petName }}</h4>
-                    <button @click="deletePetRecord(record.id)" class="btn-delete-record" title="删除记录">
-                      ×
-                    </button>
+                <div class="record-content">
+                  <!-- 多图缩略 -->
+                  <div v-if="record.photos && record.photos.length > 0" class="record-photos">
+                    <div class="record-photo-main">
+                      <ImageLoader :src="`http://localhost:3000${record.photos[0]}`" :alt="record.petName" fit="cover" />
+                      <span v-if="record.photos.length > 1" class="photo-count-badge">+{{ record.photos.length - 1 }}</span>
+                    </div>
                   </div>
-                  <div class="record-stats">
-                    <span class="record-stat">
-                      📅 {{ record.ageMonths }}个月 ({{ record.ageWeeks }}周)
-                    </span>
-                    <span class="record-stat">
-                      ⚖️ {{ record.weight }}kg
-                    </span>
+                  <div v-else-if="record.photoUrl" class="record-photos">
+                    <div class="record-photo-main">
+                      <ImageLoader :src="`http://localhost:3000${record.photoUrl}`" :alt="record.petName" fit="cover" />
+                    </div>
                   </div>
-                  <p v-if="record.notes" class="record-notes">{{ record.notes }}</p>
+                  <div class="record-info">
+                    <div class="record-header">
+                      <div style="display:flex;align-items:center;gap:0.5rem">
+                        <h4 class="record-pet-name">{{ record.petName }}</h4>
+                        <span
+                          v-if="record.type && RECORD_TYPE_CONFIG[record.type]"
+                          class="type-badge"
+                          :style="{ background: RECORD_TYPE_CONFIG[record.type]!.color + '22', color: RECORD_TYPE_CONFIG[record.type]!.color }"
+                        >
+                          {{ RECORD_TYPE_CONFIG[record.type]!.icon }} {{ RECORD_TYPE_CONFIG[record.type]!.label }}
+                        </span>
+                        <span v-if="record.isAdoptionDay" class="adoption-badge">🎉 领养纪念日</span>
+                      </div>
+                      <button @click="deletePetRecord(record.id)" class="btn-delete-record" title="删除记录">×</button>
+                    </div>
+                    <div class="record-stats">
+                      <span v-if="!shouldHideAge && record.ageMonths" class="record-stat">📅 {{ record.ageMonths }}个月 ({{ record.ageWeeks }}周)</span>
+                      <span v-else-if="shouldHideAge && catDisplayLabel" class="record-stat">📅 {{ catDisplayLabel }}</span>
+                      <span v-if="record.weight" class="record-stat">⚖️ {{ record.weight }}kg</span>
+                    </div>
+                    <p v-if="record.notes" class="record-notes">{{ record.notes }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
 
           <!-- 空状态 -->
@@ -563,88 +730,135 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
           <button @click="closeAddRecordModal" class="modal-close">×</button>
         </div>
         <div class="modal-body">
-          <!-- 照片上传 -->
-          <div class="form-group">
-            <label class="form-label">宠物照片 *</label>
-            <div class="photo-upload">
-              <div v-if="recordPhotoPreview" class="photo-preview">
-                <img :src="recordPhotoPreview" alt="预览" />
-                <button @click="recordPhotoPreview = ''; recordPhotoFile = null" class="btn-remove-photo">
-                  更换照片
-                </button>
+          <!-- 记录类型 Tab -->
+          <div class="record-type-tabs">
+            <button
+              v-for="(cfg, key) in RECORD_TYPE_CONFIG"
+              :key="key"
+              :class="['type-tab', { active: recordType === key }]"
+              :style="recordType === key ? { borderColor: cfg.color, color: cfg.color } : {}"
+              @click="recordType = key as any"
+            >
+              {{ cfg.icon }} {{ cfg.label }}
+            </button>
+          </div>
+
+          <!-- 基础字段 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">宠物名称</label>
+              <input v-model="recordForm.petName" type="text" class="form-input" placeholder="猫咪" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">记录日期</label>
+              <input v-model="recordForm.recordDate" type="date" class="form-input" />
+            </div>
+          </div>
+
+          <!-- daily 字段 -->
+          <template v-if="recordType === 'daily'">
+            <div class="form-row">
+              <div class="form-group" v-if="!shouldHideAge">
+                <label class="form-label">年龄（周）</label>
+                <input v-model.number="recordForm.ageWeeks" type="number" min="0" class="form-input" placeholder="0" />
               </div>
-              <label v-else class="photo-upload-label">
-                <input
-                  type="file"
-                  accept="image/*"
-                  @change="handlePhotoSelect"
-                  class="photo-input"
-                />
-                <span class="upload-icon">📷</span>
-                <span class="upload-text">点击上传照片</span>
+              <div class="form-group" :class="{ 'full-width': shouldHideAge }">
+                <label class="form-label">体重（kg）</label>
+                <input v-model.number="recordForm.weight" type="number" min="0" step="0.1" class="form-input" placeholder="0.0" />
+              </div>
+            </div>
+          </template>
+
+          <!-- vaccine 字段 -->
+          <template v-else-if="recordType === 'vaccine'">
+            <div class="form-group">
+              <label class="form-label">疫苗名称 *</label>
+              <input v-model="recordForm.vaccineName" type="text" class="form-input" placeholder="如：猫三联" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">下次接种日期</label>
+                <input v-model="recordForm.vaccineNextDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">接种医院</label>
+                <input v-model="recordForm.vaccineClinic" type="text" class="form-input" placeholder="医院名称" />
+              </div>
+            </div>
+          </template>
+
+          <!-- deworm 字段 -->
+          <template v-else-if="recordType === 'deworm'">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">药品名称 *</label>
+                <input v-model="recordForm.dewormDrug" type="text" class="form-input" placeholder="如：拜宠清" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">类型</label>
+                <select v-model="recordForm.dewormType" class="form-input">
+                  <option>体内</option>
+                  <option>体外</option>
+                  <option>体内+体外</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">下次驱虫日期</label>
+              <input v-model="recordForm.dewormNextDate" type="date" class="form-input" />
+            </div>
+          </template>
+
+          <!-- healthCheck 字段 -->
+          <template v-else-if="recordType === 'healthCheck'">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">医院</label>
+                <input v-model="recordForm.checkClinic" type="text" class="form-input" placeholder="医院名称" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">医生</label>
+                <input v-model="recordForm.checkVet" type="text" class="form-input" placeholder="医生姓名" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">检查结果/建议</label>
+              <textarea v-model="recordForm.checkFindings" class="form-textarea" rows="2" placeholder="检查结果或医生建议..."></textarea>
+            </div>
+          </template>
+
+          <!-- 备注（所有类型通用） -->
+          <div class="form-group">
+            <label class="form-label">备注</label>
+            <textarea v-model="recordForm.notes" class="form-textarea" placeholder="记录一些特别的瞬间..." rows="2"></textarea>
+          </div>
+
+          <!-- 多图上传 -->
+          <div class="form-group">
+            <label class="form-label">照片（最多9张）</label>
+            <div class="photos-upload-area">
+              <div v-for="(preview, i) in recordPhotoPreviews" :key="i" class="photo-thumb">
+                <img :src="preview" alt="预览" />
+              </div>
+              <label v-if="recordPhotoPreviews.length < 9" class="photo-add-btn">
+                <input type="file" accept="image/*" multiple @change="handlePhotoSelect" class="photo-input" />
+                <span>📷</span>
+                <span style="font-size:0.75rem">添加</span>
               </label>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">宠物名称</label>
-              <input
-                v-model="recordForm.petName"
-                type="text"
-                class="form-input"
-                placeholder="猫咪"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">记录日期</label>
-              <input
-                v-model="recordForm.recordDate"
-                type="date"
-                class="form-input"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">年龄（周）*</label>
-              <input
-                v-model.number="recordForm.ageWeeks"
-                type="number"
-                min="0"
-                class="form-input"
-                placeholder="0"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label">体重（kg）*</label>
-              <input
-                v-model.number="recordForm.weight"
-                type="number"
-                min="0"
-                step="0.1"
-                class="form-input"
-                placeholder="0.0"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">备注</label>
-            <textarea
-              v-model="recordForm.notes"
-              class="form-textarea"
-              placeholder="记录一些特别的瞬间..."
-              rows="3"
-            ></textarea>
+          <!-- 领养纪念日 -->
+          <div v-if="currentCat?.adoptDate" class="form-group adoption-day-check">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="isAdoptionDay" />
+              <span>🎉 标记为领养纪念日</span>
+            </label>
           </div>
         </div>
         <div class="modal-footer">
           <button @click="closeAddRecordModal" class="btn-cancel">取消</button>
-          <button @click="savePetRecord" class="btn-save" :disabled="!recordPhotoFile || recordForm.ageWeeks < 0 || recordForm.weight <= 0">
-            保存记录
-          </button>
+          <button @click="savePetRecord" class="btn-save">保存记录</button>
         </div>
       </div>
     </div>
@@ -688,6 +902,22 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
 .page-subtitle {
   color: #64748b;
   margin: 0;
+}
+
+.cat-selector-section {
+  max-width: 400px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.records-hint {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.records-hint strong {
+  color: #f97316;
 }
 
 .timeline-container {
@@ -1653,7 +1883,147 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
 
 /* 记录弹窗样式 */
 .record-modal {
-  max-width: 500px;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.record-type-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.type-tab {
+  padding: 0.375rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 2rem;
+  background: transparent;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #64748b;
+}
+
+.type-tab:hover {
+  border-color: #94a3b8;
+}
+
+.type-tab.active {
+  font-weight: 600;
+}
+
+.photos-upload-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.photo-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-add-btn {
+  width: 72px;
+  height: 72px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.photo-add-btn:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.adoption-day-check {
+  margin-top: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  color: #475569;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: #f97316;
+}
+
+/* 月份分隔线 */
+.month-divider {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 0.5rem 0;
+  margin: 1rem 0 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* 多图缩略 */
+.record-photos {
+  flex-shrink: 0;
+}
+
+.record-photo-main {
+  width: 120px;
+  height: 120px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #f1f5f9;
+  position: relative;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.75rem;
+}
+
+/* 类型徽章 */
+.type-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  font-weight: 500;
+}
+
+.adoption-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  background: #fef3c7;
+  color: #d97706;
+  font-weight: 500;
 }
 
 .form-row {
@@ -1662,71 +2032,12 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
   gap: 1rem;
 }
 
-.photo-upload {
-  width: 100%;
-}
-
-.photo-preview {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.photo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.btn-remove-photo {
-  position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.8125rem;
-  cursor: pointer;
-}
-
-.photo-upload-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  border: 2px dashed #cbd5e1;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.photo-upload-label:hover {
-  border-color: #f97316;
-  background: #fff7ed;
-}
-
 .photo-input {
   position: absolute;
   width: 100%;
   height: 100%;
   opacity: 0;
   cursor: pointer;
-}
-
-.upload-icon {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-}
-
-.upload-text {
-  color: #64748b;
-  font-size: 0.875rem;
 }
 
 .form-textarea {
@@ -1743,5 +2054,9 @@ const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
 .form-textarea:focus {
   outline: none;
   border-color: #f97316;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 </style>

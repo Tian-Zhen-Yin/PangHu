@@ -3,7 +3,7 @@
  */
 
 import { Response, NextFunction } from 'express'
-import { AuthRequest } from '../middleware/auth'
+import { Request } from 'express'
 import {
   analyzeWeight,
   getWeightHistoryWithStandards,
@@ -15,9 +15,9 @@ import { successResponse, errorResponse } from '../utils/response'
 /**
  * 获取猫咪体重分析
  */
-export async function getWeightAnalysis(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getWeightAnalysis(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const catId = req.params.catId as string
 
     if (!userId) {
@@ -43,9 +43,9 @@ export async function getWeightAnalysis(req: AuthRequest, res: Response, next: N
 /**
  * 获取猫咪体重历史及标准范围
  */
-export async function getWeightHistoryStandards(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getWeightHistoryStandards(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const catId = req.params.catId as string
 
     if (!userId) {
@@ -71,7 +71,7 @@ export async function getWeightHistoryStandards(req: AuthRequest, res: Response,
 /**
  * 获取支持的品种列表
  */
-export async function getBreeds(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getBreeds(req: Request, res: Response, next: NextFunction) {
   try {
     console.log('[getBreeds] Request')
 
@@ -88,9 +88,9 @@ export async function getBreeds(req: AuthRequest, res: Response, next: NextFunct
 /**
  * 批量获取多只猫咪的体重分析
  */
-export async function getBatchAnalysis(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getBatchAnalysis(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const { catIds } = req.body
 
     if (!userId) {

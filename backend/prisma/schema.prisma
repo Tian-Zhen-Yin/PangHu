@@ -138,6 +138,8 @@ model User {
   email          String         @unique
   username       String         @unique
   password       String
+  memberType     String         @default("free") // "free" | "premium"
+  memberExpiredAt DateTime?
   plans          UserPlan[]
   petRecords     PetRecord[]
   conversations  Conversation[]
@@ -160,7 +162,11 @@ model Cat {
   breed        String?
   gender       String    @default("unknown") // "male" | "female" | "unknown"
   birthDate    DateTime
-  adoptDate    DateTime?
+  birthDateEstimated    Boolean   @default(false) // 出生日期是否为估算
+  adoptDate    DateTime? // 领养日期（开始饲养日期）
+
+  // 领养状态：从小养大、领养幼年、领养成年、年龄不详
+  adoptStatus  String    @default("raisedFromBaby") // "raisedFromBaby" | "adoptedYoung" | "adoptedAdult" | "unknownAge"
 
   weight       Float?
   isNeutered   Boolean   @default(false)
@@ -170,6 +176,9 @@ model Cat {
   features     String?
   allergies    String?
   diseases     String?
+
+  weightGoalTarget Float?    // 目标体重 (kg)
+  weightGoalDate   DateTime? // 目标日期
 
   isActive     Boolean   @default(true)
 
@@ -236,7 +245,11 @@ model PetRecord {
   cat         Cat?     @relation(fields: [catId], references: [id], onDelete: SetNull)
 
   petName     String   @default("猫咪")
-  photoUrl    String
+  photoUrl    String   @default("") // 保留向后兼容
+  photos      String   @default("[]") // JSON 数组，多张图片 URL
+  type        String   @default("daily") // "daily"|"vaccine"|"deworm"|"healthCheck"|"free"
+  isAdoptionDay Boolean @default(false) // 是否为领养纪念日
+  templateData String? // JSON，模板特定字段
   ageWeeks    Int
   ageMonths   Int
   weight      Float

@@ -12,39 +12,62 @@ const testUsers = [
   }
 ]
 
-// 测试猫咪数据
+// 测试猫咪数据 - 包含所有四种领养状态
 const testCats = [
+  // 从小养到大 - 完整的成长记录
+  {
+    name: '奶糖',
+    gender: 'female',
+    breed: '英短蓝猫',
+    birthDate: new Date('2024-08-01'), // 约6个月大
+    adoptDate: new Date('2024-08-01'), // 从小养大
+    adoptStatus: 'raisedFromBaby',
+    weight: 2.8,
+    color: '蓝色',
+    features: '圆脸，大眼睛，性格温顺',
+    birthDateEstimated: false
+  },
+  // 领养（幼年）- 领养的幼年猫咪
   {
     name: '咪咪',
     gender: 'female',
-    breed: '英短蓝猫',
-    birthDate: new Date('2023-03-15'),
-    adoptDate: new Date('2023-05-01'),
-    weight: 4.2,
-    color: '蓝色',
-    features: '圆脸，大眼睛，性格温顺'
+    breed: '橘猫',
+    birthDate: new Date('2024-03-15'), // 约11个月大
+    adoptDate: new Date('2024-06-01'), // 2个多月时领养
+    adoptStatus: 'adoptedYoung',
+    weight: 3.5,
+    color: '橘白相间',
+    features: '活泼好动，喜欢玩玩具',
+    birthDateEstimated: false
   },
+  // 领养（成年）- 领养的成年猫咪
   {
     name: '小白',
     gender: 'male',
     breed: '布偶猫',
-    birthDate: new Date('2022-08-20'),
-    adoptDate: new Date('2022-10-15'),
+    birthDate: new Date('2022-05-20'), // 约3岁多
+    adoptDate: new Date('2024-02-15'), // 成年后领养
+    adoptStatus: 'adoptedAdult',
     weight: 6.5,
     isNeutered: true,
     neuteredDate: new Date('2023-03-10'),
     color: '重点色',
-    features: '长毛，体型大，喜欢粘人'
+    features: '长毛，体型大，喜欢粘人',
+    birthDateEstimated: false
   },
+  // 年龄不详 - 不知道年龄的猫咪
   {
     name: '花花',
     gender: 'female',
-    breed: '美短虎斑',
-    birthDate: new Date('2023-11-01'),
-    adoptDate: new Date('2024-01-10'),
-    weight: 3.8,
-    color: '银色虎斑',
-    features: '活泼好动，喜欢玩玩具'
+    breed: '狸花猫',
+    birthDate: new Date('2022-01-01'), // 估算的出生日期（约4岁）
+    adoptDate: new Date('2024-01-10'), // 捡到的流浪猫
+    adoptStatus: 'unknownAge',
+    weight: 4.2,
+    isNeutered: true,
+    color: '虎斑纹',
+    features: '警惕性高，独立性强',
+    birthDateEstimated: true // 出生日期是估算的
   }
 ]
 

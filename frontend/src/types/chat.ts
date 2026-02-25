@@ -8,6 +8,15 @@
 export type MessageRole = 'user' | 'assistant' | 'system'
 
 /**
+ * 引用的指南来源
+ */
+export interface Citation {
+  guideId: string
+  title: string
+  similarity: number
+}
+
+/**
  * 消息
  */
 export interface Message {
@@ -17,6 +26,7 @@ export interface Message {
   content: string
   markdownContent?: string
   referencedGuides?: string[]
+  citations?: Citation[]  // RAG 检索到的引用来源
   metadata?: string
   createdAt: string
 }
@@ -57,6 +67,7 @@ export interface ReferencedGuide {
 export interface SendMessageParams {
   conversationId?: string
   content: string
+  catId?: string
 }
 
 /**

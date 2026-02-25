@@ -9,6 +9,29 @@
       <div class="form-section">
         <h2>基本信息</h2>
 
+        <!-- 头像上传 -->
+        <div class="avatar-upload-section">
+          <div class="avatar-preview" @click="handleAvatarClick">
+            <img v-if="form.avatar" :src="avatarPreviewUrl" alt="头像预览" />
+            <span v-else class="avatar-placeholder">📷</span>
+            <div class="avatar-overlay">
+              <span v-if="uploadingAvatar">上传中...</span>
+              <span v-else>点击更换</span>
+            </div>
+          </div>
+          <input
+            ref="avatarInputRef"
+            type="file"
+            accept="image/*"
+            @change="handleAvatarChange"
+            style="display: none"
+          />
+          <div class="avatar-info">
+            <p class="avatar-title">猫咪头像</p>
+            <p class="avatar-hint">支持 JPG、PNG 格式，建议正方形图片，会自动裁剪为圆形</p>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>名字 <span class="required">*</span></label>
           <input v-model="form.name" type="text" placeholder="猫咪的名字" required />
@@ -30,16 +53,34 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label>猫咪来源 <span class="required">*</span></label>
+          <select v-model="form.adoptStatus" required>
+            <option v-for="(info, status) in adoptStatusConfig" :key="status" :value="status">
+              {{ info.label }} - {{ info.description }}
+            </option>
+          </select>
+          <p class="field-hint">选择猫咪来源会帮助优化成长记录和健康建议</p>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
             <label>出生日期 <span class="required">*</span></label>
             <input v-model="form.birthDate" type="date" required />
           </div>
 
-          <div class="form-group">
-            <label>领养日期</label>
-            <input v-model="form.adoptDate" type="date" />
+          <div class="form-group checkbox-group" style="padding-top: 24px;">
+            <label>
+              <input v-model="form.birthDateEstimated" type="checkbox" />
+              出生日期是估算的
+            </label>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>开始饲养日期（领养日期）</label>
+          <input v-model="form.adoptDate" type="date" />
+          <p class="field-hint">记录开始饲养猫咪的日期，成长记录将从此日期开始显示</p>
         </div>
 
         <div class="form-row">
@@ -100,8 +141,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMyCatStore } from '../../stores/myCat'
-import { getMyCatById } from '../../api/myCat'
+import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
+import { toast } from '../../composables/useToast'
 import type { CatFormData } from '../../types/cat'
+import { ADOPT_STATUS_CONFIG } from '../../types/cat'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,8 +157,11 @@ const form = ref<CatFormData & { neuteredDate?: string }>({
   name: '',
   gender: 'unknown',
   birthDate: '',
+  birthDateEstimated: false,
   breed: '',
+  avatar: '',
   adoptDate: '',
+  adoptStatus: 'raisedFromBaby',
   weight: undefined,
   isNeutered: false,
   neuteredDate: '',
@@ -124,6 +170,112 @@ const form = ref<CatFormData & { neuteredDate?: string }>({
   allergies: '',
   diseases: ''
 })
+
+const uploadingAvatar = ref(false)
+const avatarInputRef = ref<HTMLInputElement>()
+const avatarFile = ref<File | null>(null) // 保存待上传的头像文件
+
+// 获取头像预览URL
+const avatarPreviewUrl = computed(() => {
+  if (!form.value.avatar) return ''
+  // 如果是本地 blob URL，直接返回
+  if (form.value.avatar.startsWith('blob:')) return form.value.avatar
+  // 如果是完整 URL，直接返回
+  if (form.value.avatar.startsWith('http')) return form.value.avatar
+  // 否则添加 API 基础 URL
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  return `${baseURL}${form.value.avatar}`
+})
+
+// 处理头像上传
+function handleAvatarClick() {
+  avatarInputRef.value?.click()
+}
+
+async function handleAvatarChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    toast.error('请选择图片文件')
+    return
+  }
+
+  // 验证文件大小 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error('图片大小不能超过5MB')
+    return
+  }
+
+  uploadingAvatar.value = true
+  try {
+    // 裁剪图片为圆形
+    const croppedFile = await cropAvatarToCircle(file)
+
+    // 如果是编辑模式且有猫咪ID，直接上传到服务器
+    if (isEdit.value) {
+      const catId = route.params.id as string
+      const response = await uploadCatAvatar(catId, croppedFile)
+      form.value.avatar = response.data.avatar
+      toast.success('头像上传成功')
+    } else {
+      // 新建模式，保存文件并在提交时上传
+      avatarFile.value = croppedFile
+      // 显示预览
+      form.value.avatar = URL.createObjectURL(croppedFile)
+    }
+  } catch (err: any) {
+    console.error('头像处理失败:', err)
+    toast.error(err.message || '头像处理失败')
+  } finally {
+    uploadingAvatar.value = false
+    target.value = ''
+  }
+}
+
+// 将图片裁剪为圆形并返回新的File对象
+function cropAvatarToCircle(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return reject(new Error('无法创建canvas'))
+
+      // 设置正方形画布，大小为图片较短边的80%
+      const size = Math.min(img.width, img.height) * 0.8
+      canvas.width = size
+      canvas.height = size
+
+      // 绘制圆形裁剪区域
+      ctx.beginPath()
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+      ctx.closePath()
+      ctx.clip()
+
+      // 计算居中裁剪位置
+      const scale = size / Math.min(img.width, img.height)
+      const x = (size - img.width * scale) / 2
+      const y = (size - img.height * scale) / 2
+
+      ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
+
+      // 转换为Blob并创建File对象
+      canvas.toBlob((blob) => {
+        if (!blob) return reject(new Error('图片处理失败'))
+        const croppedFile = new File([blob], file.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now()
+        })
+        resolve(croppedFile)
+      }, 'image/jpeg', 0.95)
+    }
+    img.onerror = () => reject(new Error('图片加载失败'))
+    img.src = URL.createObjectURL(file)
+  })
+}
 
 onMounted(async () => {
   if (isEdit.value) {
@@ -134,8 +286,11 @@ onMounted(async () => {
         name: cat.name,
         gender: cat.gender,
         birthDate: cat.birthDate.split('T')[0],
+        birthDateEstimated: cat.birthDateEstimated || false,
         breed: cat.breed || '',
+        avatar: cat.avatar || '',
         adoptDate: cat.adoptDate ? cat.adoptDate.split('T')[0] : '',
+        adoptStatus: cat.adoptStatus || 'raisedFromBaby',
         weight: cat.weight || undefined,
         isNeutered: cat.isNeutered,
         neuteredDate: cat.neuteredDate ? cat.neuteredDate.split('T')[0] : '',
@@ -155,16 +310,44 @@ async function handleSubmit() {
     // 清理空字符串
     Object.keys(data).forEach(k => { if (data[k] === '') data[k] = undefined })
 
-    if (isEdit.value) {
-      await catStore.updateCat(route.params.id as string, data)
-    } else {
-      await catStore.createCat(data)
+    // 处理头像：如果是本地blob URL，不需要在创建时发送
+    if (data.avatar?.startsWith('blob:')) {
+      data.avatar = undefined
     }
+
+    let catId: string
+
+    if (isEdit.value) {
+      catId = route.params.id as string
+      await catStore.updateCat(catId, data)
+    } else {
+      const result = await catStore.createCat(data)
+      catId = result.data!.id
+    }
+
+    // 如果有头像文件需要上传
+    if (avatarFile.value && catId) {
+      try {
+        uploadingAvatar.value = true
+        const response = await uploadCatAvatar(catId, avatarFile.value)
+        toast.success('猫咪档案和头像保存成功')
+      } catch (err: any) {
+        console.error('头像上传失败:', err)
+        toast.warn('猫咪档案已保存，但头像上传失败')
+      }
+    } else {
+      toast.success(isEdit.value ? '猫咪档案更新成功' : '猫咪档案创建成功')
+    }
+
     router.push('/my-cats')
   } finally {
     submitting.value = false
+    uploadingAvatar.value = false
   }
 }
+
+// 获取领养状态配置
+const adoptStatusConfig = ADOPT_STATUS_CONFIG
 </script>
 
 <style scoped>
@@ -213,6 +396,82 @@ async function handleSubmit() {
   font-weight: 600;
   margin-bottom: 16px;
   color: #333;
+}
+
+.avatar-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.avatar-preview:hover {
+  transform: scale(1.05);
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 32px;
+  color: #999;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-preview:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-info {
+  flex: 1;
+}
+
+.avatar-title {
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.avatar-hint {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
 }
 
 .form-group {
@@ -264,6 +523,12 @@ async function handleSubmit() {
 
 .required {
   color: #e53e3e;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
 }
 
 .form-actions {

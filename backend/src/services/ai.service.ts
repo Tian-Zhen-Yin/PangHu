@@ -422,7 +422,7 @@ export async function generateProactiveAdvice(
     }
   }
 
-  // 年龄阶段建议
+  // 年龄阶段建议 - 根据领养状态调整
   if (types.includes('age')) {
     const ageMonths = Math.floor(
       (Date.now() - cat.birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
@@ -431,7 +431,29 @@ export async function generateProactiveAdvice(
     let stage: string
     let tips: string[]
 
-    if (ageMonths < 6) {
+    // 根据领养状态调整建议
+    const adoptStatus = cat.adoptStatus || 'raisedFromBaby'
+
+    if (adoptStatus === 'adoptedAdult' || adoptStatus === 'unknownAge') {
+      // 成年领养或年龄不详 - 重点关注健康和适应
+      stage = '成年期'
+      tips = [
+        '刚到家需要适应期，提供安静舒适的环境',
+        '建议领养后1-2周进行体检，建立健康档案',
+        '观察饮食习惯，逐步过渡到新食物',
+        '建立规律的作息习惯，帮助猫咪适应新家',
+        '注意观察行为和健康状况变化',
+      ]
+    } else if (adoptStatus === 'adoptedYoung' && ageMonths >= 6) {
+      // 领养的幼年猫（已超过幼猫期）
+      stage = '青少年期'
+      tips = [
+        '刚到新环境需要适应期，给予耐心和关爱',
+        '检查并完成必要的疫苗接种',
+        '观察饮食和排便情况，确保健康',
+        '提供安全的环境，防止应激反应',
+      ]
+    } else if (ageMonths < 6) {
       stage = '幼猫期'
       tips = [
         '幼猫需要高蛋白饮食支持快速发育',

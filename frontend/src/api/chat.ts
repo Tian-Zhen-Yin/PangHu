@@ -64,7 +64,12 @@ export function sendMessageStream(
   params: SendMessageParams,
   callbacks: {
     onMessage?: (content: string, isFirst: boolean) => void
-    onDone?: (metadata?: { tokensUsed?: number; model?: string; referencedGuides?: string[] }) => void
+    onDone?: (metadata?: {
+      tokensUsed?: number
+      model?: string
+      referencedGuides?: string[]
+      citations?: Array<{ guideId: string; title: string; similarity: number }>
+    }) => void
     onError?: (error: string) => void
     onConnected?: () => void
   }

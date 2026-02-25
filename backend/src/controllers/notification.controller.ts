@@ -3,7 +3,7 @@
  */
 
 import { Response, NextFunction } from 'express'
-import { AuthRequest } from '../middleware/auth'
+import { Request } from 'express'
 import {
   getUserNotifications,
   markNotificationAsRead,
@@ -17,9 +17,9 @@ import { successResponse, errorResponse } from '../utils/response'
 /**
  * 获取用户通知列表
  */
-export async function getNotifications(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getNotifications(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const unreadOnly = req.query.unreadOnly === 'true'
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50
     const offset = req.query.offset ? parseInt(req.query.offset as string) : 0
@@ -46,10 +46,10 @@ export async function getNotifications(req: AuthRequest, res: Response, next: Ne
 /**
  * 标记通知为已读
  */
-export async function markAsRead(req: AuthRequest, res: Response, next: NextFunction) {
+export async function markAsRead(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
-    const notificationId = req.params.id
+    const userId = (req as any).user?.userId
+    const notificationId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id
 
     if (!userId) {
       return res.status(401).json(errorResponse('用户未认证'))
@@ -73,9 +73,9 @@ export async function markAsRead(req: AuthRequest, res: Response, next: NextFunc
 /**
  * 标记所有通知为已读
  */
-export async function markAllRead(req: AuthRequest, res: Response, next: NextFunction) {
+export async function markAllRead(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
 
     if (!userId) {
       return res.status(401).json(errorResponse('用户未认证'))
@@ -95,9 +95,9 @@ export async function markAllRead(req: AuthRequest, res: Response, next: NextFun
 /**
  * 清空所有通知
  */
-export async function clearNotifications(req: AuthRequest, res: Response, next: NextFunction) {
+export async function clearNotifications(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
 
     if (!userId) {
       return res.status(401).json(errorResponse('用户未认证'))
@@ -117,9 +117,9 @@ export async function clearNotifications(req: AuthRequest, res: Response, next: 
 /**
  * 获取通知偏好设置
  */
-export async function getPreferences(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getPreferences(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
 
     if (!userId) {
       return res.status(401).json(errorResponse('用户未认证'))
@@ -145,9 +145,9 @@ export async function getPreferences(req: AuthRequest, res: Response, next: Next
 /**
  * 更新通知偏好设置
  */
-export async function updatePreferences(req: AuthRequest, res: Response, next: NextFunction) {
+export async function updatePreferences(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
 
     if (!userId) {
       return res.status(401).json(errorResponse('用户未认证'))
@@ -196,9 +196,9 @@ export async function updatePreferences(req: AuthRequest, res: Response, next: N
 /**
  * 切换指定类型的开关
  */
-export async function toggleType(req: AuthRequest, res: Response, next: NextFunction) {
+export async function toggleType(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const type = req.params.type as 'vaccine' | 'deworming' | 'checkup' | 'weight' | 'record'
 
     if (!userId) {

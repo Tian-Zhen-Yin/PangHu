@@ -2,9 +2,12 @@
   <div class="weight-trend">
     <div class="trend-header">
       <h3>体重趋势</h3>
-      <span v-if="latestWeight" class="current-weight">
-        当前体重: <strong>{{ latestWeight }}kg</strong>
-      </span>
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <span v-if="latestWeight" class="current-weight">
+          当前体重: <strong>{{ latestWeight }}kg</strong>
+        </span>
+        <button @click="handleExportCSV" class="btn-export" :class="{ 'premium-locked': !isPremium }" :title="isPremium ? '导出CSV' : '升级会员解锁'">⬇ 导出</button>
+      </div>
     </div>
 
     <!-- 健康状态分析 -->
@@ -36,6 +39,23 @@
     </div>
 
     <div v-else ref="chartRef" class="chart-container"></div>
+
+    <!-- 目标体重设置 -->
+    <div class="goal-section">
+      <div v-if="myCatStore.weightGoal" class="goal-info">
+        <span>🎯 目标: <strong>{{ myCatStore.weightGoal.target }}kg</strong></span>
+        <span class="goal-date">{{ myCatStore.weightGoal.date }}</span>
+        <button @click="showGoalForm = true" class="btn-edit-goal">修改</button>
+      </div>
+      <button v-else @click="showGoalForm = true" class="btn-set-goal">+ 设置目标体重</button>
+
+      <div v-if="showGoalForm" class="goal-form">
+        <input v-model.number="goalTarget" type="number" min="0" step="0.1" placeholder="目标体重(kg)" class="goal-input" />
+        <input v-model="goalDate" type="date" class="goal-input" />
+        <button @click="saveGoal" class="btn-save-goal">保存</button>
+        <button @click="showGoalForm = false" class="btn-cancel-goal">取消</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -46,6 +66,9 @@ import type { EChartsOption } from 'echarts'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import { getWeightAnalysis, getWeightHistoryStandards } from '../../api/weightStandard'
 import type { WeightAnalysis, WeightHistoryWithStandard } from '../../types/weight'
+import { useMyCatStore } from '../../stores/myCat'
+import { exportWeightCSV } from '../../api/myCat'
+import { useMember } from '../../composables/useMember'
 
 interface Props {
   catId: string
@@ -54,13 +77,44 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const myCatStore = useMyCatStore()
+const { isPremium } = useMember()
 const chartRef = ref<HTMLDivElement>()
 const weightHistory = ref<WeightHistoryWithStandard[]>([])
 const loading = ref(true)
 const error = ref('')
 const analysis = ref<WeightAnalysis | null>(null)
+const showGoalForm = ref(false)
+const goalTarget = ref(0)
+const goalDate = ref('')
 
 let chart: echarts.ECharts | null = null
+
+// 导出 CSV
+async function handleExportCSV() {
+  if (!isPremium.value) return
+  try {
+    const blob = await exportWeightCSV(props.catId)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${props.catName || 'cat'}_weight.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    // silent
+  }
+}
+
+// 保存目标体重
+async function saveGoal() {
+  if (!goalTarget.value || !goalDate.value) return
+  const ok = await myCatStore.setGoal(goalTarget.value, goalDate.value)
+  if (ok) {
+    showGoalForm.value = false
+    updateChart()
+  }
+}
 
 // 计算最新体重
 const latestWeight = computed(() => {
@@ -264,25 +318,21 @@ function updateChart() {
             ]
           }
         },
-        markLine: weightChange > 0.1 ? {
+        markLine: {
           silent: true,
           symbol: 'none',
           data: [
-            {
-              type: 'average',
-              name: '平均值'
-            }
+            ...(weightChange > 0.1 ? [{ type: 'average', name: '平均值' }] : []),
+            ...(myCatStore.weightGoal ? [{
+              yAxis: myCatStore.weightGoal.target,
+              name: '目标体重',
+              lineStyle: { color: '#a78bfa', type: 'dashed', width: 2 },
+              label: { show: true, position: 'end', formatter: `目标: ${myCatStore.weightGoal.target}kg`, color: '#a78bfa' }
+            }] : [])
           ],
-          lineStyle: {
-            color: '#999',
-            type: 'dashed'
-          },
-          label: {
-            show: true,
-            position: 'end',
-            formatter: '平均: {c}kg'
-          }
-        } : undefined,
+          lineStyle: { color: '#999', type: 'dashed' },
+          label: { show: true, position: 'end', formatter: '平均: {c}kg' }
+        },
         z: 2
       },
       // 标准区间阴影
@@ -491,5 +541,113 @@ onUnmounted(() => {
 .chart-container {
   width: 100%;
   height: 280px;
+}
+
+.btn-export {
+  padding: 0.25rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.2s;
+}
+
+.btn-export:hover {
+  background: #e2e8f0;
+}
+
+.premium-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.goal-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.goal-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.goal-info strong {
+  color: #a78bfa;
+}
+
+.goal-date {
+  color: #94a3b8;
+}
+
+.btn-edit-goal {
+  background: transparent;
+  border: none;
+  color: #a78bfa;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0;
+}
+
+.btn-set-goal {
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-set-goal:hover {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+.goal-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.goal-input {
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  width: 130px;
+}
+
+.goal-input:focus {
+  outline: none;
+  border-color: #a78bfa;
+}
+
+.btn-save-goal {
+  padding: 0.375rem 0.75rem;
+  background: #a78bfa;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-cancel-goal {
+  padding: 0.375rem 0.75rem;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #64748b;
 }
 </style>

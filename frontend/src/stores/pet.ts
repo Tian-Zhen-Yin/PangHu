@@ -32,11 +32,12 @@ export const usePetStore = defineStore('pet', () => {
   }
 
   // 创建宠物记录
-  async function createRecord(params: CreatePetRecordParams, file?: File) {
+  async function createRecord(params: CreatePetRecordParams, files?: File | File[]) {
     loading.value = true
     error.value = null
     try {
-      const response = await createPetRecordApi(params, file)
+      const filesArr = files ? (Array.isArray(files) ? files : [files]) : undefined
+      const response = await createPetRecordApi(params, filesArr)
       if (response.success) {
         records.value.unshift(response.data)
         return true
@@ -52,11 +53,12 @@ export const usePetStore = defineStore('pet', () => {
   }
 
   // 更新宠物记录
-  async function updateRecord(id: string, params: Partial<CreatePetRecordParams>, file?: File) {
+  async function updateRecord(id: string, params: Partial<CreatePetRecordParams>, file?: File | File[]) {
     loading.value = true
     error.value = null
     try {
-      const response = await updatePetRecordApi(id, params, file)
+      const files = file ? (Array.isArray(file) ? file : [file]) : undefined
+      const response = await updatePetRecordApi(id, params, files)
       if (response.success) {
         const index = records.value.findIndex(r => r.id === id)
         if (index !== -1) {

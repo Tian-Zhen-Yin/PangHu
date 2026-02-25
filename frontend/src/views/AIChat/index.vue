@@ -3,13 +3,18 @@ import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useChatStore } from '../../stores/chat'
+import { useMyCatStore } from '../../stores/myCat'
 import { getSuggestedQuestions } from '../../api/chat'
 import ChatMessage from '../../components/chat/ChatMessage.vue'
 import ChatInput from '../../components/chat/ChatInput.vue'
 import ConversationList from '../../components/chat/ConversationList.vue'
+import CatSelector from '../../components/cat/CatSelector.vue'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const chatStore = useChatStore()
+const myCatStore = useMyCatStore()
+const { currentCat } = storeToRefs(myCatStore)
 
 // UI状态
 const showConversationList = ref(true)
@@ -31,7 +36,10 @@ watch(() => chatStore.error, (newError) => {
 
 // 初始化
 onMounted(async () => {
-  await chatStore.fetchConversations()
+  await Promise.all([
+    chatStore.fetchConversations(),
+    myCatStore.fetchCats()
+  ])
 
   // 获取预设问题
   try {
@@ -60,7 +68,7 @@ function scrollToBottom() {
 
 // 发送消息
 async function handleSend(content: string) {
-  await chatStore.sendMessage({ content })
+  await chatStore.sendMessage({ content, catId: currentCat.value?.id })
 }
 
 // 点击预设问题
@@ -159,11 +167,21 @@ function navigateToGuide(guideId: string) {
             <p class="chat-subtitle">您的专业猫咪医疗顾问</p>
           </div>
         </div>
-        <button v-if="chatStore.currentConversationId" class="new-chat-btn" @click="handleNewConversation">
-          <span class="icon">+</span>
-          <span>新对话</span>
-        </button>
+        <div class="header-right">
+          <CatSelector />
+          <button v-if="chatStore.currentConversationId" class="new-chat-btn" @click="handleNewConversation">
+            <span class="icon">+</span>
+            <span>新对话</span>
+          </button>
+        </div>
       </header>
+
+      <!-- 当前猫咪上下文提示 -->
+      <div v-if="currentCat" class="cat-context-bar">
+        <span class="cat-context-icon">💬</span>
+        <span>正在为「{{ currentCat.name }}」提供咨询</span>
+        <span class="cat-context-meta">{{ currentCat.ageFormatted }} · {{ currentCat.gender === 'male' ? '公猫' : currentCat.gender === 'female' ? '母猫' : '未知' }}{{ currentCat.weight ? ` · ${currentCat.weight}kg` : '' }}</span>
+      </div>
 
       <!-- 消息列表 -->
       <div ref="messagesContainer" class="messages-container">
@@ -224,6 +242,32 @@ function navigateToGuide(guideId: string) {
   display: flex;
   height: 100vh;
   background-color: #f5f7fa;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cat-context-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #fff8f5;
+  border-bottom: 1px solid #ffe0d0;
+  font-size: 13px;
+  color: #ff6b35;
+}
+
+.cat-context-icon {
+  font-size: 14px;
+}
+
+.cat-context-meta {
+  color: #999;
+  font-size: 12px;
 }
 
 .conversation-list-panel {

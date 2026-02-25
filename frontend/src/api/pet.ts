@@ -1,12 +1,16 @@
 import api from './index'
 import type { ApiResponse } from '../types/common'
 
-// 宠物记录类型
 export interface PetRecord {
   id: string
   userId: string
+  catId?: string | null
   petName: string
   photoUrl: string
+  photos: string[]
+  type: string // 'daily'|'vaccine'|'deworm'|'healthCheck'|'free'
+  isAdoptionDay: boolean
+  templateData: string | null
   ageWeeks: number
   ageMonths: number
   weight: number
@@ -16,88 +20,58 @@ export interface PetRecord {
   updatedAt: string
 }
 
-// 创建宠物记录的参数
 export interface CreatePetRecordParams {
   petName?: string
-  photoUrl: string
   ageWeeks: number
   ageMonths?: number
   weight: number
   notes?: string
   recordDate?: string
+  catId?: string
+  type?: string
+  isAdoptionDay?: boolean
+  templateData?: string
 }
 
-/**
- * 获取用户的所有宠物记录
- * 支持按 catId 过滤
- */
 export function getPetRecords(catId?: string): Promise<ApiResponse<PetRecord[]>> {
-  if (catId) {
-    return api.get('/pets/records', { params: { catId } })
-  }
+  if (catId) return api.get('/pets/records', { params: { catId } })
   return api.get('/pets/records')
 }
 
-/**
- * 获取单个宠物记录详情
- */
 export function getPetRecordById(id: string): Promise<ApiResponse<PetRecord>> {
   return api.get(`/pets/records/${id}`)
 }
 
-/**
- * 创建宠物记录（带图片上传）
- */
-export function createPetRecord(params: CreatePetRecordParams, file?: File): Promise<ApiResponse<PetRecord>> {
-  if (file) {
-    // 使用 FormData 上传文件
-    const formData = new FormData()
-    formData.append('photo', file)
-    if (params.petName) formData.append('petName', params.petName)
-    formData.append('ageWeeks', params.ageWeeks.toString())
-    if (params.ageMonths) formData.append('ageMonths', params.ageMonths.toString())
-    formData.append('weight', params.weight.toString())
-    if (params.notes) formData.append('notes', params.notes)
-    if (params.recordDate) formData.append('recordDate', params.recordDate)
-
-    return api.post('/pets/records', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-  } else {
-    // 普通请求
-    return api.post('/pets/records', params)
-  }
+export function createPetRecord(params: CreatePetRecordParams, files?: File[]): Promise<ApiResponse<PetRecord>> {
+  const formData = new FormData()
+  if (files?.length) files.forEach(f => formData.append('photos', f))
+  if (params.petName) formData.append('petName', params.petName)
+  formData.append('ageWeeks', params.ageWeeks.toString())
+  if (params.ageMonths) formData.append('ageMonths', params.ageMonths.toString())
+  formData.append('weight', params.weight.toString())
+  if (params.notes) formData.append('notes', params.notes)
+  if (params.recordDate) formData.append('recordDate', params.recordDate)
+  if (params.catId) formData.append('catId', params.catId)
+  if (params.type) formData.append('type', params.type)
+  if (params.isAdoptionDay) formData.append('isAdoptionDay', 'true')
+  if (params.templateData) formData.append('templateData', params.templateData)
+  return api.post('/pets/records', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
-/**
- * 更新宠物记录（可选图片上传）
- */
-export function updatePetRecord(id: string, params: Partial<CreatePetRecordParams>, file?: File): Promise<ApiResponse<PetRecord>> {
-  if (file) {
-    const formData = new FormData()
-    formData.append('photo', file)
-    if (params.petName) formData.append('petName', params.petName)
-    if (params.ageWeeks !== undefined) formData.append('ageWeeks', params.ageWeeks.toString())
-    if (params.ageMonths !== undefined) formData.append('ageMonths', params.ageMonths.toString())
-    if (params.weight !== undefined) formData.append('weight', params.weight.toString())
-    if (params.notes !== undefined) formData.append('notes', params.notes)
-    if (params.recordDate) formData.append('recordDate', params.recordDate)
-
-    return api.patch(`/pets/records/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-  } else {
-    return api.patch(`/pets/records/${id}`, params)
-  }
+export function updatePetRecord(id: string, params: Partial<CreatePetRecordParams>, files?: File[]): Promise<ApiResponse<PetRecord>> {
+  const formData = new FormData()
+  if (files?.length) files.forEach(f => formData.append('photos', f))
+  if (params.petName) formData.append('petName', params.petName)
+  if (params.ageWeeks !== undefined) formData.append('ageWeeks', params.ageWeeks.toString())
+  if (params.ageMonths !== undefined) formData.append('ageMonths', params.ageMonths.toString())
+  if (params.weight !== undefined) formData.append('weight', params.weight.toString())
+  if (params.notes !== undefined) formData.append('notes', params.notes)
+  if (params.recordDate) formData.append('recordDate', params.recordDate)
+  if (params.type) formData.append('type', params.type)
+  if (params.templateData) formData.append('templateData', params.templateData)
+  return api.patch(`/pets/records/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
-/**
- * 删除宠物记录
- */
 export function deletePetRecord(id: string): Promise<ApiResponse<null>> {
   return api.delete(`/pets/records/${id}`)
 }

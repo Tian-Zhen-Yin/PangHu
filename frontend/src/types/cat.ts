@@ -57,6 +57,21 @@ export interface Vaccine {
 export type CatGender = 'male' | 'female' | 'unknown'
 
 /**
+ * 领养状态
+ */
+export type CatAdoptStatus = 'raisedFromBaby' | 'adoptedYoung' | 'adoptedAdult' | 'unknownAge'
+
+/**
+ * 领养状态配置
+ */
+export const ADOPT_STATUS_CONFIG: Record<CatAdoptStatus, { label: string; description: string }> = {
+  raisedFromBaby: { label: '从小养到大', description: '从小养到大，完整记录成长' },
+  adoptedYoung: { label: '领养（幼年）', description: '领养的幼年猫咪，从领养日开始记录' },
+  adoptedAdult: { label: '领养（成年）', description: '领养的成年猫咪，关注健康养护' },
+  unknownAge: { label: '年龄不详', description: '不知道年龄，关注日常健康' },
+}
+
+/**
  * 猫咪档案
  */
 export interface Cat {
@@ -67,7 +82,9 @@ export interface Cat {
   breed: string | null
   gender: CatGender
   birthDate: string
-  adoptDate: string | null
+  birthDateEstimated: boolean // 出生日期是否为估算
+  adoptDate: string | null // 领养日期（开始饲养日期）
+  adoptStatus: CatAdoptStatus // 领养状态
   weight: number | null
   isNeutered: boolean
   neuteredDate: string | null
@@ -78,6 +95,9 @@ export interface Cat {
   isActive: boolean
   ageMonths: number
   ageFormatted: string
+  timelineTitle?: string // 时间线标题（根据领养状态动态生成）
+  weightGoalTarget?: number | null // 目标体重
+  weightGoalDate?: string | null // 目标日期
   lastVaccine?: VaccineRecord | null
   lastRecord?: any | null
   createdAt: string
@@ -91,9 +111,11 @@ export interface CatFormData {
   name: string
   gender: CatGender
   birthDate: string
+  birthDateEstimated?: boolean
   breed?: string
   avatar?: string
   adoptDate?: string
+  adoptStatus?: CatAdoptStatus
   weight?: number
   isNeutered?: boolean
   neuteredDate?: string

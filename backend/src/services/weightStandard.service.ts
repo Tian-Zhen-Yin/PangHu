@@ -4,7 +4,7 @@
  * 提供体重分析、标准查询、健康评估功能
  */
 
-import { prisma } from '../lib/prisma'
+import prisma from '../config/database'
 import { getWeightStandard } from '../seed/weightStandards'
 
 /**
@@ -226,7 +226,7 @@ export async function getSupportedBreeds(): Promise<string[]> {
     distinct: ['breed'],
     select: { breed: true },
   })
-  return standards.map(s => s.breed).sort()
+  return standards.map((s: { breed: string }) => s.breed).sort()
 }
 
 /**

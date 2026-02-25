@@ -85,3 +85,57 @@ export async function getWeightHistory(req: Request, res: Response) {
   }
 }
 
+
+export async function exportWeightCSV(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.userId
+    const id = req.params.id as string
+    const records = await getCatWeightHistory(id, userId)
+    if (!records) return res.status(404).json(errorResponse('猫咪不存在'))
+    const csv = ['日期,体重(kg),备注', ...records.map(r => `${r.date},${r.weight},${r.notes || ''}`)]
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', `attachment; filename="weight-${id}.csv"`)
+    res.send('\uFEFF' + csv.join('\n'))
+  } catch (error: any) {
+    res.status(500).json(errorResponse(error.message || '导出失败'))
+  }
+}
+
+export async function updateWeightGoal(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.userId
+    const id = req.params.id as string
+    const { targetWeight, targetDate } = req.body
+    if (!targetWeight || !targetDate) return res.status(400).json(errorResponse('缺少必要参数'))
+    const { setWeightGoal } = await import('../services/cat.service')
+    const cat = await setWeightGoal(id, userId, parseFloat(targetWeight), targetDate)
+    if (!cat) return res.status(404).json(errorResponse('猫咪不存在'))
+    res.json(successResponse({ weightGoalTarget: cat.weightGoalTarget, weightGoalDate: cat.weightGoalDate }, '目标设置成功'))
+  } catch (error: any) {
+    res.status(500).json(errorResponse(error.message || '设置失败'))
+  }
+}
+
+export async function uploadCatAvatarHandler(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.userId
+    const id = req.params.id as string
+    const file = req.file as Express.Multer.File
+
+    if (!file) {
+      return res.status(400).json(errorResponse('请选择要上传的头像'))
+    }
+
+    const { updateCatAvatar } = await import('../services/cat.service')
+    const avatarUrl = `/uploads/avatars/${file.filename}`
+    const cat = await updateCatAvatar(id, userId, avatarUrl)
+
+    if (!cat) {
+      return res.status(404).json(errorResponse('猫咪不存在'))
+    }
+
+    res.json(successResponse({ avatar: avatarUrl }, '头像上传成功'))
+  } catch (error: any) {
+    res.status(500).json(errorResponse(error.message || '头像上传失败'))
+  }
+}

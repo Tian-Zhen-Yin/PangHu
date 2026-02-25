@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { marked } from 'marked'
-import type { Message } from '../../types/chat'
+import type { Message, Citation } from '../../types/chat'
 
 interface Props {
   message: Message
@@ -25,6 +25,25 @@ const renderedContent = computed(() => {
   const content = props.message.markdownContent || props.message.content
   return marked(content)
 })
+
+// 解析引用来源（从 metadata JSON）
+const citations = computed<Citation[]>(() => {
+  if (props.message.citations) {
+    return props.message.citations
+  }
+  if (props.message.metadata) {
+    try {
+      const parsed = JSON.parse(props.message.metadata)
+      return parsed.citations || []
+    } catch {
+      return []
+    }
+  }
+  return []
+})
+
+// 是否显示引用来源
+const showCitations = computed(() => citations.value.length > 0)
 
 // 复制消息内容
 async function copyMessage() {
@@ -72,6 +91,24 @@ const timeDisplay = computed(() => {
         <div v-if="isAssistant" class="markdown-content" v-html="renderedContent"></div>
         <div v-else class="plain-content">{{ message.content }}</div>
       </div>
+
+      <!-- 引用来源 -->
+      <div v-if="showCitations && !props.isStreaming" class="message-citations">
+        <div class="citations-header">📚 参考来源</div>
+        <div class="citations-list">
+          <button
+            v-for="citation in citations"
+            :key="citation.guideId"
+            @click="emit('clickGuide', citation.guideId)"
+            class="citation-item"
+          >
+            <span class="citation-icon">📖</span>
+            <span class="citation-title">{{ citation.title }}</span>
+            <span class="citation-score">{{ Math.round(citation.similarity * 100) }}%</span>
+          </button>
+        </div>
+      </div>
+
       <div v-if="isAssistant" class="message-actions">
         <button class="action-button" @click="copyMessage">
           <span class="icon">{{ isCopied ? '✓' : '📋' }}</span>
@@ -280,6 +317,67 @@ const timeDisplay = computed(() => {
 
 .action-button .icon {
   font-size: 14px;
+}
+
+/* 引用来源样式 */
+.message-citations {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.citations-header {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.citations-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citation-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.citation-item:hover {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #ea580c;
+}
+
+.citation-icon {
+  font-size: 11px;
+}
+
+.citation-title {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-score {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 @media (max-width: 767px) {

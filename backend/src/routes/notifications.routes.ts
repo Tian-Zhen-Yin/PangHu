@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express'
-import { authMiddleware } from '../middleware/auth'
+import { authMiddleware } from '../middlewares/auth'
 import {
   getNotifications,
   markAsRead,

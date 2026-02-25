@@ -1,27 +1,38 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '../../stores/auth'
+
+const authStore = useAuthStore()
 
 const features = [
   {
-    title: '养成时间线',
-    description: '从新生到成年，了解猫咪成长的每个阶段',
-    icon: '📅',
+    title: '成长记录',
+    description: '记下相遇后的每一天，留住每一段温暖时光',
+    icon: '📸',
     path: '/timeline',
     color: 'bg-gradient-to-br from-orange-400 to-pink-500'
   },
   {
-    title: '知识指南',
-    description: '喂养、护理、健康全方位知识库',
+    title: '养猫指南',
+    description: '吃什么、怎么养、何时护理，简单易懂，不踩坑',
     icon: '📚',
     path: '/guides',
     color: 'bg-gradient-to-br from-blue-400 to-purple-500'
   },
   {
-    title: '计划模板',
-    description: '预设养成计划，轻松管理猫咪成长',
+    title: '记录模板',
+    description: '日常、体重、疫苗、驱虫，点一下就能快速记',
     icon: '📋',
     path: '/templates',
     color: 'bg-gradient-to-br from-green-400 to-teal-500'
+  },
+  {
+    title: '喵星小顾问',
+    description: '有疑问随时问，轻松养好你的喵星小居民',
+    icon: '🤖',
+    path: '/ai-chat',
+    color: 'bg-gradient-to-br from-amber-400 to-orange-500',
+    requiresAuth: true
   }
 ]
 
@@ -45,15 +56,18 @@ const stages = [
           哈吉咪养成计划
         </h1>
         <p class="hero-subtitle">
-          从幼猫到成年，全程陪伴您的猫咪健康成长
+          从相遇那天起，陪你的每一位喵星小居民，好好长大。
+        </p>
+        <p class="hero-footer">
+          每一段陪伴，都值得被认真记录。
         </p>
         <div class="hero-actions">
           <RouterLink to="/timeline" class="btn btn-primary">
-            开始探索
+            开始记录
             <span class="arrow">→</span>
           </RouterLink>
           <RouterLink to="/guides" class="btn btn-secondary">
-            浏览指南
+            养猫指南
           </RouterLink>
         </div>
       </div>
@@ -61,13 +75,14 @@ const stages = [
 
     <!-- Features Section -->
     <section class="features-section">
-      <h2 class="section-title">核心功能</h2>
+      <h2 class="section-title">开始你的养猫之旅</h2>
       <div class="features-grid">
         <RouterLink
           v-for="feature in features"
           :key="feature.title"
           :to="feature.path"
           class="feature-card"
+          v-show="!feature.requiresAuth || authStore.isAuthenticated"
         >
           <div :class="['feature-icon', feature.color]">
             {{ feature.icon }}
@@ -173,7 +188,14 @@ const stages = [
 .hero-subtitle {
   font-size: 1.25rem;
   color: #64748b;
+  margin: 0 0 1rem 0;
+}
+
+.hero-footer {
+  font-size: 0.95rem;
+  color: #94a3b8;
   margin: 0 0 2rem 0;
+  font-style: italic;
 }
 
 .hero-actions {
@@ -245,7 +267,7 @@ const stages = [
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 

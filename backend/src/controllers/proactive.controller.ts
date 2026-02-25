@@ -3,16 +3,16 @@
  */
 
 import { Response, NextFunction } from 'express'
-import { AuthRequest } from '../middleware/auth'
+import { Request } from 'express'
 import { generateProactiveAdvice } from '../services/ai.service'
 import { successResponse, errorResponse } from '../utils/response'
 
 /**
  * 获取猫咪主动健康建议
  */
-export async function getProactiveAdvice(req: AuthRequest, res: Response, next: NextFunction) {
+export async function getProactiveAdvice(req: Request, res: Response, next: NextFunction) {
   try {
-    const userId = req.user?.userId
+    const userId = (req as any).user?.userId
     const catId = req.params.catId as string
     const types = req.query.types as string | undefined
 

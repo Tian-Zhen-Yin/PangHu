@@ -5,6 +5,7 @@ import { successResponse } from '../utils/response'
 import { sendMessageStream, sendMessage, type ChatMessage } from '../services/ai.service'
 import { getKnowledgeContext } from '../services/knowledge.service'
 import { isSSERequest } from '../utils/stream'
+import { getCatContext } from '../services/cat.service'
 
 /**
  * 获取用户的所有对话
@@ -133,7 +134,7 @@ export async function updateConversationTitle(req: Request, res: Response) {
  * 发送消息（流式响应）
  */
 export async function sendMessageHandler(req: Request, res: Response) {
-  const { conversationId, content } = req.body
+  const { conversationId, content, catId } = req.body
   const userId = (req as any).user?.userId
 
   if (!content || content.trim().length === 0) {
@@ -142,11 +143,11 @@ export async function sendMessageHandler(req: Request, res: Response) {
 
   // 如果是SSE请求，使用流式响应
   if (isSSERequest(req.headers.accept)) {
-    return handleStreamingMessage(conversationId, content, userId, req, res)
+    return handleStreamingMessage(conversationId, content, userId, catId, req, res)
   }
 
   // 否则使用普通响应（保持兼容性）
-  return handleNormalMessage(conversationId, content, userId, res)
+  return handleNormalMessage(conversationId, content, userId, catId, res)
 }
 
 /**
@@ -156,72 +157,53 @@ async function handleStreamingMessage(
   conversationId: string | undefined,
   content: string,
   userId: string,
+  catId: string | undefined,
   req: Request,
   res: Response
 ) {
   let conversation: any
 
-  // 如果没有指定对话ID，创建新对话
   if (!conversationId) {
-    // 使用消息的前20个字符作为标题
     const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
-
     conversation = await prisma.conversation.create({
-      data: {
-        userId,
-        title
-      }
+      data: { userId, title, catId: catId || null }
     })
   } else {
     conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId
-      }
+      where: { id: conversationId, userId }
     })
-
     if (!conversation) {
       return res.status(404).json(successResponse(null, '对话不存在'))
     }
+    // 如果对话没有关联猫咪但本次传入了catId，更新关联
+    if (catId && !conversation.catId) {
+      await prisma.conversation.update({ where: { id: conversation.id }, data: { catId } })
+    }
   }
 
-  // 保存用户消息
   const userMessage = await prisma.message.create({
-    data: {
-      conversationId: conversation.id,
-      role: 'user',
-      content
-    }
+    data: { conversationId: conversation.id, role: 'user', content }
   })
 
-  // 获取对话历史
   const history = await prisma.message.findMany({
-    where: {
-      conversationId: conversation.id,
-      id: { not: userMessage.id } // 排除刚刚保存的消息
-    },
+    where: { conversationId: conversation.id, id: { not: userMessage.id } },
     orderBy: { createdAt: 'asc' },
-    take: 20 // 限制历史记录数量
+    take: 20
   })
 
   const chatHistory: ChatMessage[] = history
     .filter(m => m.role !== 'system')
-    .map(m => ({
-      role: m.role as ChatMessage['role'],
-      content: m.content
-    }))
+    .map(m => ({ role: m.role as ChatMessage['role'], content: m.content }))
 
-  // 获取相关知识
   const knowledgeContext = await getKnowledgeContext(content)
 
-  // 开始流式响应
-  res.on('close', async () => {
-    // 连接关闭时的处理
-    console.log('SSE connection closed')
-  })
+  // 获取猫咪上下文
+  const effectiveCatId = catId || conversation.catId
+  const catContext = effectiveCatId ? await getCatContext(effectiveCatId, userId) : undefined
 
-  // 异步处理AI响应
-  sendMessageStream(content, chatHistory, knowledgeContext.context, res)
+  res.on('close', () => { console.log('SSE connection closed') })
+
+  sendMessageStream(content, chatHistory, knowledgeContext.context, res, catContext || undefined)
 }
 
 /**
@@ -231,48 +213,31 @@ async function handleNormalMessage(
   conversationId: string | undefined,
   content: string,
   userId: string,
+  catId: string | undefined,
   res: Response
 ) {
   let conversation: any
 
-  // 如果没有指定对话ID，创建新对话
   if (!conversationId) {
     const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
-
     conversation = await prisma.conversation.create({
-      data: {
-        userId,
-        title
-      }
+      data: { userId, title, catId: catId || null }
     })
   } else {
     conversation = await prisma.conversation.findFirst({
-      where: {
-        id: conversationId,
-        userId
-      }
+      where: { id: conversationId, userId }
     })
-
     if (!conversation) {
       return res.status(404).json(successResponse(null, '对话不存在'))
     }
   }
 
-  // 保存用户消息
   await prisma.message.create({
-    data: {
-      conversationId: conversation.id,
-      role: 'user',
-      content
-    }
+    data: { conversationId: conversation.id, role: 'user', content }
   })
 
-  // 获取对话历史
   const history = await prisma.message.findMany({
-    where: {
-      conversationId: conversation.id,
-      role: { not: 'system' }
-    },
+    where: { conversationId: conversation.id, role: { not: 'system' } },
     orderBy: { createdAt: 'asc' },
     take: 20
   })
@@ -282,7 +247,6 @@ async function handleNormalMessage(
     content: m.content
   }))
 
-  // 获取相关知识
   const knowledgeContext = await getKnowledgeContext(content)
 
   try {

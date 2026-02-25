@@ -5,6 +5,8 @@ export interface User {
   id: string
   email: string
   username: string
+  memberType: string // 'free' | 'premium'
+  memberExpiredAt: string | null
   createdAt: string
   updatedAt: string
 }

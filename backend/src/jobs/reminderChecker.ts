@@ -8,7 +8,7 @@
  */
 
 import cron from 'node-cron'
-import { prisma } from '../lib/prisma'
+import prisma from '../config/database'
 import { sendNotification, type NotificationData } from '../services/notification.service'
 
 /**
@@ -143,7 +143,7 @@ async function checkWeightReminders() {
             gte: thirtyDaysAgo,
           },
           weight: {
-            not: null,
+            not: null as any,
           },
         },
         orderBy: {

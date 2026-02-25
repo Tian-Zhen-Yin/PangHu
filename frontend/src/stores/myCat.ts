@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Cat, CatFormData } from '../types/cat'
-import { getMyCats, getMyCatById, createMyCat, updateMyCat, deleteMyCat } from '../api/myCat'
+import { getMyCats, createMyCat, updateMyCat, deleteMyCat, setWeightGoal as setWeightGoalApi } from '../api/myCat'
 
 export const useMyCatStore = defineStore('myCat', () => {
   const cats = ref<Cat[]>([])
   const currentCat = ref<Cat | null>(null)
   const loading = ref(false)
+  const weightGoal = ref<{ target: number; date: string } | null>(null)
 
   async function fetchCats() {
     loading.value = true
@@ -14,15 +15,13 @@ export const useMyCatStore = defineStore('myCat', () => {
       const res = await getMyCats()
       if (res.success) {
         cats.value = res.data
-        // 恢复上次选中的猫咪
         const savedId = localStorage.getItem('currentCatId')
         if (savedId) {
           const found = cats.value.find(c => c.id === savedId)
           if (found) currentCat.value = found
         }
-        // 如果没有选中，默认选第一只
         if (!currentCat.value && cats.value.length > 0) {
-          selectCat(cats.value[0])
+          selectCat(cats.value[0]!)
         }
       }
     } finally {
@@ -33,10 +32,17 @@ export const useMyCatStore = defineStore('myCat', () => {
   function selectCat(cat: Cat) {
     currentCat.value = cat
     localStorage.setItem('currentCatId', cat.id)
+    // 恢复该猫咪的体重目标
+    if (cat.weightGoalTarget && cat.weightGoalDate) {
+      weightGoal.value = { target: cat.weightGoalTarget, date: cat.weightGoalDate }
+    } else {
+      weightGoal.value = null
+    }
   }
 
   function clearCurrentCat() {
     currentCat.value = null
+    weightGoal.value = null
     localStorage.removeItem('currentCatId')
   }
 
@@ -72,15 +78,32 @@ export const useMyCatStore = defineStore('myCat', () => {
     return res
   }
 
+  async function setGoal(targetWeight: number, targetDate: string) {
+    if (!currentCat.value) return false
+    try {
+      const res = await setWeightGoalApi(currentCat.value.id, targetWeight, targetDate)
+      if (res.success) {
+        weightGoal.value = { target: targetWeight, date: targetDate }
+        if (currentCat.value) {
+          currentCat.value = { ...currentCat.value, weightGoalTarget: targetWeight, weightGoalDate: targetDate }
+        }
+        return true
+      }
+    } catch {}
+    return false
+  }
+
   return {
     cats,
     currentCat,
     loading,
+    weightGoal,
     fetchCats,
     selectCat,
     clearCurrentCat,
     createCat,
     updateCat,
-    deleteCat
+    deleteCat,
+    setGoal
   }
 })

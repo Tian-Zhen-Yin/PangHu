@@ -27,7 +27,7 @@ export async function getPetRecords(req: Request, res: Response) {
       orderBy: { recordDate: 'desc' }
     })
 
-    res.json(successResponse(records))
+    res.json(successResponse(records.map(r => ({ ...r, photos: JSON.parse(r.photos) }))))
   } catch (error) {
     res.status(500).json({ success: false, data: null, message: '获取记录失败' })
   }
@@ -71,27 +71,33 @@ export async function createPetRecord(req: Request, res: Response) {
   }
 
   try {
-    const { petName, photoUrl, ageWeeks, ageMonths, weight, notes, recordDate } = req.body
+    const { petName, photoUrl, photos, ageWeeks, ageMonths, weight, notes, recordDate, catId, type, isAdoptionDay, templateData } = req.body
 
-    // 验证必填字段
-    if (!photoUrl || !ageWeeks || weight === undefined) {
+    const photosArr: string[] = photos ? JSON.parse(photos) : (photoUrl ? [photoUrl] : [])
+
+    if (photosArr.length === 0 || !ageWeeks || weight === undefined) {
       return res.status(400).json({ success: false, data: null, message: '缺少必要参数' })
     }
 
     const record = await prisma.petRecord.create({
       data: {
         userId,
+        catId: catId || null,
         petName: petName || '猫咪',
-        photoUrl,
-        ageWeeks,
-        ageMonths: ageMonths || Math.floor(ageWeeks / 4),
+        photoUrl: photosArr[0] || '',
+        photos: JSON.stringify(photosArr),
+        type: type || 'daily',
+        isAdoptionDay: isAdoptionDay === 'true' || isAdoptionDay === true,
+        templateData: templateData || null,
+        ageWeeks: parseInt(ageWeeks),
+        ageMonths: ageMonths ? parseInt(ageMonths) : Math.floor(parseInt(ageWeeks) / 4),
         weight: parseFloat(weight),
         notes,
         recordDate: recordDate ? new Date(recordDate) : new Date()
       }
     })
 
-    res.json({ success: true, data: record, message: '记录创建成功' })
+    res.json({ success: true, data: { ...record, photos: JSON.parse(record.photos) }, message: '记录创建成功' })
   } catch (error) {
     console.error('创建记录失败:', error)
     res.status(500).json({ success: false, data: null, message: '创建记录失败' })
@@ -111,7 +117,6 @@ export async function updatePetRecord(req: Request, res: Response) {
   }
 
   try {
-    // 验证记录属于当前用户
     const existing = await prisma.petRecord.findFirst({
       where: { id: recordId, userId }
     })
@@ -120,22 +125,28 @@ export async function updatePetRecord(req: Request, res: Response) {
       return res.status(404).json({ success: false, data: null, message: '记录不存在' })
     }
 
-    const { petName, photoUrl, ageWeeks, ageMonths, weight, notes, recordDate } = req.body
+    const { petName, photoUrl, photos, ageWeeks, ageMonths, weight, notes, recordDate, type, isAdoptionDay, templateData } = req.body
+
+    const photosArr: string[] | null = photos ? JSON.parse(photos) : (photoUrl ? [photoUrl] : null)
 
     const updated = await prisma.petRecord.update({
       where: { id: recordId },
       data: {
         petName: petName || existing.petName,
-        photoUrl: photoUrl || existing.photoUrl,
-        ageWeeks: ageWeeks !== undefined ? ageWeeks : existing.ageWeeks,
-        ageMonths: ageMonths !== undefined ? ageMonths : existing.ageMonths,
+        photoUrl: photosArr ? photosArr[0] : existing.photoUrl,
+        photos: photosArr ? JSON.stringify(photosArr) : existing.photos,
+        type: type || existing.type,
+        isAdoptionDay: isAdoptionDay !== undefined ? (isAdoptionDay === 'true' || isAdoptionDay === true) : existing.isAdoptionDay,
+        templateData: templateData !== undefined ? templateData : existing.templateData,
+        ageWeeks: ageWeeks !== undefined ? parseInt(ageWeeks) : existing.ageWeeks,
+        ageMonths: ageMonths !== undefined ? parseInt(ageMonths) : existing.ageMonths,
         weight: weight !== undefined ? parseFloat(weight) : existing.weight,
         notes: notes !== undefined ? notes : existing.notes,
         recordDate: recordDate ? new Date(recordDate) : existing.recordDate
       }
     })
 
-    res.json({ success: true, data: updated, message: '记录更新成功' })
+    res.json({ success: true, data: { ...updated, photos: JSON.parse(updated.photos) }, message: '记录更新成功' })
   } catch (error) {
     console.error('更新记录失败:', error)
     res.status(500).json({ success: false, data: null, message: '更新记录失败' })

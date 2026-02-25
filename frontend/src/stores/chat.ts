@@ -171,7 +171,8 @@ export const useChatStore = defineStore('chat', () => {
     cancelStream = sendMessageStream(
       {
         conversationId: params.conversationId || currentConversation.value?.id,
-        content: params.content
+        content: params.content,
+        catId: params.catId
       },
       {
         onConnected: () => {
@@ -184,10 +185,14 @@ export const useChatStore = defineStore('chat', () => {
             messages.value[aiMessageIndex].content = streamingContent.value
           }
         },
-        onDone: () => {
+        onDone: (metadata) => {
           isStreaming.value = false
           if (messages.value[aiMessageIndex]) {
             messages.value[aiMessageIndex].content = streamingContent.value
+            // 保存引用来源到 metadata
+            if (metadata?.citations) {
+              messages.value[aiMessageIndex].citations = metadata.citations
+            }
           }
 
           // 更新对话列表（如果有新对话）

@@ -75,7 +75,13 @@ export class SSEStream {
   /**
    * 发送完成事件
    */
-  sendDone(metadata?: { tokensUsed?: number; model?: string; referencedGuides?: string[]; latency?: number }): void {
+  sendDone(metadata?: {
+    tokensUsed?: number
+    model?: string
+    referencedGuides?: string[]
+    citations?: Array<{ guideId: string; title: string; similarity: number }>
+    latency?: number
+  }): void {
     this.send({
       event: 'message_done',
       data: JSON.stringify(metadata || {})

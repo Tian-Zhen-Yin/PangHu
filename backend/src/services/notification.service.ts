@@ -4,7 +4,7 @@
  * 提供消息通知的创建、查询、标记已读等功能
  */
 
-import { prisma } from '../lib/prisma'
+import prisma from '../config/database'
 
 /**
  * 通知类型
@@ -49,8 +49,7 @@ export async function createNotification(data: NotificationData) {
  */
 export async function createBulkNotifications(notifications: NotificationData[]) {
   const results = await prisma.notification.createMany({
-    data: notifications,
-    skipDuplicates: true,
+    data: notifications as any,
   })
 
   console.log('[Notification] Bulk created:', results.count, 'notifications')
@@ -292,7 +291,6 @@ export async function sendNotification(data: NotificationData): Promise<boolean>
 
   const notification = await createNotification({
     ...data,
-    sentAt: new Date(),
   })
 
   return !!notification

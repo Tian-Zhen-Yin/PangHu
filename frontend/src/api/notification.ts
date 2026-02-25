@@ -2,9 +2,8 @@
  * 通知 API
  */
 
-import { api } from './index'
+import api from './index'
 import type {
-  Notification,
   NotificationListResponse,
   UserNotificationPreference,
   NotificationsResponse,
@@ -26,7 +25,7 @@ export async function getNotifications(options?: {
   if (options?.offset) params.append('offset', options.offset.toString())
 
   const response = await api.get<NotificationsResponse>(`/notifications?${params.toString()}`)
-  return response.data
+  return response.data.data
 }
 
 /**
@@ -42,7 +41,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
  */
 export async function markAllNotificationsRead(): Promise<{ count: number }> {
   const response = await api.post<{ data: { count: number } }>('/notifications/mark-all-read')
-  return response.data
+  return { count: response.data.data.count }
 }
 
 /**
@@ -50,7 +49,7 @@ export async function markAllNotificationsRead(): Promise<{ count: number }> {
  */
 export async function clearAllNotifications(): Promise<{ count: number }> {
   const response = await api.delete<{ data: { count: number } }>('/notifications')
-  return response.data
+  return { count: response.data.data.count }
 }
 
 /**
@@ -58,7 +57,7 @@ export async function clearAllNotifications(): Promise<{ count: number }> {
  */
 export async function getNotificationPreferences(): Promise<UserNotificationPreference> {
   const response = await api.get<PreferencesResponse>('/notifications/preferences')
-  return response.data
+  return response.data.data
 }
 
 /**
@@ -69,7 +68,7 @@ export async function updateNotificationPreferences(
   preferences: Partial<UserNotificationPreference>
 ): Promise<UserNotificationPreference> {
   const response = await api.put<PreferencesResponse>('/notifications/preferences', preferences)
-  return response.data
+  return response.data.data
 }
 
 /**
@@ -80,5 +79,5 @@ export async function toggleNotificationType(
   type: 'vaccine' | 'deworming' | 'checkup' | 'weight' | 'record'
 ): Promise<UserNotificationPreference> {
   const response = await api.put<PreferencesResponse>(`/notifications/preferences/${type}/toggle`)
-  return response.data
+  return response.data.data
 }
