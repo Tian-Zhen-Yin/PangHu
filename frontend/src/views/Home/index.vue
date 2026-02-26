@@ -1,8 +1,47 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useMyCatStore } from '../../stores/myCat'
+import { getProactiveAdvice } from '../../api/proactive'
+import type { ProactiveAdvice } from '../../types/proactive'
+import type { Cat } from '../../types/cat'
 
 const authStore = useAuthStore()
+const catStore = useMyCatStore()
+
+const selectedCat = ref<Cat | null>(null)
+const todayAdvice = ref<ProactiveAdvice | null>(null)
+
+onMounted(async () => {
+  // 获取用户的第一只猫咪
+  const cats = await catStore.fetchCats()
+  if (cats && cats.length > 0) {
+    selectedCat.value = cats[0]
+    // 获取今日建议
+    try {
+      todayAdvice.value = await getProactiveAdvice(selectedCat.value.id, ['vaccine', 'weight', 'general'])
+    } catch (err) {
+      console.error('获取 AI 建议失败:', err)
+    }
+  }
+})
+
+function getWeightIcon(status: string): string {
+  switch (status) {
+    case 'thin': return '📉'
+    case 'normal': return '✅'
+    case 'overweight': return '📈'
+    default: return '❓'
+  }
+}
+
+function getAvatarUrl(cat: Cat): string {
+  if (!cat.avatar) return ''
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+  if (cat.avatar.startsWith('http')) return cat.avatar
+  return `${baseURL}${cat.avatar}`
+}
 
 const features = [
   {
@@ -70,6 +109,40 @@ const stages = [
             养猫指南
           </RouterLink>
         </div>
+      </div>
+    </section>
+
+    <!-- AI 今日建议（仅登录用户显示） -->
+    <section v-if="authStore.isAuthenticated && todayAdvice" class="ai-advice-section">
+      <h2 class="section-title">AI 今日建议</h2>
+      <div class="advice-card">
+        <div class="cat-info">
+          <img v-if="selectedCat?.avatar" :src="getAvatarUrl(selectedCat)" class="cat-avatar" :alt="selectedCat.name" />
+          <div v-else class="cat-avatar-placeholder">{{ selectedCat?.name?.charAt(0) || '?' }}</div>
+          <span class="cat-name">{{ selectedCat?.name }}</span>
+        </div>
+        <div class="advice-items">
+          <!-- 疫苗提醒 -->
+          <div v-if="todayAdvice.vaccineAdvice" class="quick-advice">
+            <span class="advice-icon">💉</span>
+            <span class="advice-text">{{ todayAdvice.vaccineAdvice.nextAction }}</span>
+          </div>
+          <!-- 体重状态 -->
+          <div v-if="todayAdvice.weightAdvice" class="quick-advice">
+            <span class="advice-icon">
+              {{ getWeightIcon(todayAdvice.weightAdvice.status) }}
+            </span>
+            <span class="advice-text">{{ todayAdvice.weightAdvice.suggestion }}</span>
+          </div>
+          <!-- 综合建议 -->
+          <div v-if="todayAdvice.generalAdvice" class="quick-advice general">
+            <span class="advice-icon">🤖</span>
+            <span class="advice-text">{{ todayAdvice.generalAdvice }}</span>
+          </div>
+        </div>
+        <RouterLink v-if="selectedCat" :to="`/my-cats/${selectedCat.id}`" class="view-detail-link">
+          查看详情 →
+        </RouterLink>
       </div>
     </section>
 
@@ -370,6 +443,96 @@ const stages = [
 /* Tips Section */
 .tips-section {
   margin-bottom: 2rem;
+}
+
+/* AI Advice Section */
+.ai-advice-section {
+  max-width: 800px;
+  margin: 0 auto 3rem;
+}
+
+.advice-card {
+  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.cat-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cat-avatar,
+.cat-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.cat-avatar-placeholder {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.cat-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.advice-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.quick-advice {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+}
+
+.quick-advice.general {
+  background: #fff7e6;
+  border-left: 3px solid #f5a623;
+}
+
+.advice-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.advice-text {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.view-detail-link {
+  display: inline-block;
+  color: #f97316;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.view-detail-link:hover {
+  color: #ea580c;
+  text-decoration: underline;
 }
 
 .tips-grid {

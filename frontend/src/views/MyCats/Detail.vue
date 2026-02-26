@@ -96,6 +96,13 @@
       <!-- 体重趋势图 -->
       <WeightTrend :cat-id="cat.id" :cat-name="cat.name" />
 
+      <!-- AI 健康建议 -->
+      <AIHealthAdvice
+        v-if="cat"
+        :cat-id="cat.id"
+        :types="['weight', 'vaccine', 'age', 'general']"
+      />
+
       <!-- 快捷操作 -->
       <div class="quick-actions">
         <button class="action-card" @click="$router.push('/timeline')">
@@ -123,6 +130,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import WeightTrend from '../../components/cat/WeightTrend.vue'
+import AIHealthAdvice from '../../components/cat/AIHealthAdvice.vue'
 import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
 import { toast } from '../../composables/useToast'
 import type { Cat } from '../../types/cat'
