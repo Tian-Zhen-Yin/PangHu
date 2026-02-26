@@ -8,6 +8,7 @@ import type {
   WeightAnalysisResponse,
   WeightHistoryStandardResponse,
   BreedsResponse,
+  WeightHistoryWithStandard,
 } from '../types/weight'
 
 /**
@@ -39,5 +40,17 @@ export async function getSupportedBreeds(): Promise<BreedsResponse> {
  */
 export async function getBatchWeightAnalysis(catIds: string[]): Promise<Record<string, WeightAnalysis>> {
   const response = await api.post<{ data: Record<string, WeightAnalysis> }>('/weight-standards/batch', { catIds })
-  return response.data.data
+  return response.data
+}
+
+/**
+ * 批量获取多只猫咪的体重历史及标准范围
+ * @param catIds 猫咪ID数组（2-5个）
+ */
+export async function getBatchWeightHistory(catIds: string[]): Promise<Record<string, WeightHistoryWithStandard[]>> {
+  if (catIds.length < 2 || catIds.length > 5) {
+    throw new Error('请选择2-5只猫咪进行对比')
+  }
+  const response = await api.post<{ data: Record<string, WeightHistoryWithStandard[]> }>('/weight-standards/batch-history', { catIds })
+  return response.data
 }

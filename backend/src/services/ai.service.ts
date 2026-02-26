@@ -361,7 +361,8 @@ export async function generateProactiveAdvice(
   userId: string,
   types: ('weight' | 'vaccine' | 'age' | 'general')[] = ['weight', 'vaccine', 'age', 'general']
 ): Promise<ProactiveAdviceResponse> {
-  const { prisma } = require('../lib/prisma')
+  const { PrismaClient } = require('@prisma/client')
+  const prisma = new PrismaClient()
   const { analyzeWeight } = require('./weightStandard.service')
 
   // 获取猫咪档案

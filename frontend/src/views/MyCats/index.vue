@@ -2,7 +2,16 @@
   <div class="my-cats-page">
     <div class="page-header">
       <h1>我的猫咪</h1>
-      <button class="btn-primary" @click="$router.push('/my-cats/new')">＋ 添加猫咪</button>
+      <div class="header-actions">
+        <button
+          v-if="cats.length >= 2"
+          class="btn-secondary"
+          @click="$router.push('/my-cats/compare')"
+        >
+          📊 多猫对比
+        </button>
+        <button class="btn-primary" @click="$router.push('/my-cats/new')">＋ 添加猫咪</button>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">加载中...</div>
@@ -80,6 +89,11 @@ async function handleDelete(id: string) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .page-header h1 {
@@ -199,6 +213,23 @@ async function handleDelete(id: string) {
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+}
+
+.btn-secondary {
+  background: white;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
 }
 
 .btn-sm {

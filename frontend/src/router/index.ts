@@ -88,6 +88,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '添加猫咪 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
+    path: '/my-cats/compare',
+    name: 'CatsComparison',
+    component: () => import('../views/MyCats/Compare.vue'),
+    meta: { title: '多猫对比 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
     path: '/my-cats/:id/edit',
     name: 'MyCatEdit',
     component: () => import('../views/MyCats/Form.vue'),

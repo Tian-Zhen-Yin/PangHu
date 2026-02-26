@@ -118,3 +118,39 @@ export async function getBatchAnalysis(req: Request, res: Response, next: NextFu
     next(error)
   }
 }
+
+/**
+ * 批量获取多只猫咪的体重历史及标准范围
+ */
+export async function getBatchWeightHistory(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = (req as any).user?.userId
+    const { catIds } = req.body
+
+    if (!userId) {
+      return res.status(401).json(errorResponse('用户未认证'))
+    }
+
+    // 验证：2-5只猫咪
+    if (!Array.isArray(catIds) || catIds.length < 2 || catIds.length > 5) {
+      return res.status(400).json(errorResponse('请选择2-5只猫咪进行对比'))
+    }
+
+    console.log('[getBatchWeightHistory] Request - userId:', userId, 'catIds:', catIds)
+
+    const results: Record<string, any[]> = {}
+
+    for (const catId of catIds) {
+      const history = await getWeightHistoryWithStandards(catId, userId)
+      if (history) {
+        results[catId] = history
+      }
+    }
+
+    console.log('[getBatchWeightHistory] Result - fetched:', Object.keys(results).length, 'cats')
+    res.json(successResponse(results, '批量获取体重历史成功'))
+  } catch (error: any) {
+    console.error('[getBatchWeightHistory] Error:', error)
+    next(error)
+  }
+}

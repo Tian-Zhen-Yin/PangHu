@@ -47,3 +47,24 @@ export interface WeightStandard {
 export type WeightAnalysisResponse = ApiResponse<WeightAnalysis>
 export type WeightHistoryStandardResponse = ApiResponse<WeightHistoryWithStandard[]>
 export type BreedsResponse = ApiResponse<string[]>
+
+/**
+ * 多猫对比数据
+ */
+export interface CatComparisonData {
+  cat: {
+    id: string
+    name: string
+    avatar: string | null
+    breed: string | null
+    ageFormatted: string
+    gender: string
+  }
+  analysis: WeightAnalysis | null
+  history: WeightHistoryWithStandard[]
+}
+
+/**
+ * 多猫对比 API 响应
+ */
+export type CatsComparisonResponse = ApiResponse<CatComparisonData[]>

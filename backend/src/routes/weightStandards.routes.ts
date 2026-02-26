@@ -9,6 +9,7 @@ import {
   getWeightHistoryStandards,
   getBreeds,
   getBatchAnalysis,
+  getBatchWeightHistory,
 } from '../controllers/weightStandard.controller'
 
 const router = Router()
@@ -39,5 +40,11 @@ router.get('/:catId/history', getWeightHistoryStandards)
  * 批量获取多只猫咪的体重分析
  */
 router.post('/batch', getBatchAnalysis)
+
+/**
+ * POST /api/weight-standards/batch-history
+ * 批量获取多只猫咪的体重历史及标准范围
+ */
+router.post('/batch-history', getBatchWeightHistory)
 
 export default router
