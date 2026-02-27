@@ -1,0 +1,20 @@
+/**
+ * 阴影系统
+ * 奶油风格的柔和阴影
+ */
+
+:root {
+  --shadow-xs: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 30px rgba(255, 180, 162, 0.15);
+  --shadow-xl: 0 20px 40px rgba(255, 180, 162, 0.2);
+
+  /* 暖色阴影 */
+  --shadow-warm-sm: 0 2px 8px rgba(255, 143, 163, 0.08);
+  --shadow-warm-md: 0 4px 12px rgba(255, 143, 163, 0.1);
+  --shadow-warm-lg: 0 10px 30px rgba(255, 143, 163, 0.15);
+
+  /* 内阴影 */
+  --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}

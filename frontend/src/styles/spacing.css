@@ -1,0 +1,18 @@
+/**
+ * 间距系统
+ * 8px 基准的倍数系统
+ */
+
+:root {
+  --space-0: 0;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 48px;
+  --space-5xl: 64px;
+  --space-6xl: 80px;
+}

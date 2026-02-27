@@ -1,0 +1,40 @@
+/**
+ * V4 Design Tokens
+ * 全局设计变量 - 奶油可爱风格
+ *
+ * 模块化设计系统，按需引入
+ */
+
+@import './color.css';
+@import './spacing.css';
+@import './radius.css';
+@import './shadow.css';
+@import './typography.css';
+@import './transitions.css';
+
+:root {
+  /* ========== Z-index 层级 ========== */
+
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+
+  /* ========== 断点 (用于 JS) ========== */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* ========== 容器宽度 ========== */
+
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1200px;
+  --container-mobile: 430px;
+}

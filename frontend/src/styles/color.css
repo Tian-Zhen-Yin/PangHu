@@ -1,0 +1,53 @@
+/**
+ * 色彩系统
+ * 奶油可爱风格配色
+ */
+
+:root {
+  /* 主色 - 温暖橙 */
+  --color-primary: #FFB86C;
+  --color-primary-light: #FFD6A5;
+  --color-primary-dark: #FF9A3C;
+  --color-primary-dim: rgba(255, 184, 108, 0.1);
+
+  /* 辅助色 - 柔和粉 */
+  --color-secondary: #FF8FA3;
+  --color-secondary-light: #FFB5C2;
+  --color-secondary-dark: #FF6B85;
+  --color-secondary-dim: rgba(255, 143, 163, 0.1);
+
+  /* 强调色 - 清新绿 */
+  --color-accent: #95D5B2;
+  --color-accent-light: #B8E5CC;
+  --color-accent-dark: #6BC494;
+
+  /* 背景色 */
+  --color-bg: #FFFDF9;
+  --color-bg-alt: #FFF8F3;
+  --color-bg-muted: #F5F3F0;
+  --color-card: #FFFFFF;
+
+  /* 文字色 */
+  --color-text-main: #5F4B4B;
+  --color-text-sub: #9B8B8B;
+  --color-text-light: #BBBBBB;
+  --color-text-muted: #D4CFC9;
+
+  /* 边框和分割线 */
+  --color-border: #F2F2F2;
+  --color-divider: #EEEEEE;
+
+  /* 状态色 */
+  --color-success: #95D5B2;
+  --color-success-light: #B8E5CC;
+  --color-warning: #FFB86C;
+  --color-warning-light: #FFD6A5;
+  --color-error: #FF8FA3;
+  --color-error-light: #FFB5C2;
+  --color-info: #A0C4FF;
+  --color-info-light: #C5D9FF;
+
+  /* 功能色 */
+  --color-link: #FFB86C;
+  --color-link-hover: #FF9A3C;
+}
