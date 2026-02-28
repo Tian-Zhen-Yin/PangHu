@@ -1,12 +1,21 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { DashboardCatCard } from '../types'
 import type { Cat } from '../../../types/cat'
 
-defineProps<{
+const props = defineProps<{
   cats: DashboardCatCard[]
   currentCat?: Cat | null
 }>()
+
+// 其他猫咪折叠状态
+const showOtherCats = ref(false)
+
+// 其他猫咪列表
+const otherCats = computed(() =>
+  props.cats.filter(c => c.cat.id !== props.currentCat?.id)
+)
 
 function getAvatarUrl(cat: any): string {
   if (!cat.avatar) return ''
@@ -27,15 +36,15 @@ function getAgeText(birthDate?: string | null): string {
   if (remainingMonths === 0) return `${years}岁`
   return `${years}岁${remainingMonths}个月`
 }
+
+function toggleOtherCats() {
+  showOtherCats.value = !showOtherCats.value
+}
 </script>
 
 <template>
   <div class="cats-overview">
-    <div class="section-header">
-      <h3 class="section-title">🐱 我的猫咪</h3>
-      <RouterLink to="/my-cats/new" class="add-btn">+ 添加</RouterLink>
-    </div>
-
+    <!-- 空状态 -->
     <div v-if="cats.length === 0" class="empty-state">
       <span class="empty-icon">🐾</span>
       <span class="empty-text">还没有添加猫咪哦</span>
@@ -43,309 +52,171 @@ function getAgeText(birthDate?: string | null): string {
     </div>
 
     <template v-else>
-      <!-- 当前猫咪卡片 -->
+      <!-- 当前猫咪卡片 - 半沉浸式主舞台 -->
       <RouterLink
         v-if="currentCat"
         :to="`/my-cats/${currentCat.id}`"
-        class="current-cat-card"
+        class="current-cat-stage"
       >
-        <div class="current-cat-header">
-          <span class="current-badge">当前猫咪</span>
-          <div class="current-cat-actions">
-            <span class="view-detail">查看详情 →</span>
+        <div class="stage-content">
+          <!-- 左侧：大头像 -->
+          <div class="avatar-wrapper">
+            <img
+              v-if="currentCat.avatar"
+              :src="getAvatarUrl(currentCat)"
+              class="cat-avatar"
+              :alt="currentCat.name"
+            />
+            <div v-else class="cat-avatar-placeholder">
+              {{ currentCat.name?.charAt(0) || '?' }}
+            </div>
           </div>
-        </div>
-        <div class="current-cat-content">
-          <img
-            v-if="currentCat.avatar"
-            :src="getAvatarUrl(currentCat)"
-            class="current-cat-avatar"
-            :alt="currentCat.name"
-          />
-          <div v-else class="current-cat-avatar-placeholder">
-            {{ currentCat.name?.charAt(0) || '?' }}
-          </div>
-          <div class="current-cat-info">
-            <h4 class="current-cat-name">{{ currentCat.name }}</h4>
-            <div class="current-cat-meta">
-              <span class="meta-item">
-                <span class="meta-icon">🎂</span>
-                {{ getAgeText(currentCat.birthDate) }}
-              </span>
-              <span v-if="currentCat.gender" class="meta-item">
-                <span class="meta-icon">{{ currentCat.gender === 'male' ? '♂️' : '♀️' }}</span>
-                {{ currentCat.gender === 'male' ? '弟弟' : '妹妹' }}
+
+          <!-- 右侧：三层信息结构 -->
+          <div class="cat-details">
+            <!-- 第一层：名字 -->
+            <h3 class="cat-name">{{ currentCat.name }}</h3>
+
+            <!-- 第二层：年龄 · 性别 -->
+            <div class="cat-meta">
+              <span>{{ getAgeText(currentCat.birthDate) }}</span>
+              <span class="separator">·</span>
+              <span v-if="currentCat.gender">
+                {{ currentCat.gender === 'male' ? '♂ 弟弟' : '♀ 妹妹' }}
               </span>
             </div>
-            <div v-if="currentCat.weight" class="current-cat-weight">
-              <span class="weight-label">当前体重</span>
-              <span class="weight-value">{{ currentCat.weight }} kg</span>
+
+            <!-- 第三层：体重趋势 -->
+            <div v-if="currentCat.weight" class="weight-section">
+              <div class="weight-main">
+                <span class="weight-number">{{ currentCat.weight }}</span>
+                <span class="weight-unit">kg</span>
+              </div>
+              <div class="weight-trend">
+                <span class="trend-label">当前体重</span>
+              </div>
             </div>
+          </div>
+
+          <!-- 右侧箭头 -->
+          <div class="stage-arrow">
+            <span>→</span>
           </div>
         </div>
       </RouterLink>
 
-      <!-- 其他猫咪列表 -->
-      <div v-if="cats.length > 1" class="other-cats-section">
-        <div class="other-cats-title">其他猫咪 ({{ cats.length - 1 }})</div>
-        <div class="cats-list">
+      <!-- 其他猫咪 - 折叠式 -->
+      <div v-if="otherCats.length > 0" class="other-cats">
+        <button class="toggle-btn" @click.prevent="toggleOtherCats">
+          <span class="toggle-icon">{{ showOtherCats ? '▼' : '▶' }}</span>
+          <span class="toggle-text">其他猫咪 ({{ otherCats.length }})</span>
+        </button>
+
+        <div v-show="showOtherCats" class="cats-grid">
           <RouterLink
-            v-for="item in cats.filter(c => c.cat.id !== currentCat?.id)"
+            v-for="item in otherCats"
             :key="item.cat.id"
             :to="`/my-cats/${item.cat.id}`"
-            class="cat-card"
+            class="mini-cat-card"
           >
             <img
               v-if="item.cat.avatar"
               :src="getAvatarUrl(item.cat)"
-              class="cat-avatar"
+              class="mini-avatar"
               :alt="item.cat.name"
             />
-            <div v-else class="cat-avatar-placeholder">
+            <div v-else class="mini-avatar-placeholder">
               {{ item.cat.name?.charAt(0) || '?' }}
             </div>
-            <div class="cat-info">
-              <span class="cat-name">{{ item.cat.name }}</span>
-              <span class="cat-age">{{ item.ageText }}</span>
+            <div class="mini-info">
+              <span class="mini-name">{{ item.cat.name }}</span>
+              <span class="mini-age">{{ item.ageText }}</span>
             </div>
-            <span class="arrow-icon">→</span>
           </RouterLink>
         </div>
       </div>
+
+      <!-- 添加按钮 -->
+      <RouterLink to="/my-cats/new" class="add-cat-btn">
+        <span class="add-icon">+</span>
+        <span>添加猫咪</span>
+      </RouterLink>
     </template>
   </div>
 </template>
 
 <style scoped>
 .cats-overview {
-  background: var(--color-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-sm);
+  width: 100%;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-.section-title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-main);
-  margin: 0;
-}
-
-.add-btn {
-  padding: 6px var(--space-md);
-  background: var(--color-primary);
-  color: white;
-  text-decoration: none;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  transition: background var(--transition-base);
-}
-
-.add-btn:hover {
-  background: var(--color-primary-dark);
-}
-
+/* 空状态 */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-4xl) var(--space-lg);
-  color: var(--color-text-sub);
+  gap: var(--space-md);
+  padding: var(--space-5xl) var(--space-xl);
+  background: var(--color-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--color-border);
 }
 
 .empty-icon {
-  font-size: var(--text-5xl);
+  font-size: 48px;
 }
 
 .empty-text {
   font-size: var(--text-sm);
+  color: var(--color-text-sub);
 }
 
 .empty-action {
-  padding: var(--space-sm) var(--space-lg);
+  padding: var(--space-md) var(--space-xl);
   background: var(--color-primary);
   color: white;
   text-decoration: none;
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
-  margin-top: var(--space-sm);
-  transition: background var(--transition-base);
-}
-
-.empty-action:hover {
-  background: var(--color-primary-dark);
-}
-
-/* 当前猫咪卡片 */
-.current-cat-card {
-  display: block;
-  background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-secondary-dim) 100%);
-  border-radius: var(--radius-md);
-  padding: var(--space-lg);
-  text-decoration: none;
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
-  margin-bottom: var(--space-md);
-}
-
-.current-cat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-warm-md);
-}
-
-.current-cat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-}
-
-.current-badge {
-  padding: 4px 10px;
-  background: var(--color-primary);
-  color: white;
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  border-radius: var(--radius-full);
-}
-
-.current-cat-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.view-detail {
-  font-size: var(--text-xs);
-  color: var(--color-link);
-  font-weight: var(--font-medium);
-}
-
-.current-cat-content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-}
-
-.current-cat-avatar,
-.current-cat-avatar-placeholder {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 3px solid white;
-  box-shadow: var(--shadow-sm);
-}
-
-.current-cat-avatar-placeholder {
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-3xl);
-}
-
-.current-cat-info {
-  flex: 1;
-}
-
-.current-cat-name {
-  font-size: var(--text-xl);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-main);
-  margin: 0 0 var(--space-sm) 0;
-}
-
-.current-cat-meta {
-  display: flex;
-  gap: var(--space-md);
-  margin-bottom: var(--space-sm);
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-sm);
-  color: var(--color-text-sub);
-}
-
-.meta-icon {
-  font-size: var(--text-base);
-}
-
-.current-cat-weight {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 6px var(--space-md);
-  background: white;
-  border-radius: var(--radius-full);
-}
-
-.weight-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-sub);
-}
-
-.weight-value {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--color-primary);
-}
-
-/* 其他猫咪 */
-.other-cats-section {
   margin-top: var(--space-md);
 }
 
-.other-cats-title {
-  font-size: var(--text-sm);
-  color: var(--color-text-sub);
-  margin-bottom: var(--space-sm);
-  padding-left: var(--space-xs);
+/* 当前猫咪 - 半沉浸式主舞台 */
+.current-cat-stage {
+  display: block;
+  background: linear-gradient(145deg, var(--color-primary-dim) 0%, var(--color-secondary-dim) 50%, var(--color-bg) 100%);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4xl);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
 }
 
-.cats-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+.current-cat-stage:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-.cat-card {
+.stage-content {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: var(--color-bg);
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  transition: background var(--transition-base), transform var(--transition-base);
+  gap: var(--space-2xl);
 }
 
-.cat-card:hover {
-  background: var(--color-bg-alt);
-  transform: translateX(4px);
+/* 左侧大头像 */
+.avatar-wrapper {
+  flex-shrink: 0;
 }
 
 .cat-avatar,
 .cat-avatar-placeholder {
-  width: 48px;
-  height: 48px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
+  border: 4px solid white;
+  box-shadow: var(--shadow-warm-md);
 }
 
 .cat-avatar-placeholder {
@@ -354,30 +225,199 @@ function getAgeText(birthDate?: string | null): string {
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  font-size: 40px;
 }
 
-.cat-info {
+/* 右侧详情 - 三层结构 */
+.cat-details {
   flex: 1;
+  min-width: 0;
+}
+
+/* 第一层：名字 */
+.cat-name {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+/* 第二层：年龄·性别 */
+.cat-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
+  margin-bottom: var(--space-lg);
+}
+
+.separator {
+  margin: 0 var(--space-sm);
+  opacity: 0.5;
+}
+
+/* 第三层：体重趋势 */
+.weight-section {
   display: flex;
-  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-lg);
+}
+
+.weight-main {
+  display: flex;
+  align-items: baseline;
   gap: var(--space-xs);
 }
 
-.cat-name {
-  font-size: var(--text-base);
-  font-weight: var(--font-medium);
-  color: var(--color-text-main);
+.weight-number {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary-dark);
 }
 
-.cat-age {
+.weight-unit {
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
+}
+
+.weight-trend {
+  padding: var(--space-xs) var(--space-md);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-full);
+}
+
+.trend-label {
   font-size: var(--text-xs);
   color: var(--color-text-sub);
 }
 
-.arrow-icon {
+/* 箭头 */
+.stage-arrow {
   color: var(--color-primary);
+  font-size: var(--text-xl);
+  opacity: 0.6;
+  transition: transform var(--transition-base);
+}
+
+.current-cat-stage:hover .stage-arrow {
+  transform: translateX(4px);
+}
+
+/* 其他猫咪 - 折叠式 */
+.other-cats {
+  margin-top: var(--space-lg);
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: none;
+  border: none;
+  padding: var(--space-md) var(--space-lg);
+  color: var(--color-text-sub);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-base);
+}
+
+.toggle-btn:hover {
+  background: var(--color-bg);
+}
+
+.toggle-icon {
+  font-size: 10px;
+}
+
+.cats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+}
+
+.mini-cat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-base);
+}
+
+.mini-cat-card:hover {
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.mini-avatar,
+.mini-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mini-avatar-placeholder {
+  background: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-dark);
+  font-weight: var(--font-semibold);
   font-size: var(--text-lg);
+}
+
+.mini-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mini-name {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-age {
+  font-size: 11px;
+  color: var(--color-text-sub);
+}
+
+/* 添加按钮 */
+.add-cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-bg);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  text-decoration: none;
+  color: var(--color-text-sub);
+  font-size: var(--text-sm);
+  transition: all var(--transition-base);
+}
+
+.add-cat-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-dim);
+}
+
+.add-icon {
+  font-size: var(--text-lg);
+  font-weight: var(--font-medium);
 }
 </style>

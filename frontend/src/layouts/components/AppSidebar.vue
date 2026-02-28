@@ -38,10 +38,9 @@ function isActive(path: string): boolean {
 
 <style scoped>
 .sidebar {
-  width: 200px;
-  background: #ffffff;
-  border-right: 1px solid var(--color-divider, #F2F2F2);
-  padding: 1rem 0;
+  width: 160px;
+  background: transparent;
+  padding: var(--space-xl) var(--space-lg);
   position: sticky;
   top: 56px;
   height: calc(100vh - 56px);
@@ -51,37 +50,37 @@ function isActive(path: string): boolean {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  color: var(--color-text-sub, #888888);
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--color-text-sub);
   text-decoration: none;
-  transition: all 0.2s ease;
-  border-radius: 0;
-  margin: 0 0.5rem;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
 }
 
 .nav-item:hover {
-  background: var(--color-bg, #FFF8F3);
-  color: var(--color-text-main, #333333);
+  background: rgba(246, 178, 107, 0.12);
+  color: var(--color-text-main);
 }
 
 .nav-item.active {
-  background: var(--color-primary, #FFB86C);
-  color: white;
-  font-weight: 500;
+  background: rgba(246, 178, 107, 0.2);
+  color: var(--color-primary);
+  font-weight: var(--font-medium);
 }
 
 .nav-icon {
-  font-size: 1.25rem;
+  font-size: 18px;
 }
 
 .nav-text {
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 </style>

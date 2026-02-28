@@ -2,7 +2,13 @@
 import { SSEStream } from '../utils/stream'
 import { Response } from 'express'
 import axios from 'axios'
+import https from 'https'
 import { retrieveKnowledge, buildRAGPrompt, type Citation } from './rag.service'
+
+// 创建忽略证书验证的 https agent（仅用于开发环境）
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+})
 
 // 默认使用的模型
 const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4-flash'
@@ -201,7 +207,8 @@ export async function sendMessage(
       temperature: 0.7,
       top_p: 0.9
     }, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      httpsAgent
     })
 
     const content = response.data.choices?.[0]?.message?.content || ''
@@ -260,7 +267,8 @@ export async function sendMessageStream(
       stream: true
     }, {
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      responseType: 'stream'
+      responseType: 'stream',
+      httpsAgent
     })
 
     console.log('[AI Service] 收到ZhipuAI响应，状态:', response.status)

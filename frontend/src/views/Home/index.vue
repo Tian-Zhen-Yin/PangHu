@@ -6,6 +6,7 @@ import { useMyCatStore } from '../../stores/myCat'
 import { getProactiveAdvice } from '../../api/proactive'
 import type { ProactiveAdvice } from '../../types/proactive'
 import type { Cat } from '../../types/cat'
+import heroImage from '../../assets/images/hero-home.png'
 
 const authStore = useAuthStore()
 const catStore = useMyCatStore()
@@ -14,11 +15,9 @@ const selectedCat = ref<Cat | null>(null)
 const todayAdvice = ref<ProactiveAdvice | null>(null)
 
 onMounted(async () => {
-  // 获取用户的第一只猫咪
   const cats = await catStore.fetchCats()
   if (cats && cats.length > 0) {
     selectedCat.value = cats[0]
-    // 获取今日建议
     try {
       todayAdvice.value = await getProactiveAdvice(selectedCat.value.id, ['vaccine', 'weight', 'general'])
     } catch (err) {
@@ -49,28 +48,28 @@ const features = [
     description: '记下相遇后的每一天，留住每一段温暖时光',
     icon: '📸',
     path: '/timeline',
-    color: 'bg-gradient-to-br from-orange-400 to-pink-500'
+    color: 'bg-primary-soft'
   },
   {
     title: '养猫指南',
     description: '吃什么、怎么养、何时护理，简单易懂，不踩坑',
     icon: '📚',
     path: '/guides',
-    color: 'bg-gradient-to-br from-blue-400 to-purple-500'
+    color: 'bg-secondary-soft'
   },
   {
     title: '记录模板',
     description: '日常、体重、疫苗、驱虫，点一下就能快速记',
     icon: '📋',
     path: '/templates',
-    color: 'bg-gradient-to-br from-green-400 to-teal-500'
+    color: 'bg-accent-soft'
   },
   {
     title: '喵星小顾问',
     description: '有疑问随时问，轻松养好你的喵星小居民',
     icon: '🤖',
     path: '/ai-chat',
-    color: 'bg-gradient-to-br from-amber-400 to-orange-500',
+    color: 'bg-primary-soft',
     requiresAuth: true
   }
 ]
@@ -87,27 +86,24 @@ const stages = [
 
 <template>
   <div class="home-page">
-    <!-- Hero Section -->
+    <!-- Hero Section with Image -->
     <section class="hero">
-      <div class="hero-content">
-        <h1 class="hero-title">
-          <span class="emoji">🐱</span>
-          哈吉咪养成计划
-        </h1>
-        <p class="hero-subtitle">
-          从相遇那天起，陪你的每一位喵星小居民，好好长大。
-        </p>
-        <p class="hero-footer">
-          每一段陪伴，都值得被认真记录。
-        </p>
-        <div class="hero-actions">
-          <RouterLink to="/timeline" class="btn btn-primary">
-            开始记录
-            <span class="arrow">→</span>
-          </RouterLink>
-          <RouterLink to="/guides" class="btn btn-secondary">
-            养猫指南
-          </RouterLink>
+      <img :src="heroImage" alt="哈吉咪养成计划" class="hero-image" />
+      <div class="hero-overlay">
+        <div class="hero-content">
+          <h1 class="hero-title">哈吉咪养成计划</h1>
+          <p class="hero-subtitle">
+            从相遇那天起，陪你的每一位喵星小居民，好好长大。
+          </p>
+          <div class="hero-actions">
+            <RouterLink to="/timeline" class="hero-btn primary">
+              开始记录
+              <span class="arrow">→</span>
+            </RouterLink>
+            <RouterLink to="/guides" class="hero-btn secondary">
+              养猫指南
+            </RouterLink>
+          </div>
         </div>
       </div>
     </section>
@@ -122,19 +118,16 @@ const stages = [
           <span class="cat-name">{{ selectedCat?.name }}</span>
         </div>
         <div class="advice-items">
-          <!-- 疫苗提醒 -->
           <div v-if="todayAdvice.vaccineAdvice" class="quick-advice">
             <span class="advice-icon">💉</span>
             <span class="advice-text">{{ todayAdvice.vaccineAdvice.nextAction }}</span>
           </div>
-          <!-- 体重状态 -->
           <div v-if="todayAdvice.weightAdvice" class="quick-advice">
             <span class="advice-icon">
               {{ getWeightIcon(todayAdvice.weightAdvice.status) }}
             </span>
             <span class="advice-text">{{ todayAdvice.weightAdvice.suggestion }}</span>
           </div>
-          <!-- 综合建议 -->
           <div v-if="todayAdvice.generalAdvice" class="quick-advice general">
             <span class="advice-icon">🤖</span>
             <span class="advice-text">{{ todayAdvice.generalAdvice }}</span>
@@ -215,7 +208,7 @@ const stages = [
 
 <style scoped>
 .home-page {
-  animation: fadeIn 0.5s ease-in;
+  animation: fadeIn var(--transition-slow);
 }
 
 @keyframes fadeIn {
@@ -231,197 +224,203 @@ const stages = [
 
 /* Hero Section */
 .hero {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fce7f3 100%);
-  border-radius: 1.5rem;
-  margin-bottom: 3rem;
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-3xl);
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-3xl) var(--space-xl);
+  background: linear-gradient(to top, rgba(90, 74, 66, 0.7), transparent);
 }
 
 .hero-content {
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 500px;
 }
 
 .hero-title {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 1rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.emoji {
-  font-size: 3.5rem;
+  font-size: var(--text-4xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-white);
+  margin: 0 0 var(--space-sm) 0;
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  color: #64748b;
-  margin: 0 0 1rem 0;
-}
-
-.hero-footer {
-  font-size: 0.95rem;
-  color: #94a3b8;
-  margin: 0 0 2rem 0;
-  font-style: italic;
+  font-size: var(--text-lg);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 var(--space-lg) 0;
 }
 
 .hero-actions {
   display: flex;
-  gap: 1rem;
-  justify-content: center;
+  gap: var(--space-md);
   flex-wrap: wrap;
 }
 
-.btn {
-  padding: 0.875rem 2rem;
-  border-radius: 0.75rem;
-  font-weight: 600;
+.hero-btn {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-semibold);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-sm);
+  font-size: var(--text-base);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white;
+.hero-btn.primary {
+  background: var(--color-primary);
+  color: var(--color-text-white);
+  box-shadow: var(--shadow-warm-sm);
 }
 
-.btn-primary:hover {
+.hero-btn.primary:hover {
+  background: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(249, 115, 22, 0.3);
+  box-shadow: var(--shadow-warm-md);
 }
 
-.btn-secondary {
-  background: white;
-  color: #475569;
-  border: 2px solid #e2e8f0;
+.hero-btn.secondary {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-main);
 }
 
-.btn-secondary:hover {
-  border-color: #f97316;
-  color: #f97316;
+.hero-btn.secondary:hover {
+  background: var(--color-text-white);
 }
 
 .arrow {
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-base);
 }
 
-.btn:hover .arrow {
+.hero-btn:hover .arrow {
   transform: translateX(4px);
 }
 
 /* Section Styles */
 .section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-main);
   text-align: center;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 var(--space-sm) 0;
 }
 
 .section-subtitle {
   text-align: center;
-  color: #64748b;
-  margin: 0 0 2rem 0;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xl) 0;
 }
 
 /* Features Section */
 .features-section {
-  margin-bottom: 4rem;
+  margin-bottom: var(--space-4xl);
 }
 
 .features-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: var(--space-lg);
 }
 
 .feature-card {
-  background: white;
-  padding: 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  background: var(--color-bg-card);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
   text-decoration: none;
   color: inherit;
+  border: 1px solid var(--color-border-light);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-light);
 }
 
 .feature-icon {
   width: 4rem;
   height: 4rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-md);
 }
 
 .feature-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-xs) 0;
 }
 
 .feature-description {
-  color: #64748b;
+  color: var(--color-text-secondary);
   margin: 0;
+  font-size: var(--text-sm);
 }
 
 /* Stages Section */
 .stages-section {
-  margin-bottom: 4rem;
+  margin-bottom: var(--space-4xl);
 }
 
 .stages-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .stage-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  background: var(--color-bg-card);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-base);
+  border: 1px solid var(--color-border-light);
 }
 
 .stage-card:hover {
   transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .stage-emoji {
-  font-size: 2.5rem;
+  font-size: var(--text-3xl);
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-sm);
 }
 
 .stage-name {
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.25rem 0;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-xxs) 0;
 }
 
 .stage-age {
-  color: #64748b;
-  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
   margin: 0;
 }
 
@@ -430,39 +429,39 @@ const stages = [
 }
 
 .text-link {
-  color: #f97316;
+  color: var(--color-primary);
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.3s ease;
+  font-weight: var(--font-medium);
+  transition: color var(--transition-base);
 }
 
 .text-link:hover {
-  color: #ea580c;
+  color: var(--color-primary-hover);
 }
 
 /* Tips Section */
 .tips-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-xl);
 }
 
 /* AI Advice Section */
 .ai-advice-section {
   max-width: 800px;
-  margin: 0 auto 3rem;
+  margin: 0 auto var(--space-3xl);
 }
 
 .advice-card {
-  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-secondary-soft) 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 .cat-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .cat-avatar,
@@ -475,106 +474,114 @@ const stages = [
 }
 
 .cat-avatar-placeholder {
-  background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 1.25rem;
+  color: var(--color-text-white);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-xl);
 }
 
 .cat-name {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 1.1rem;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-main);
+  font-size: var(--text-lg);
 }
 
 .advice-items {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .quick-advice {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: white;
-  border-radius: 0.5rem;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
 }
 
 .quick-advice.general {
-  background: #fff7e6;
-  border-left: 3px solid #f5a623;
+  background: var(--color-primary-soft);
+  border-left: 3px solid var(--color-primary);
 }
 
 .advice-icon {
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   flex-shrink: 0;
 }
 
 .advice-text {
-  font-size: 0.9rem;
-  color: #475569;
-  line-height: 1.4;
+  font-size: var(--text-sm);
+  color: var(--color-text-main);
+  line-height: var(--leading-normal);
 }
 
 .view-detail-link {
   display: inline-block;
-  color: #f97316;
+  color: var(--color-primary);
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: var(--font-medium);
+  font-size: var(--text-sm);
 }
 
 .view-detail-link:hover {
-  color: #ea580c;
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
 .tips-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-lg);
 }
 
 .tip-card {
-  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
-  padding: 1.5rem;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--color-primary-soft) 0%, var(--color-bg-soft) 100%);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
 }
 
 .tip-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-sm);
 }
 
 .tip-title {
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-xs) 0;
 }
 
 .tip-text {
-  color: #64748b;
+  color: var(--color-text-secondary);
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 @media (max-width: 640px) {
+  .hero {
+    min-height: 400px;
+  }
+
   .hero-title {
-    font-size: 2rem;
+    font-size: var(--text-2xl);
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .section-title {
-    font-size: 1.5rem;
+    font-size: var(--text-xl);
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
   }
 
   .stages-grid {

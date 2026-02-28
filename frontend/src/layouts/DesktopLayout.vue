@@ -18,7 +18,7 @@ import AppSidebar from './components/AppSidebar.vue'
 <style scoped>
 .desktop-layout {
   min-height: 100vh;
-  background: var(--color-bg, #FFF8F3);
+  background: var(--color-bg);
 }
 
 .layout-container {
@@ -29,7 +29,7 @@ import AppSidebar from './components/AppSidebar.vue'
 
 .main-content {
   flex: 1;
-  padding: 2rem;
+  padding: var(--space-3xl) var(--space-2xl);
   min-height: calc(100vh - 64px);
 }
 </style>

@@ -1,14 +1,14 @@
 /**
- * 圆角系统
- * 统一的圆角规范
+ * 圆角系统 - 品牌视觉手册 v1.0
+ * UI 元素统一 20px+ 圆角
  */
 
 :root {
   --radius-xs: 8px;
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
+  --radius-sm: 16px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
   --radius-2xl: 32px;
   --radius-full: 999px;
 }

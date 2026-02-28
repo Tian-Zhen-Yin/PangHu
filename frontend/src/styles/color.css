@@ -1,53 +1,65 @@
 /**
- * 色彩系统
+ * 色彩系统 - 品牌视觉手册 v1.0
  * 奶油可爱风格配色
  */
 
 :root {
-  /* 主色 - 温暖橙 */
-  --color-primary: #FFB86C;
-  --color-primary-light: #FFD6A5;
-  --color-primary-dark: #FF9A3C;
-  --color-primary-dim: rgba(255, 184, 108, 0.1);
+  /* ========== 品牌主色 - 猫咪橙 ========== */
+  --color-primary: #F6B26B;
+  --color-primary-hover: #F3A14E;
+  --color-primary-press: #E5903A;
+  --color-primary-light: #FFCC9A;
+  --color-primary-soft: #FFF4E5;
+  --color-primary-bg: #FFE8CC;
+  --color-primary-dim: rgba(246, 178, 107, 0.12);
 
-  /* 辅助色 - 柔和粉 */
-  --color-secondary: #FF8FA3;
-  --color-secondary-light: #FFB5C2;
-  --color-secondary-dark: #FF6B85;
-  --color-secondary-dim: rgba(255, 143, 163, 0.1);
+  /* ========== 辅助色 - 点缀粉 ========== */
+  --color-secondary: #F8C8DC;
+  --color-secondary-light: #FFD6E8;
+  --color-secondary-dark: #E8B0CC;
+  --color-secondary-soft: #FFF0F6;
+  --color-secondary-dim: rgba(248, 200, 220, 0.15);
 
-  /* 强调色 - 清新绿 */
-  --color-accent: #95D5B2;
-  --color-accent-light: #B8E5CC;
-  --color-accent-dark: #6BC494;
+  /* ========== 强调色 - 健康绿 ========== */
+  --color-accent: #9ED5B8;
+  --color-accent-light: #B8E5CD;
+  --color-accent-dark: #7BC99F;
+  --color-accent-soft: #EAF7F0;
 
-  /* 背景色 */
-  --color-bg: #FFFDF9;
-  --color-bg-alt: #FFF8F3;
-  --color-bg-muted: #F5F3F0;
+  /* ========== 背景色 - 奶油风 ========== */
+  --color-bg-page: #FAF8F5;
+  --color-bg: #FAF8F5;
+  --color-bg-alt: #F5F2ED;
+  --color-bg-muted: #EFECE7;
+  --color-bg-soft: #F7F3EE;
+  --color-bg-card: #FFFFFF;
   --color-card: #FFFFFF;
 
-  /* 文字色 */
-  --color-text-main: #5F4B4B;
-  --color-text-sub: #9B8B8B;
-  --color-text-light: #BBBBBB;
-  --color-text-muted: #D4CFC9;
+  /* ========== 文字色 ========== */
+  --color-text-main: #5A4A42;
+  --color-text-secondary: #9B8C7C;
+  --color-text-sub: #9A8E88;
+  --color-text-light: #BFB5B0;
+  --color-text-muted: #DAD4D0;
+  --color-text-white: #FFFFFF;
 
-  /* 边框和分割线 */
-  --color-border: #F2F2F2;
-  --color-divider: #EEEEEE;
+  /* ========== 边框 ========== */
+  --color-border-light: #F0ECE6;
+  --color-border: #EBE7E3;
+  --color-border-normal: #E6DFD7;
+  --color-divider: #E5E1DD;
 
-  /* 状态色 */
-  --color-success: #95D5B2;
-  --color-success-light: #B8E5CC;
-  --color-warning: #FFB86C;
-  --color-warning-light: #FFD6A5;
-  --color-error: #FF8FA3;
-  --color-error-light: #FFB5C2;
-  --color-info: #A0C4FF;
-  --color-info-light: #C5D9FF;
+  /* ========== 状态色 ========== */
+  --color-success: #9ED5B8;
+  --color-success-soft: #EAF7F0;
+  --color-success-light: #B8E5CD;
+  --color-warning: #F9C97C;
+  --color-warning-light: #FFCC9A;
+  --color-error: #F28B82;
+  --color-error-light: #FFD6E8;
+  --color-info: #B8D4FF;
 
-  /* 功能色 */
-  --color-link: #FFB86C;
-  --color-link-hover: #FF9A3C;
+  /* ========== 功能色 ========== */
+  --color-link: #F6B26B;
+  --color-link-hover: #E59F55;
 }

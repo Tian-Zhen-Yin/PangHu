@@ -5,9 +5,15 @@ import { useAuthStore } from '../stores/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: 'Dashboard',
+    component: () => import('../modules/dashboard/pages/DashboardPage.vue'),
+    meta: { title: '首页 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/home',
     name: 'Home',
     component: () => import('../views/Home/index.vue'),
-    meta: { title: '首页 - 哈吉咪养成计划' }
+    meta: { title: '关于我们 - 哈吉咪养成计划' }
   },
   {
     path: '/timeline',

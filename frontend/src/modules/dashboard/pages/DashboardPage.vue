@@ -123,11 +123,20 @@ onMounted(async () => {
 
     <!-- 已登录 Dashboard -->
     <div v-else class="dashboard-content">
-      <DailyQuote />
-      <QuickActions />
-      <RemindersCard v-if="reminders.length > 0" :reminders="reminders" />
+      <!-- 1. 当前猫咪总览（核心卡） -->
       <CatsOverview :cats="catCards" :current-cat="catStore.currentCat" />
+
+      <!-- 2. 快捷操作（轻量化图标按钮） -->
+      <QuickActions />
+
+      <!-- 3. 今日提醒 -->
+      <RemindersCard v-if="reminders.length > 0" :reminders="reminders" />
+
+      <!-- 4. 最近记录 -->
       <RecentRecords v-if="recentRecords.length > 0" :records="recentRecords" />
+
+      <!-- 5. 每日语录（降级处理） -->
+      <DailyQuote />
     </div>
   </div>
 </template>
@@ -140,7 +149,7 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   min-height: 50vh;
-  padding: var(--space-lg);
+  padding: var(--space-xl);
 }
 
 .guest-content {
@@ -150,30 +159,30 @@ onMounted(async () => {
 
 .welcome-icon {
   font-size: var(--text-5xl);
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
 .guest-title {
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
   color: var(--color-text-main);
-  margin: 0 0 var(--space-md) 0;
+  margin: 0 0 var(--space-lg) 0;
 }
 
 .guest-desc {
   font-size: var(--text-base);
   color: var(--color-text-sub);
-  margin: 0 0 var(--space-2xl) 0;
+  margin: 0 0 var(--space-3xl) 0;
 }
 
 .guest-actions {
   display: flex;
-  gap: var(--space-md);
+  gap: var(--space-lg);
   justify-content: center;
 }
 
 .btn {
-  padding: var(--space-md) var(--space-xl);
+  padding: var(--space-lg) var(--space-2xl);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   text-decoration: none;
@@ -200,21 +209,16 @@ onMounted(async () => {
   border-color: var(--color-divider);
 }
 
+/* 已登录 Dashboard - 单列布局，当前猫咪为主舞台 */
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-2xl);
+  max-width: 640px;
 }
 
-@media (min-width: 768px) {
-  .dashboard-content {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-lg);
-  }
-  .dashboard-content > :first-child,
-  .dashboard-content > :nth-child(2) {
-    grid-column: 1 / -1;
-  }
+/* 当前猫咪卡片横跨全宽 */
+.dashboard-content > :first-child {
+  width: 100%;
 }
 </style>

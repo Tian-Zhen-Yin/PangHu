@@ -27,23 +27,26 @@ onMounted(() => {
 
 <style scoped>
 .daily-quote {
-  background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-secondary-dim) 100%);
-  border-radius: var(--radius-lg);
-  padding: var(--space-xl);
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-3xl) var(--space-2xl);
+  box-shadow: var(--shadow-xs);
   text-align: center;
+  border: 1px solid var(--color-border);
 }
 
 .quote-icon {
   font-size: var(--text-3xl);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
+  opacity: 0.7;
 }
 
 .quote-text {
   font-size: var(--text-lg);
   color: var(--color-text-main);
-  margin: 0 0 var(--space-md) 0;
+  margin: 0 0 var(--space-lg) 0;
   line-height: var(--leading-normal);
+  opacity: 0.9;
 }
 
 .quote-time {

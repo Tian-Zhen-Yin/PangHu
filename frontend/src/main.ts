@@ -8,6 +8,7 @@ import App from './App.vue'
 import { setupGlobalErrorHandler } from './utils/errorHandler'
 import { useAuthStore } from './stores/auth'
 import './assets/styles/main.css'
+import './styles/tokens.css'
 
 const app = createApp(App)
 const pinia = createPinia()

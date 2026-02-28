@@ -4,6 +4,12 @@
  */
 
 import axios from 'axios'
+import https from 'https'
+
+// 创建忽略证书验证的 https agent（仅用于开发环境）
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+})
 
 const EMBEDDING_API_URL = 'https://open.bigmodel.cn/api/paas/v4/embeddings'
 const EMBEDDING_MODEL = 'embedding-3'
@@ -70,7 +76,8 @@ export async function getEmbedding(text: string, apiKey: string): Promise<number
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        httpsAgent
       }
     )
 
@@ -109,7 +116,8 @@ export async function getEmbeddings(
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          httpsAgent
         }
       )
 
