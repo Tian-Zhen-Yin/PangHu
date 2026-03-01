@@ -1,19 +1,46 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import WeightSparkline from '../../../components/record/WeightSparkline.vue'
 import type { DashboardRecentRecord } from '../types'
 
-defineProps<{
+const props = defineProps<{
   records: DashboardRecentRecord[]
 }>()
 
+// 提取体重记录用于趋势图
+const weightRecords = computed(() => {
+  return props.records
+    .filter(r => {
+      // 匹配 type 为 weight 或标题中包含体重
+      if (r.type === 'weight') return true
+      if (r.title.includes('体重') || r.title.includes('kg')) return true
+      return false
+    })
+    .slice(0, 10)
+    .map(r => {
+      // 从标题中提取体重，支持多种格式: "体重: 4.5kg", "4.5kg", "体重: 4.5"
+      const title = r.title ?? ''
+      const match = title.match(/(\d+\.?\d*)\s*kg/)
+        || title.match(/体重[：:]\s*(\d+\.?\d*)/)
+        || title.match(/(\d+\.?\d*)/)
+      const weight = match?.[1] ? parseFloat(match[1]) : 0
+      return {
+        weight: isNaN(weight) ? 0 : weight,
+        date: r.date
+      }
+    })
+    .filter(r => r.weight > 0) // 过滤掉无效体重
+})
+
 // 根据类型获取标签样式
-function getTypeTag(type: string) {
+function getTypeTag(type: string): { label: string; class: string } {
   const tags: Record<string, { label: string; class: string }> = {
     weight: { label: '体重', class: 'tag-weight' },
     vaccine: { label: '疫苗', class: 'tag-vaccine' },
     general: { label: '日常', class: 'tag-general' }
   }
-  return tags[type] || tags.general
+  return (tags[type] ?? tags.general)!
 }
 </script>
 
@@ -24,6 +51,13 @@ function getTypeTag(type: string) {
       <RouterLink to="/timeline" class="more-link">查看全部 →</RouterLink>
     </div>
 
+    <!-- 体重趋势图 (有体重记录时显示在顶部) -->
+    <WeightSparkline
+      v-if="weightRecords.length > 0"
+      :data="weightRecords"
+    />
+
+    <!-- 记录列表 -->
     <div v-if="records.length === 0" class="empty-state">
       <span class="empty-text">暂无记录</span>
     </div>

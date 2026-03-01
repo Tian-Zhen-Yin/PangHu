@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { marked } from 'marked'
+import MascotCharacter from '../mascot/MascotCharacter.vue'
 import type { Message, Citation } from '../../types/chat'
 
 interface Props {
@@ -79,22 +80,27 @@ const timeDisplay = computed(() => {
 <template>
   <div :class="['chat-message', isAssistant ? 'assistant' : 'user']">
     <div class="message-avatar">
-      <span v-if="isAssistant">🐱</span>
-      <span v-else>👤</span>
+      <MascotCharacter v-if="isAssistant" expression="focused" size="small" :animated="false" />
+      <div v-else class="user-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        </svg>
+      </div>
     </div>
     <div class="message-content-wrapper">
-      <div class="message-header">
-        <span class="message-role">{{ isAssistant ? '喵喵医生' : '您' }}</span>
-        <span class="message-time">{{ timeDisplay }}</span>
-      </div>
       <div class="message-content">
-        <div v-if="isAssistant" class="markdown-content" v-html="renderedContent"></div>
-        <div v-else class="plain-content">{{ message.content }}</div>
+        <div v-if="isAssistant" class="markdown-content cream-bubble" v-html="renderedContent"></div>
+        <div v-else class="plain-content user-bubble">{{ message.content }}</div>
       </div>
 
       <!-- 引用来源 -->
       <div v-if="showCitations && !props.isStreaming" class="message-citations">
-        <div class="citations-header">📚 参考来源</div>
+        <div class="citations-header">
+          <svg class="citations-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332-.477 4.5-1.747"/>
+          </svg>
+          参考来源
+        </div>
         <div class="citations-list">
           <button
             v-for="citation in citations"
@@ -102,16 +108,19 @@ const timeDisplay = computed(() => {
             @click="emit('clickGuide', citation.guideId)"
             class="citation-item"
           >
-            <span class="citation-icon">📖</span>
             <span class="citation-title">{{ citation.title }}</span>
-            <span class="citation-score">{{ Math.round(citation.similarity * 100) }}%</span>
+            <span class="citation-score">{{ Math.round(citation.similarity * 100) }}%相关</span>
           </button>
         </div>
       </div>
 
-      <div v-if="isAssistant" class="message-actions">
-        <button class="action-button" @click="copyMessage">
-          <span class="icon">{{ isCopied ? '✓' : '📋' }}</span>
+      <div class="message-footer">
+        <span class="message-time">{{ timeDisplay }}</span>
+        <button v-if="isAssistant" class="action-button" @click="copyMessage">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path v-if="!isCopied" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4a2 2 0 012 2v0"/>
+            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
           <span>{{ isCopied ? '已复制' : '复制' }}</span>
         </button>
       </div>
@@ -122,8 +131,8 @@ const timeDisplay = computed(() => {
 <style scoped>
 .chat-message {
   display: flex;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 10px;
+  padding: 12px 24px;
   animation: fadeIn 0.3s ease;
 }
 
@@ -146,73 +155,63 @@ const timeDisplay = computed(() => {
   align-items: flex-end;
 }
 
-.chat-message.user .message-header {
-  flex-direction: row-reverse;
+/* 消息头像 */
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
 }
 
-.message-avatar {
-  width: 36px;
-  height: 36px;
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  background: #E5E7EB;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
+  color: #9CA3AF;
 }
 
-.chat-message.assistant .message-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.chat-message.user .message-avatar {
-  background-color: #e4e7ed;
+.user-avatar svg {
+  width: 16px;
+  height: 16px;
 }
 
 .message-content-wrapper {
   display: flex;
   flex-direction: column;
-  max-width: 80%;
+  max-width: 75%;
 }
 
-.message-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.message-role {
-  font-size: 13px;
-  font-weight: 500;
-  color: #606266;
-}
-
-.message-time {
-  font-size: 12px;
-  color: #909399;
-}
-
+/* 消息内容气泡 */
 .message-content {
-  padding: 12px 16px;
-  border-radius: 12px;
   line-height: 1.6;
 }
 
-.chat-message.assistant .message-content {
-  background-color: #fff;
-  border: 1px solid #e4e7ed;
-  border-top-left-radius: 4px;
+/* AI 气泡 - 奶油风 */
+.cream-bubble {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  border: 1px solid #FED7AA;
+  border-radius: 4px 18px 18px 18px;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.08);
+  color: #4B5563;
 }
 
-.chat-message.user .message-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  border-top-right-radius: 4px;
+/* 用户气泡 - 纯白 */
+.user-bubble {
+  padding: 12px 18px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 18px 4px 18px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  color: #374151;
 }
 
+/* Markdown 内容样式 */
 .markdown-content {
-  color: #303133;
+  font-size: 14px;
 }
 
 .markdown-content :deep(p) {
@@ -228,14 +227,15 @@ const timeDisplay = computed(() => {
 .markdown-content :deep(h3) {
   margin: 12px 0 8px 0;
   font-weight: 600;
+  color: #374151;
 }
 
 .markdown-content :deep(h1) {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .markdown-content :deep(h2) {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .markdown-content :deep(h3) {
@@ -253,69 +253,44 @@ const timeDisplay = computed(() => {
 }
 
 .markdown-content :deep(code) {
-  background-color: #f5f7fa;
+  background-color: #FFF7ED;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 13px;
   font-family: 'Courier New', monospace;
+  color: #F4A261;
 }
 
 .markdown-content :deep(pre) {
-  background-color: #f5f7fa;
+  background-color: #FAF8F5;
   padding: 12px;
   border-radius: 8px;
   overflow-x: auto;
   margin: 8px 0;
+  border: 1px solid #F5F0E8;
 }
 
 .markdown-content :deep(pre code) {
   background-color: transparent;
   padding: 0;
+  color: #374151;
 }
 
 .markdown-content :deep(blockquote) {
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #F4A261;
   padding-left: 12px;
   margin: 8px 0;
-  color: #606266;
+  color: #6B7280;
 }
 
 .markdown-content :deep(strong) {
   font-weight: 600;
-  color: #667eea;
+  color: #F4A261;
 }
 
 .plain-content {
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.message-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: none;
-  background: none;
-  color: #909399;
-  font-size: 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.action-button:hover {
-  background-color: #f5f7fa;
-  color: #606266;
-}
-
-.action-button .icon {
   font-size: 14px;
 }
 
@@ -323,18 +298,26 @@ const timeDisplay = computed(() => {
 .message-citations {
   margin-top: 8px;
   padding: 10px 12px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: #FAF8F5;
+  border-radius: 10px;
+  border: 1px solid #F5F0E8;
 }
 
 .citations-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
-  font-weight: 500;
-  color: #64748b;
-  margin-bottom: 6px;
+  font-weight: 600;
+  color: #F4A261;
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.citations-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .citations-list {
@@ -347,28 +330,24 @@ const timeDisplay = computed(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: 1px solid #E5E7EB;
+  border-radius: 100px;
   font-size: 12px;
-  color: #475569;
+  color: #4B5563;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .citation-item:hover {
-  background: #fff7ed;
-  border-color: #fdba74;
-  color: #ea580c;
-}
-
-.citation-icon {
-  font-size: 11px;
+  background: #FFF7ED;
+  border-color: #F4A261;
+  color: #F4A261;
 }
 
 .citation-title {
-  max-width: 120px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -376,8 +355,46 @@ const timeDisplay = computed(() => {
 
 .citation-score {
   font-size: 10px;
-  color: #94a3b8;
-  font-weight: 500;
+  color: #F4A261;
+  font-weight: 600;
+}
+
+/* 消息底部 */
+.message-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #9CA3AF;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: #9CA3AF;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.action-button:hover {
+  background-color: #F3F4F6;
+  color: #6B7280;
+}
+
+.action-button .icon {
+  width: 14px;
+  height: 14px;
 }
 
 @media (max-width: 767px) {
@@ -386,7 +403,13 @@ const timeDisplay = computed(() => {
   }
 
   .message-content-wrapper {
-    max-width: 85%;
+    max-width: 80%;
+  }
+
+  .cream-bubble,
+  .user-bubble {
+    padding: 12px 14px;
+    font-size: 13px;
   }
 }
 </style>

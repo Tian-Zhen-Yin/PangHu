@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 
 const authStore = useAuthStore()
 </script>
@@ -8,9 +9,15 @@ const authStore = useAuthStore()
 <template>
   <header class="app-header">
     <div class="header-content">
-      <RouterLink to="/" class="logo">
-        <span class="logo-icon">🐱</span>
-        <span class="logo-text">哈吉咪</span>
+      <RouterLink to="/" class="logo-group">
+        <MascotCharacter
+          expression="default"
+          size="small"
+          layout="inline"
+          :animated="false"
+          :float-animation="false"
+        />
+        <span class="brand-name">哈吉咪</span>
       </RouterLink>
 
       <div class="header-actions">
@@ -28,8 +35,8 @@ const authStore = useAuthStore()
 <style scoped>
 .app-header {
   height: 56px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--color-divider, #F2F2F2);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-divider);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -40,53 +47,54 @@ const authStore = useAuthStore()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 var(--space-lg);
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.logo {
+.logo-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   text-decoration: none;
 }
 
-.logo-icon {
-  font-size: 1.5rem;
-}
-
-.logo-text {
-  font-size: 18px;
+.brand-name {
+  font-size: var(--text-lg);
   font-weight: 600;
-  color: var(--color-text-main, #333333);
+  color: var(--color-text-main);
 }
 
 .login-btn {
-  padding: 0.5rem 1rem;
-  background: var(--color-primary, #FFB86C);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-primary);
   color: white;
   text-decoration: none;
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
   font-weight: 500;
+  transition: background var(--transition-base);
+}
+
+.login-btn:hover {
+  background: var(--color-primary-dark);
 }
 
 .user-link {
-  padding: 0.5rem 1rem;
-  color: var(--color-text-main, #333333);
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--color-text-main);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 /* 桌面端适配 */
 @media (min-width: 768px) {
   .header-content {
-    padding: 0 2rem;
+    padding: 0 var(--space-2xl);
   }
 
-  .logo-text {
-    font-size: 20px;
+  .brand-name {
+    font-size: var(--text-xl);
   }
 }
 </style>

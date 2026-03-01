@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { DashboardReminder } from '../types'
+import HealthAdviceCard from '../../../components/mascot/HealthAdviceCard.vue'
 
 defineProps<{
   reminders: DashboardReminder[]
@@ -15,7 +16,7 @@ const healthTips = [
 ]
 
 const tipIndex = ref(Math.floor(Math.random() * healthTips.length))
-const dailyTip = computed(() => healthTips[tipIndex.value])
+const dailyTip = computed(() => healthTips[tipIndex.value] ?? { icon: '💡', title: '健康提示', desc: '关注猫咪健康' })
 </script>
 
 <template>
@@ -25,13 +26,12 @@ const dailyTip = computed(() => healthTips[tipIndex.value])
     <div v-if="reminders.length === 0" class="empty-state">
       <span class="empty-icon">✨</span>
       <span class="empty-text">今日暂无紧急提醒</span>
-      <div class="daily-tip">
-        <span class="tip-icon">{{ dailyTip.icon }}</span>
-        <div class="tip-content">
-          <span class="tip-title">{{ dailyTip.title }}</span>
-          <span class="tip-desc">{{ dailyTip.desc }}</span>
-        </div>
-      </div>
+
+      <!-- 健康建议卡片 - 内嵌吉祥物 -->
+      <HealthAdviceCard
+        :title="dailyTip.title"
+        :description="dailyTip.desc"
+      />
     </div>
 
     <div v-else class="reminders-list">
@@ -83,42 +83,6 @@ const dailyTip = computed(() => healthTips[tipIndex.value])
 .empty-text {
   font-size: var(--text-xs);
   color: var(--color-text-light);
-}
-
-.daily-tip {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  width: 100%;
-  padding: var(--space-md) var(--space-lg);
-  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  margin-top: var(--space-sm);
-}
-
-.tip-icon {
-  font-size: var(--text-xl);
-  flex-shrink: 0;
-  opacity: 0.7;
-}
-
-.tip-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  flex: 1;
-}
-
-.tip-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  color: var(--color-text-main);
-}
-
-.tip-desc {
-  font-size: 11px;
-  color: var(--color-text-sub);
 }
 
 .reminders-list {

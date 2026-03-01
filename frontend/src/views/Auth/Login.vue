@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -37,10 +38,39 @@ function goToRegister() {
 
 <template>
   <div class="auth-page">
+    <!-- 左侧：吉祥物品牌展示区 -->
+    <div class="brand-section">
+      <MascotCharacter
+        expression="default"
+        size="hero"
+        :animated="true"
+        :float-animation="true"
+      />
+      <div class="brand-content">
+        <h1 class="brand-title">哈吉咪养成计划</h1>
+        <p class="brand-subtitle">记录喵星人的成长足迹</p>
+        <div class="brand-features">
+          <div class="feature-item">
+            <span class="feature-icon">📸</span>
+            <span>成长记录</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">⚖️</span>
+            <span>体重追踪</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">💉</span>
+            <span>健康提醒</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：登录表单 -->
     <div class="auth-container">
       <div class="auth-header">
-        <h1 class="auth-title">🐱 哈吉咪养成计划</h1>
-        <p class="auth-subtitle">登录您的账号</p>
+        <h2 class="auth-title">欢迎回来</h2>
+        <p class="auth-subtitle">登录账号继续记录美好时光</p>
       </div>
 
       <form class="auth-form" @submit.prevent="handleLogin">
@@ -90,17 +120,62 @@ function goToRegister() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-  padding: 1rem;
+  background: var(--color-bg);
+  padding: var(--space-xl);
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  max-width: 480px;
+}
+
+.brand-content {
+  margin-top: var(--space-2xl);
+}
+
+.brand-title {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-md) 0;
+}
+
+.brand-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-text-sub);
+  margin: 0 0 var(--space-2xl) 0;
+}
+
+.brand-features {
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
+}
+
+.feature-icon {
+  font-size: 24px;
 }
 
 .auth-container {
-  background: white;
-  border-radius: 1.5rem;
-  padding: 2.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  background: var(--color-card);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4xl);
+  box-shadow: var(--shadow-md);
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   animation: slideUp 0.4s ease-out;
 }
 
@@ -117,82 +192,84 @@ function goToRegister() {
 
 .auth-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-2xl);
 }
 
 .auth-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-main);
+  margin: 0 0 var(--space-md) 0;
 }
 
 .auth-subtitle {
-  color: #64748b;
+  font-size: var(--text-sm);
+  color: var(--color-text-sub);
   margin: 0;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-lg);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .form-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-main);
 }
 
 .form-input {
-  padding: 0.875rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+  padding: var(--space-md) var(--space-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
+  transition: all var(--transition-base);
+  background: var(--color-bg);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(246, 178, 107, 0.15);
 }
 
 .form-input.error {
-  border-color: #ef4444;
+  border-color: var(--color-error);
 }
 
 .error-message {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  background: var(--color-error-light);
+  color: var(--color-error-dark);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 .auth-btn {
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  padding: var(--space-lg) var(--space-2xl);
+  background: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: var(--radius-full);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 0.5rem;
+  transition: all var(--transition-base);
 }
 
 .auth-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+  box-shadow: var(--shadow-warm-sm);
 }
 
 .auth-btn:disabled {
@@ -201,20 +278,43 @@ function goToRegister() {
 }
 
 .auth-footer {
-  margin-top: 2rem;
+  margin-top: var(--space-2xl);
   text-align: center;
-  color: #64748b;
-  font-size: 0.875rem;
+  color: var(--color-text-sub);
+  font-size: var(--text-sm);
 }
 
 .auth-footer a {
-  color: #f97316;
-  font-weight: 600;
+  color: var(--color-primary);
+  font-weight: var(--font-semibold);
   cursor: pointer;
   text-decoration: none;
 }
 
 .auth-footer a:hover {
   text-decoration: underline;
+}
+
+/* 桌面端左右布局 */
+@media (min-width: 768px) {
+  .auth-page {
+    flex-direction: row;
+    gap: var(--space-5xl);
+    padding: var(--space-3xl);
+  }
+
+  .brand-section {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .brand-content {
+    margin-top: 0;
+    margin-left: var(--space-3xl);
+  }
+
+  .brand-features {
+    justify-content: flex-start;
+  }
 }
 </style>

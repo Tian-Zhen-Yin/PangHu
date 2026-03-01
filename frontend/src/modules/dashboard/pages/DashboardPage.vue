@@ -7,8 +7,8 @@ import { usePetStore } from '../../../stores/pet'
 import { getProactiveAdvice } from '../../../api/proactive'
 import RemindersCard from '../components/RemindersCard.vue'
 import CatsOverview from '../components/CatsOverview.vue'
-import QuickActions from '../components/QuickActions.vue'
-import RecentRecords from '../components/RecentRecords.vue'
+import ActionGrid from '../../../components/mascot/ActionGrid.vue'
+import RecentRecordGroup from '../../../components/home/RecentRecordGroup.vue'
 import DailyQuote from '../components/DailyQuote.vue'
 import type { DashboardReminder, DashboardCatCard, DashboardRecentRecord } from '../types'
 import type { Cat } from '../../../types/cat'
@@ -20,6 +20,7 @@ const petStore = usePetStore()
 const reminders = ref<DashboardReminder[]>([])
 const catCards = ref<DashboardCatCard[]>([])
 const recentRecords = ref<DashboardRecentRecord[]>([])
+const isLoading = ref(true)
 
 function getAgeText(cat: Cat): string {
   if (!cat.birthDate) return '年龄未知'
@@ -102,6 +103,8 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('加载猫咪数据失败:', err)
+  } finally {
+    isLoading.value = false
   }
 })
 </script>
@@ -126,14 +129,18 @@ onMounted(async () => {
       <!-- 1. 当前猫咪总览（核心卡） -->
       <CatsOverview :cats="catCards" :current-cat="catStore.currentCat" />
 
-      <!-- 2. 快捷操作（轻量化图标按钮） -->
-      <QuickActions />
+      <!-- 2. 金刚区内嵌吉祥物 -->
+      <ActionGrid />
 
       <!-- 3. 今日提醒 -->
       <RemindersCard v-if="reminders.length > 0" :reminders="reminders" />
 
-      <!-- 4. 最近记录 -->
-      <RecentRecords v-if="recentRecords.length > 0" :records="recentRecords" />
+      <!-- 复合式最近记录模块 -->
+      <RecentRecordGroup
+        v-if="recentRecords.length > 0"
+        :records="recentRecords"
+        :cat-name="catStore.currentCat?.name || '猫咪'"
+      />
 
       <!-- 5. 每日语录（降级处理） -->
       <DailyQuote />
@@ -217,8 +224,7 @@ onMounted(async () => {
   max-width: 640px;
 }
 
-/* 当前猫咪卡片横跨全宽 */
-.dashboard-content > :first-child {
-  width: 100%;
+/* 移动端适配 */
+@media (max-width: 768px) {
 }
 </style>

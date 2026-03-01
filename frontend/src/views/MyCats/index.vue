@@ -14,13 +14,26 @@
       </div>
     </div>
 
-    <div v-if="loading" class="loading">加载中...</div>
-
-    <div v-else-if="cats.length === 0" class="empty-state">
-      <div class="empty-icon">🐱</div>
-      <p>还没有添加猫咪档案</p>
-      <button class="btn-primary" @click="$router.push('/my-cats/new')">添加第一只猫咪</button>
+    <div v-if="loading" class="loading-state">
+      <MascotCharacter
+        expression="yawning"
+        size="large"
+        :animated="true"
+        :float-animation="true"
+      />
+      <p class="loading-text">正在加载猫咪数据...</p>
     </div>
+
+    <EmptyState
+      v-else-if="cats.length === 0"
+      title="还没有添加猫咪档案"
+      description="添加你的第一只喵星人，开始记录成长足迹"
+      expression="confused"
+      :show-action="true"
+      action-text="添加第一只猫咪"
+      :action-path="'/my-cats/new'"
+      @action="() => $router.push('/my-cats/new')"
+    />
 
     <div v-else class="cats-grid">
       <div
@@ -60,6 +73,8 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMyCatStore } from '../../stores/myCat'
+import EmptyState from '../../components/common/EmptyState.vue'
+import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import type { Cat } from '../../types/cat'
 
 const catStore = useMyCatStore()
@@ -101,21 +116,19 @@ async function handleDelete(id: string) {
   font-weight: 700;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #888;
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5xl) var(--space-xl);
+  gap: var(--space-lg);
 }
 
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #888;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+.loading-text {
+  font-size: var(--text-base);
+  color: var(--color-text-sub);
+  margin: 0;
 }
 
 .cats-grid {

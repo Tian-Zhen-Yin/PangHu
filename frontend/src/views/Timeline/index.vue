@@ -8,8 +8,28 @@ import { storeToRefs } from 'pinia'
 import { toast } from '../../composables/useToast'
 import ImageLoader from '../../components/common/ImageLoader.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
-import type { Stage, Task } from '../../types/cat'
+import EmptyState from '../../components/common/EmptyState.vue'
+import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
+import HorizontalStageTimeline from '../../components/growth/HorizontalStageTimeline.vue'
+import type { Stage, Task, Vaccine } from '../../types/cat'
 import type { CreatePetRecordParams } from '../../api/pet'
+
+// 区块标题图标 SVG
+const sectionIcons = {
+  milestone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 010-5H6"/><path d="M18 9h1.5a2.5 2.5 0 000-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0012 0V2z"/></svg>',
+  task: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+  date: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>',
+  photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  health: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  feeding: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><path d="M6 1v3"/><path d="M10 1v3"/><path d="M14 1v3"/></svg>',
+  training: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>',
+  care: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 015 5c0 5-5 10-5 10s-5-5-5-10a5 5 0 015-5z"/><path d="M12 8a2 2 0 110 4 2 2 0 010-4z"/></svg>',
+  vaccine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a2 2 0 012 2v2a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M9 10V6a3 3 0 016 0v4"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>',
+  deworm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+  free: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  celebration: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/></svg>',
+  daily: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>'
+}
 
 type TaskCategory = 'health' | 'feeding' | 'training' | 'care'
 
@@ -90,12 +110,6 @@ watch(currentCat, async (newCat) => {
   }
 })
 
-// 选择阶段
-function selectStage(stage: Stage) {
-  selectedStage.value = stage
-  activeTab.value = 'overview'
-}
-
 // 打开任务完成弹窗
 function openTaskModal(task: Task) {
   currentTask.value = task
@@ -155,6 +169,14 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+// 暴力清洗任务标题 - 彻底切除开头所有的英文字母和附带的空格
+function cleanTaskTitle(title: string): string {
+  if (!title) return ''
+  // 匹配开头的一个或多个英文字母，以及后面的任意个空格，替换为空
+  const cleaned = title.replace(/^[a-zA-Z]+\s*/, '')
+  return cleaned.trim() || title
+}
+
 // 宠物记录功能
 function openAddRecordModal() {
   if (!authStore.isAuthenticated) {
@@ -184,14 +206,18 @@ function closeAddRecordModal() {
 
 function handlePhotoSelect(event: Event) {
   const target = event.target as HTMLInputElement
-  const files = Array.from(target.files || []).slice(0, 9)
-  recordPhotoFiles.value = files
-  recordPhotoPreviews.value = []
+  const files = Array.from(target.files || []).slice(0, 9 - recordPhotoPreviews.value.length)
+  recordPhotoFiles.value = [...recordPhotoFiles.value, ...files]
   files.forEach(file => {
     const reader = new FileReader()
     reader.onload = (e) => recordPhotoPreviews.value.push(e.target?.result as string)
     reader.readAsDataURL(file)
   })
+}
+
+function removePhoto(index: number) {
+  recordPhotoPreviews.value.splice(index, 1)
+  recordPhotoFiles.value.splice(index, 1)
 }
 
 function calculateAgeMonths(ageWeeks: number): number {
@@ -253,21 +279,60 @@ const taskProgress = computed(() => {
   }
 })
 
+// 健康进度相关计算属性
+const healthProgressPercent = computed(() => {
+  if (!selectedStage.value?.vaccines || selectedStage.value.vaccines.length === 0) return 0
+  // 简单假设：根据当前猫咪年龄计算应该完成的疫苗比例
+  const catAgeWeeks = currentCat.value?.ageMonths ? currentCat.value.ageMonths * 4 : 0
+  const totalVaccines = selectedStage.value.vaccines.length
+  const completedVaccines = selectedStage.value.vaccines.filter(v => v.ageWeeks <= catAgeWeeks).length
+  return totalVaccines > 0 ? Math.round((completedVaccines / totalVaccines) * 100) : 0
+})
+
+const healthProgressSummary = computed(() => {
+  const percent = healthProgressPercent.value
+  if (percent >= 100) return '基础免疫已全部完成，真棒！'
+  if (percent >= 66) return '已完成基础免疫 2/3，继续保持喵！'
+  if (percent >= 33) return '已完成基础免疫 1/3，加油喵~'
+  return '免疫计划进行中，记得按时接种哦'
+})
+
+const healthProgressMascot = computed(() => {
+  const percent = healthProgressPercent.value
+  if (percent >= 100) return 'excited'
+  if (percent >= 66) return 'happy'
+  if (percent >= 33) return 'focused'
+  return 'waiting'
+})
+
+// 判断疫苗是否已完成（基于年龄）
+function isVaccineDone(vaccine: Vaccine): boolean {
+  if (!currentCat.value) return false
+  const catAgeWeeks = currentCat.value.ageMonths ? currentCat.value.ageMonths * 4 : 0
+  return vaccine.ageWeeks <= catAgeWeeks
+}
+
+// 获取疫苗状态样式类
+function getVaccineStatus(vaccine: Vaccine): string {
+  if (isVaccineDone(vaccine)) return 'done'
+  return 'active'
+}
+
 // 任务分类
 const taskCategories: Record<TaskCategory, TaskCategoryInfo> = {
-  health: { name: '健康', icon: '🏥', color: 'bg-red-100 text-red-700' },
-  feeding: { name: '喂养', icon: '🍽️', color: 'bg-blue-100 text-blue-700' },
-  training: { name: '训练', icon: '🎾', color: 'bg-green-100 text-green-700' },
-  care: { name: '护理', icon: '🧼', color: 'bg-purple-100 text-purple-700' }
+  health: { name: '健康', icon: 'health', color: 'category-health' },
+  feeding: { name: '喂养', icon: 'feeding', color: 'category-feeding' },
+  training: { name: '训练', icon: 'training', color: 'category-training' },
+  care: { name: '护理', icon: 'care', color: 'category-care' }
 }
 
 // 记录类型配置
 const RECORD_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  daily:       { label: '日常', icon: '📋', color: '#4ade80' },
-  vaccine:     { label: '疫苗', icon: '💉', color: '#60a5fa' },
-  deworm:      { label: '驱虫', icon: '🐛', color: '#f97316' },
-  healthCheck: { label: '体检', icon: '🏥', color: '#a78bfa' },
-  free:        { label: '自由', icon: '✏️', color: '#94a3b8' },
+  daily:       { label: '日常', icon: 'daily', color: '#4ade80' },
+  vaccine:     { label: '疫苗', icon: 'vaccine', color: '#60a5fa' },
+  deworm:      { label: '驱虫', icon: 'deworm', color: '#f97316' },
+  healthCheck: { label: '体检', icon: 'health', color: '#a78bfa' },
+  free:        { label: '自由', icon: 'free', color: '#94a3b8' },
 }
 
 // 按月分组记录
@@ -297,21 +362,6 @@ const pageSubtitle = computed(() => {
       return `记录${currentCat.value.name}的日常生活与健康`
     default:
       return '从新生到成年的完整成长路径'
-  }
-})
-
-const stageNavTitle = computed(() => {
-  if (!currentCat.value) return '成长阶段'
-  switch (currentCat.value.adoptStatus) {
-    case 'raisedFromBaby':
-    case 'adoptedYoung':
-      return '成长阶段'
-    case 'adoptedAdult':
-      return '养护指南'
-    case 'unknownAge':
-      return '日常护理'
-    default:
-      return '成长阶段'
   }
 })
 
@@ -369,13 +419,19 @@ watch(filteredStages, (stages) => {
     selectedStage.value = stages[0]!
   }
 })
+
+// 阶段切换时重置到概览标签
+watch(selectedStage, () => {
+  activeTab.value = 'overview'
+})
 </script>
 
 <template>
   <div class="timeline-page">
     <div class="page-header">
       <h1 class="page-title">
-        🐱 {{ currentCat?.timelineTitle || '猫咪养成时间线' }}
+        <MascotCharacter expression="default" size="small" :animated="false" class="title-mascot" />
+        {{ currentCat?.timelineTitle || '猫咪养成时间线' }}
       </h1>
       <p class="page-subtitle">{{ pageSubtitle }}</p>
     </div>
@@ -389,33 +445,18 @@ watch(filteredStages, (stages) => {
     </div>
 
     <div class="timeline-container">
-      <!-- 阶段导航 -->
-      <aside class="stage-nav">
-        <h2 class="nav-title">{{ stageNavTitle }}</h2>
-        <div class="stage-list">
-          <button
-            v-for="stage in filteredStages"
-            :key="stage.id"
-            :class="['stage-item', { active: selectedStage?.id === stage.id }]"
-            @click="selectStage(stage)"
-          >
-            <div class="stage-indicator">
-              <span class="stage-number">{{ stage.order }}</span>
-            </div>
-            <div class="stage-info">
-              <h3 class="stage-name">{{ stage.name }}</h3>
-              <p class="stage-age">{{ stage.ageRange }}</p>
-            </div>
-          </button>
-        </div>
-      </aside>
+      <!-- 横向时间轴导航 -->
+      <HorizontalStageTimeline
+        v-model="selectedStage"
+        :stages="filteredStages"
+      />
 
       <!-- 阶段详情 -->
       <main class="stage-detail" v-if="selectedStage">
         <!-- 详情头部 -->
         <div class="detail-header">
           <div class="stage-badge">
-            <span class="badge-emoji">📋</span>
+            <MascotCharacter expression="focused" size="small" :animated="false" class="badge-mascot" />
             <span class="badge-text">第 {{ selectedStage.order }} 阶段</span>
           </div>
           <h2 class="detail-title">{{ selectedStage.name }}</h2>
@@ -423,65 +464,89 @@ watch(filteredStages, (stages) => {
           <p class="detail-description">{{ selectedStage.description }}</p>
         </div>
 
-        <!-- 标签页 -->
-        <div class="tabs">
+        <!-- 标签页 - 悬浮胶囊分段控制器 -->
+        <div class="premium-tabs-container">
+
           <button
-            :class="['tab', { active: activeTab === 'overview' }]"
+            class="tab-btn"
+            :class="{ 'is-active': activeTab === 'overview' }"
             @click="activeTab = 'overview'"
           >
-            <span class="tab-icon">📊</span>
-            概览
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span class="tab-text">概览</span>
           </button>
+
           <button
-            :class="['tab', { active: activeTab === 'tasks' }]"
+            class="tab-btn"
+            :class="{ 'is-active': activeTab === 'tasks' }"
             @click="activeTab = 'tasks'"
           >
-            <span class="tab-icon">✅</span>
-            任务清单
-            <span class="tab-badge" v-if="taskProgress.total > 0">
-              {{ taskProgress.completed }}/{{ taskProgress.total }}
-            </span>
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            <span class="tab-text">任务清单</span>
+            <span v-if="taskProgress.total > 0" class="tab-badge">{{ taskProgress.completed }}/{{ taskProgress.total }}</span>
           </button>
+
           <button
-            :class="['tab', { active: activeTab === 'vaccines' }]"
+            class="tab-btn"
+            :class="{ 'is-active': activeTab === 'vaccines' }"
             @click="activeTab = 'vaccines'"
-            :disabled="!selectedStage.vaccines || selectedStage.vaccines.length === 0"
           >
-            <span class="tab-icon">💉</span>
-            疫苗接种
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <span class="tab-text">疫苗接种</span>
+            <span v-if="selectedStage?.vaccines?.length" class="tab-badge warning">{{ selectedStage.vaccines.length }}</span>
           </button>
+
           <button
-            :class="['tab', { active: activeTab === 'growth' }]"
+            class="tab-btn"
+            :class="{ 'is-active': activeTab === 'growth' }"
             @click="activeTab = 'growth'"
           >
-            <span class="tab-icon">📸</span>
-            成长记录
-            <span class="tab-badge" v-if="petStore.recordCount > 0">
-              {{ petStore.recordCount }}
-            </span>
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9zM15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="tab-text">成长记录</span>
+            <span v-if="petStore.recordCount > 0" class="tab-badge">{{ petStore.recordCount }}</span>
           </button>
+
         </div>
 
         <!-- 概览内容 -->
         <div v-show="activeTab === 'overview'" class="tab-content">
           <!-- 里程碑 -->
-          <section class="section" v-if="selectedStage.milestones && selectedStage.milestones.length > 0">
-            <h3 class="section-title">
-              <span class="section-icon">🏆</span>
-              里程碑
-            </h3>
-            <div class="milestones">
+          <section class="milestones-section" v-if="selectedStage.milestones && selectedStage.milestones.length > 0">
+            <div class="section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="section-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              <h3 class="section-title">重要里程碑</h3>
+            </div>
+
+            <div class="milestones-grid">
               <div
                 v-for="milestone in selectedStage.milestones"
                 :key="milestone.id"
-                class="milestone-card"
+                class="milestone-premium-card"
               >
-                <span class="milestone-icon">{{ milestone.icon || '🎯' }}</span>
-                <div class="milestone-content">
-                  <h4 class="milestone-title">{{ milestone.title }}</h4>
-                  <p class="milestone-description">{{ milestone.description }}</p>
-                  <span class="milestone-age">{{ milestone.ageWeeks }}周</span>
+                <div class="card-header">
+                  <div class="title-with-icon">
+                    <div class="icon-plate">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    </div>
+                    <h4 class="milestone-title">{{ milestone.title }}</h4>
+                  </div>
+
+                  <span class="time-badge">{{ milestone.ageWeeks }}周</span>
                 </div>
+
+                <p class="milestone-desc">{{ milestone.description }}</p>
               </div>
             </div>
           </section>
@@ -489,19 +554,46 @@ watch(filteredStages, (stages) => {
           <!-- 任务预览 -->
           <section class="section">
             <h3 class="section-title">
-              <span class="section-icon">📝</span>
+              <span class="section-icon" v-html="sectionIcons.task"></span>
               重要任务
             </h3>
-            <div class="task-preview">
+            <div class="overview-tasks-preview">
               <div
                 v-for="task in selectedStage!.tasks?.slice(0, 3)"
                 :key="task.id"
-                class="task-preview-item"
+                class="overview-task-card"
+                @click="openTaskModal(task)"
               >
-                <span class="task-dot" :class="taskCategories[task.category]!.color">
-                  {{ taskCategories[task.category]!.icon }}
-                </span>
-                <span class="task-name">{{ task.title }}</span>
+                <div class="otc-icon-wrapper" :class="task.category">
+                  <!-- 健康类 -->
+                  <svg v-if="task.category === 'health'" viewBox="0 0 24 24" fill="none" class="otc-icon">
+                    <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 12H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 8H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 16H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <!-- 喂养类 -->
+                  <svg v-else-if="task.category === 'feeding'" viewBox="0 0 24 24" fill="none" class="otc-icon">
+                    <path d="M12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M21 3V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M16.5 7.5L21 3L16.5 7.5ZM16.5 7.5L21 12L16.5 7.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <!-- 训练类 -->
+                  <svg v-else-if="task.category === 'training'" viewBox="0 0 24 24" fill="none" class="otc-icon">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 3V12L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <!-- 护理类 -->
+                  <svg v-else viewBox="0 0 24 24" fill="none" class="otc-icon">
+                    <path d="M8 3L4 7V19C4 20.1 4.9 21 6 21H18C19.1 21 20 20.1 20 19V7L16 3H8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 12V21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M8 21H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <span class="otc-title">{{ cleanTaskTitle(task.title) }}</span>
+                <svg class="otc-arrow" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
               </div>
               <button class="view-all-btn" @click="activeTab = 'tasks'">
                 查看全部任务 →
@@ -531,76 +623,137 @@ watch(filteredStages, (stages) => {
                 v-if="selectedStage!.tasks?.some((t: Task) => t.category === category)"
               >
                 <h4 class="category-title">
-                  <span :class="['category-badge', taskCategories[category].color]">
-                    {{ taskCategories[category].icon }}
+                  <span :class="['category-badge', category]">
+                    <span class="category-icon">
+                      <svg v-if="category === 'health'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                      </svg>
+                      <svg v-else-if="category === 'feeding'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                      </svg>
+                      <svg v-else-if="category === 'training'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                      </svg>
+                      <svg v-else-if="category === 'care'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                      </svg>
+                    </span>
                     {{ taskCategories[category].name }}
                   </span>
                 </h4>
+
                 <div class="category-tasks">
                   <div
                     v-for="task in selectedStage!.tasks?.filter((t: Task) => t.category === category)"
                     :key="task.id"
                     class="task-item"
                     :class="{ completed: taskStates[task.id]?.completed }"
+                    @click="openTaskModal(task)"
                   >
-                  <div class="task-checkbox-wrapper">
-                    <input
-                      type="checkbox"
-                      :checked="taskStates[task.id]?.completed"
-                      @change="openTaskModal(task)"
-                      class="task-checkbox"
-                    />
-                  </div>
-                  <div class="task-content" @click="openTaskModal(task)">
-                    <span class="task-title">{{ task.title }}</span>
-                    <p v-if="task.description" class="task-description">{{ task.description }}</p>
-                    <!-- 完成信息 -->
-                    <div v-if="taskStates[task.id]?.completed" class="task-completion-info">
-                      <span v-if="taskStates[task.id]?.date" class="completion-date">
-                        📅 {{ formatDate(taskStates[task.id]!.date!) }}
-                      </span>
-                      <p v-if="taskStates[task.id]?.notes" class="completion-notes">
-                        📝 {{ taskStates[task.id]!.notes! }}
-                      </p>
+                    <div class="task-icon-box" :class="task.category">
+                      <svg v-if="task.category === 'health'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                      </svg>
+                      <svg v-else-if="task.category === 'feeding'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 8h1a4 4 0 010 8h-1"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                      </svg>
+                      <svg v-else-if="task.category === 'training'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                      </svg>
+                      <svg v-else-if="task.category === 'care'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                      </svg>
                     </div>
-                  </div>
-                  <div class="task-actions">
-                    <span class="priority-badge" :class="`priority-${task.priority}`">
-                      {{ task.priority === 1 ? '高' : task.priority === 2 ? '中' : '低' }}
-                    </span>
-                    <button
-                      v-if="taskStates[task.id]?.completed"
-                      @click.stop="uncompleteTask(task.id)"
-                      class="uncomplete-btn"
-                      title="取消完成"
-                    >
-                      ↩️
-                    </button>
+
+                    <div class="task-content">
+                      <span class="task-title">{{ cleanTaskTitle(task.title) }}</span>
+                      <p v-if="task.description" class="task-description">{{ task.description }}</p>
+                    </div>
+
+                    <div class="task-checkbox-wrapper" @click.stop>
+                      <input
+                        type="checkbox"
+                        :checked="taskStates[task.id]?.completed"
+                        @change="openTaskModal(task)"
+                        class="task-checkbox custom-checkbox"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
             </template>
           </div>
         </div>
 
-        <!-- 疫苗接种内容 -->
+        <!-- 疫苗接种内容 - 健康屏障 -->
         <div v-show="activeTab === 'vaccines'" class="tab-content">
-          <div v-if="selectedStage.vaccines && selectedStage.vaccines.length > 0" class="vaccines-list">
+          <!-- 健康进度摘要卡片 -->
+          <div class="health-summary-card">
+            <div class="summary-text">
+              <h3>{{ currentCat?.name || '小猫咪' }}的免疫屏障</h3>
+              <p>{{ healthProgressSummary }}</p>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: healthProgressPercent + '%' }"></div>
+              <MascotCharacter :expression="healthProgressMascot" size="small" :animated="false" class="progress-mascot" />
+            </div>
+          </div>
+
+          <!-- 健康时间轴 -->
+          <div v-if="selectedStage.vaccines && selectedStage.vaccines.length > 0" class="health-timeline">
             <div
-              v-for="vaccine in selectedStage.vaccines"
+              v-for="(vaccine, index) in selectedStage.vaccines"
               :key="vaccine.id"
-              class="vaccine-card"
+              :class="['health-row', getVaccineStatus(vaccine)]"
             >
-              <div class="vaccine-icon">💉</div>
-              <div class="vaccine-content">
-                <h4 class="vaccine-name">{{ vaccine.name }}</h4>
-                <p v-if="vaccine.description" class="vaccine-description">{{ vaccine.description }}</p>
-                <span class="vaccine-age">接种时间：{{ vaccine.ageWeeks }}周</span>
+              <!-- 时间轴节点 -->
+              <div class="axis-node">
+                <div class="status-indicator">
+                  <!-- 已完成：勾选图标 -->
+                  <svg v-if="isVaccineDone(vaccine)" class="check-icon" viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" stroke-width="2.5" stroke="white" fill="none"/>
+                  </svg>
+                  <!-- 进行中：脉冲点 -->
+                  <div v-else class="active-pulse"></div>
+                </div>
+                <div v-if="index !== selectedStage.vaccines.length - 1" class="connector-line"></div>
+              </div>
+
+              <!-- 健康信息卡片 -->
+              <div class="health-info-card">
+                <header class="card-header">
+                  <span class="category-tag">疫苗</span>
+                  <span class="status-badge" :class="isVaccineDone(vaccine) ? 'done' : 'pending'">
+                    {{ isVaccineDone(vaccine) ? '已完成' : '待接种' }}
+                  </span>
+                </header>
+                <h4 class="card-title">{{ vaccine.name }}</h4>
+                <p v-if="vaccine.description" class="card-description">{{ vaccine.description }}</p>
+
+                <!-- 卡片底部 -->
+                <footer class="card-footer">
+                  <div class="time-info">
+                    <svg class="clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 6v6l4 2"/>
+                    </svg>
+                    <span>建议接种：{{ vaccine.ageWeeks }}周龄</span>
+                  </div>
+                  <!-- 胖虎医学小贴士 -->
+                  <div class="medical-tip" v-if="!isVaccineDone(vaccine)">
+                    <MascotCharacter expression="focused" size="small" :animated="false" class="tip-mascot" />
+                    <span>接种前3天不要洗澡哦，小猫咪会怕怕！</span>
+                  </div>
+                </footer>
               </div>
             </div>
           </div>
-          <div v-else class="empty-state">
+
+          <!-- 空状态 -->
+          <div v-else class="empty-health">
+            <MascotCharacter expression="confused" size="medium" :animated="false" />
             <p class="empty-text">此阶段无需接种特殊疫苗</p>
           </div>
         </div>
@@ -608,7 +761,10 @@ watch(filteredStages, (stages) => {
         <!-- 成长记录内容 -->
         <div v-show="activeTab === 'growth'" class="tab-content">
           <div class="growth-header">
-            <h3 class="growth-title">📸 宠物成长记录</h3>
+            <h3 class="growth-title">
+              <span class="icon-growth" v-html="sectionIcons.photo"></span>
+              宠物成长记录
+            </h3>
             <button @click="openAddRecordModal" class="btn-add-record">
               + 添加记录
             </button>
@@ -655,15 +811,25 @@ watch(filteredStages, (stages) => {
                           class="type-badge"
                           :style="{ background: RECORD_TYPE_CONFIG[record.type]!.color + '22', color: RECORD_TYPE_CONFIG[record.type]!.color }"
                         >
-                          {{ RECORD_TYPE_CONFIG[record.type]!.icon }} {{ RECORD_TYPE_CONFIG[record.type]!.label }}
+                          <span class="type-icon" v-html="sectionIcons[RECORD_TYPE_CONFIG[record.type]?.icon as keyof typeof sectionIcons] || sectionIcons.daily"></span>
+                          {{ RECORD_TYPE_CONFIG[record.type]!.label }}
                         </span>
-                        <span v-if="record.isAdoptionDay" class="adoption-badge">🎉 领养纪念日</span>
+                        <span v-if="record.isAdoptionDay" class="adoption-badge">
+                          <span class="badge-icon" v-html="sectionIcons.celebration"></span>
+                          领养纪念日
+                        </span>
                       </div>
                       <button @click="deletePetRecord(record.id)" class="btn-delete-record" title="删除记录">×</button>
                     </div>
                     <div class="record-stats">
-                      <span v-if="!shouldHideAge && record.ageMonths" class="record-stat">📅 {{ record.ageMonths }}个月 ({{ record.ageWeeks }}周)</span>
-                      <span v-else-if="shouldHideAge && catDisplayLabel" class="record-stat">📅 {{ catDisplayLabel }}</span>
+                      <span v-if="!shouldHideAge && record.ageMonths" class="record-stat">
+                        <span class="icon-stat" v-html="sectionIcons.date"></span>
+                        {{ record.ageMonths }}个月 ({{ record.ageWeeks }}周)
+                      </span>
+                      <span v-else-if="shouldHideAge && catDisplayLabel" class="record-stat">
+                        <span class="icon-stat" v-html="sectionIcons.date"></span>
+                        {{ catDisplayLabel }}
+                      </span>
                       <span v-if="record.weight" class="record-stat">⚖️ {{ record.weight }}kg</span>
                     </div>
                     <p v-if="record.notes" class="record-notes">{{ record.notes }}</p>
@@ -675,7 +841,7 @@ watch(filteredStages, (stages) => {
 
           <!-- 空状态 -->
           <div v-else class="empty-records">
-            <span class="empty-icon">📸</span>
+            <span class="empty-icon" v-html="sectionIcons.photo"></span>
             <p class="empty-text">还没有成长记录</p>
             <p class="empty-hint">记录宠物的成长瞬间，留下美好回忆</p>
             <button @click="openAddRecordModal" class="btn-add-first-record">
@@ -690,7 +856,7 @@ watch(filteredStages, (stages) => {
     <div v-if="showTaskModal" class="modal-overlay" @click="closeTaskModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">✅ 标记任务完成</h3>
+          <h3 class="modal-title">标记任务完成</h3>
           <button @click="closeTaskModal" class="modal-close">×</button>
         </div>
         <div class="modal-body">
@@ -726,134 +892,187 @@ watch(filteredStages, (stages) => {
     <div v-if="showAddRecordModal" class="modal-overlay" @click="closeAddRecordModal">
       <div class="modal-content record-modal" @click.stop>
         <div class="modal-header">
-          <h3 class="modal-title">📸 添加成长记录</h3>
+          <h3 class="modal-title">添加成长记录</h3>
           <button @click="closeAddRecordModal" class="modal-close">×</button>
         </div>
         <div class="modal-body">
-          <!-- 记录类型 Tab -->
+          <!-- 记录类型胶囊 Tab -->
           <div class="record-type-tabs">
             <button
-              v-for="(cfg, key) in RECORD_TYPE_CONFIG"
-              :key="key"
-              :class="['type-tab', { active: recordType === key }]"
-              :style="recordType === key ? { borderColor: cfg.color, color: cfg.color } : {}"
-              @click="recordType = key as any"
+              :class="['type-capsule', { 'is-active': recordType === 'daily' }]"
+              @click="recordType = 'daily'"
             >
-              {{ cfg.icon }} {{ cfg.label }}
+              <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+              </svg>
+              日常
+            </button>
+            <button
+              :class="['type-capsule', { 'is-active': recordType === 'vaccine' }]"
+              @click="recordType = 'vaccine'"
+            >
+              <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+              </svg>
+              疫苗
+            </button>
+            <button
+              :class="['type-capsule', { 'is-active': recordType === 'deworm' }]"
+              @click="recordType = 'deworm'"
+            >
+              <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              驱虫
+            </button>
+            <button
+              :class="['type-capsule', { 'is-active': recordType === 'healthCheck' }]"
+              @click="recordType = 'healthCheck'"
+            >
+              <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              体检
+            </button>
+            <button
+              :class="['type-capsule', { 'is-active': recordType === 'free' }]"
+              @click="recordType = 'free'"
+            >
+              <svg class="type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              自由
             </button>
           </div>
 
-          <!-- 基础字段 -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">宠物名称</label>
-              <input v-model="recordForm.petName" type="text" class="form-input" placeholder="猫咪" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">记录日期</label>
-              <input v-model="recordForm.recordDate" type="date" class="form-input" />
-            </div>
-          </div>
-
-          <!-- daily 字段 -->
-          <template v-if="recordType === 'daily'">
+          <!-- 奶油风表单 -->
+          <div class="cream-form">
+            <!-- 基础字段 -->
             <div class="form-row">
-              <div class="form-group" v-if="!shouldHideAge">
-                <label class="form-label">年龄（周）</label>
-                <input v-model.number="recordForm.ageWeeks" type="number" min="0" class="form-input" placeholder="0" />
+              <div class="form-item half">
+                <label class="cream-label">宠物名称</label>
+                <input v-model="recordForm.petName" type="text" class="cream-input" placeholder="猫咪" readonly />
               </div>
-              <div class="form-group" :class="{ 'full-width': shouldHideAge }">
-                <label class="form-label">体重（kg）</label>
-                <input v-model.number="recordForm.weight" type="number" min="0" step="0.1" class="form-input" placeholder="0.0" />
+              <div class="form-item half">
+                <label class="cream-label">记录日期</label>
+                <input v-model="recordForm.recordDate" type="date" class="cream-input" />
               </div>
             </div>
-          </template>
 
-          <!-- vaccine 字段 -->
-          <template v-else-if="recordType === 'vaccine'">
-            <div class="form-group">
-              <label class="form-label">疫苗名称 *</label>
-              <input v-model="recordForm.vaccineName" type="text" class="form-input" placeholder="如：猫三联" />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">下次接种日期</label>
-                <input v-model="recordForm.vaccineNextDate" type="date" class="form-input" />
+            <!-- daily 字段 -->
+            <template v-if="recordType === 'daily'">
+              <div class="form-row">
+                <div class="form-item half" v-if="!shouldHideAge">
+                  <label class="cream-label">年龄（周）</label>
+                  <div class="input-with-unit">
+                    <input v-model.number="recordForm.ageWeeks" type="number" min="0" class="cream-input" placeholder="0" />
+                    <span class="unit">Weeks</span>
+                  </div>
+                </div>
+                <div class="form-item half" :class="{ 'full-width': shouldHideAge }">
+                  <label class="cream-label">体重（kg）</label>
+                  <div class="input-with-unit">
+                    <input v-model.number="recordForm.weight" type="number" min="0" step="0.1" class="cream-input" placeholder="0.0" />
+                    <span class="unit">kg</span>
+                  </div>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">接种医院</label>
-                <input v-model="recordForm.vaccineClinic" type="text" class="form-input" placeholder="医院名称" />
-              </div>
-            </div>
-          </template>
+            </template>
 
-          <!-- deworm 字段 -->
-          <template v-else-if="recordType === 'deworm'">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">药品名称 *</label>
-                <input v-model="recordForm.dewormDrug" type="text" class="form-input" placeholder="如：拜宠清" />
+            <!-- vaccine 字段 -->
+            <template v-else-if="recordType === 'vaccine'">
+              <div class="form-item full">
+                <label class="cream-label">疫苗名称 *</label>
+                <input v-model="recordForm.vaccineName" type="text" class="cream-input" placeholder="如：猫三联" />
               </div>
-              <div class="form-group">
-                <label class="form-label">类型</label>
-                <select v-model="recordForm.dewormType" class="form-input">
-                  <option>体内</option>
-                  <option>体外</option>
-                  <option>体内+体外</option>
-                </select>
+              <div class="form-row">
+                <div class="form-item half">
+                  <label class="cream-label">下次接种日期</label>
+                  <input v-model="recordForm.vaccineNextDate" type="date" class="cream-input" />
+                </div>
+                <div class="form-item half">
+                  <label class="cream-label">接种医院</label>
+                  <input v-model="recordForm.vaccineClinic" type="text" class="cream-input" placeholder="医院名称" />
+                </div>
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">下次驱虫日期</label>
-              <input v-model="recordForm.dewormNextDate" type="date" class="form-input" />
-            </div>
-          </template>
+            </template>
 
-          <!-- healthCheck 字段 -->
-          <template v-else-if="recordType === 'healthCheck'">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">医院</label>
-                <input v-model="recordForm.checkClinic" type="text" class="form-input" placeholder="医院名称" />
+            <!-- deworm 字段 -->
+            <template v-else-if="recordType === 'deworm'">
+              <div class="form-row">
+                <div class="form-item half">
+                  <label class="cream-label">药品名称 *</label>
+                  <input v-model="recordForm.dewormDrug" type="text" class="cream-input" placeholder="如：拜宠清" />
+                </div>
+                <div class="form-item half">
+                  <label class="cream-label">类型</label>
+                  <select v-model="recordForm.dewormType" class="cream-input cream-select">
+                    <option>体内</option>
+                    <option>体外</option>
+                    <option>体内+体外</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">医生</label>
-                <input v-model="recordForm.checkVet" type="text" class="form-input" placeholder="医生姓名" />
+              <div class="form-item full">
+                <label class="cream-label">下次驱虫日期</label>
+                <input v-model="recordForm.dewormNextDate" type="date" class="cream-input" />
+              </div>
+            </template>
+
+            <!-- healthCheck 字段 -->
+            <template v-else-if="recordType === 'healthCheck'">
+              <div class="form-row">
+                <div class="form-item half">
+                  <label class="cream-label">医院</label>
+                  <input v-model="recordForm.checkClinic" type="text" class="cream-input" placeholder="医院名称" />
+                </div>
+                <div class="form-item half">
+                  <label class="cream-label">医生</label>
+                  <input v-model="recordForm.checkVet" type="text" class="cream-input" placeholder="医生姓名" />
+                </div>
+              </div>
+              <div class="form-item full">
+                <label class="cream-label">检查结果/建议</label>
+                <textarea v-model="recordForm.checkFindings" class="cream-textarea" rows="3" placeholder="检查结果或医生建议..."></textarea>
+              </div>
+            </template>
+
+            <!-- 备注（所有类型通用） -->
+            <div class="form-item full">
+              <label class="cream-label">备注</label>
+              <textarea v-model="recordForm.notes" class="cream-textarea" rows="3" placeholder="想写下{{ currentCat?.name || '小猫咪' }}今天的顽皮瞬间吗？喵~"></textarea>
+            </div>
+
+            <!-- 奶油风照片上传区 -->
+            <div class="form-item full">
+              <div class="photo-upload-header">
+                <label class="cream-label">照片</label>
+                <span class="photo-count">{{ recordPhotoPreviews.length }}/9</span>
+              </div>
+              <div class="premium-photo-area">
+                <div v-for="(preview, i) in recordPhotoPreviews" :key="i" class="photo-thumb-new">
+                  <img :src="preview" alt="预览" />
+                  <button @click="removePhoto(i)" class="photo-remove">×</button>
+                </div>
+                <label v-if="recordPhotoPreviews.length < 9" class="photo-upload-trigger">
+                  <input type="file" accept="image/*" multiple @change="handlePhotoSelect" class="hidden-input" />
+                  <MascotCharacter expression="waiting" size="small" :animated="false" />
+                  <span>添加瞬间</span>
+                </label>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">检查结果/建议</label>
-              <textarea v-model="recordForm.checkFindings" class="form-textarea" rows="2" placeholder="检查结果或医生建议..."></textarea>
-            </div>
-          </template>
 
-          <!-- 备注（所有类型通用） -->
-          <div class="form-group">
-            <label class="form-label">备注</label>
-            <textarea v-model="recordForm.notes" class="form-textarea" placeholder="记录一些特别的瞬间..." rows="2"></textarea>
-          </div>
-
-          <!-- 多图上传 -->
-          <div class="form-group">
-            <label class="form-label">照片（最多9张）</label>
-            <div class="photos-upload-area">
-              <div v-for="(preview, i) in recordPhotoPreviews" :key="i" class="photo-thumb">
-                <img :src="preview" alt="预览" />
-              </div>
-              <label v-if="recordPhotoPreviews.length < 9" class="photo-add-btn">
-                <input type="file" accept="image/*" multiple @change="handlePhotoSelect" class="photo-input" />
-                <span>📷</span>
-                <span style="font-size:0.75rem">添加</span>
+            <!-- 领养纪念日 -->
+            <div v-if="currentCat?.adoptDate" class="form-item full adoption-check">
+              <label class="cream-checkbox">
+                <input type="checkbox" v-model="isAdoptionDay" />
+                <span class="checkbox-mark"></span>
+                <svg class="checkbox-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                标记为领养纪念日
               </label>
             </div>
-          </div>
-
-          <!-- 领养纪念日 -->
-          <div v-if="currentCat?.adoptDate" class="form-group adoption-day-check">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="isAdoptionDay" />
-              <span>🎉 标记为领养纪念日</span>
-            </label>
           </div>
         </div>
         <div class="modal-footer">
@@ -920,94 +1139,104 @@ watch(filteredStages, (stages) => {
   color: #f97316;
 }
 
+/* ========== 横向布局容器 ========== */
 .timeline-container {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-/* 阶段导航 */
-.stage-nav {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 6rem;
-}
-
-.nav-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #475569;
-  margin: 0 0 1rem 0;
-}
-
-.stage-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.stage-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 2px solid transparent;
-  border-radius: 0.75rem;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
+/* 阶段详情 - 奶油风大卡片 */
+.stage-detail {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   width: 100%;
 }
 
-.stage-item:hover {
-  background: #f8fafc;
+/* ================= 悬浮胶囊 Tab ================= */
+.premium-tabs-container {
+  display: flex;
+  align-items: center;
+  background-color: #F3F4F6;
+  border-radius: 100px;
+  padding: 6px;
+  gap: 4px;
+  margin: 16px 0 24px 0;
 }
 
-.stage-item.active {
-  border-color: #f97316;
-  background: #fff7ed;
-}
-
-.stage-indicator {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white;
+.tab-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  color: #9CA3AF;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.tab-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 默认微标样式 (灰色) */
+.tab-badge {
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #E5E7EB;
+  color: #6B7280;
+  transition: all 0.3s ease;
+}
+
+/* ================= 激活态视觉 (Active State) ================= */
+
+/* 1. 滑块变身：纯白背景 + 物理悬浮投影 */
+.tab-btn.is-active {
+  background: #FFFFFF;
+  color: #F4A261;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* 2. 文字提亮加粗 */
+.tab-btn.is-active .tab-text {
   font-weight: 600;
-  flex-shrink: 0;
+  color: #374151;
 }
 
-.stage-info {
-  flex: 1;
+/* 3. 选中态的图标微微放大 */
+.tab-btn.is-active .tab-icon {
+  transform: scale(1.1);
 }
 
-.stage-name {
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.25rem 0;
+/* 4. 微标变化：变成浅橘色底 + 深橘色字 */
+.tab-btn.is-active .tab-badge {
+  background: #FFF7ED;
+  color: #F4A261;
 }
 
-.stage-age {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0;
-}
-
-/* 阶段详情 */
-.stage-detail {
-  background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* 如果有需要特别警告的微标 (比如疫苗待打)，反向高亮 */
+.tab-btn.is-active .tab-badge.warning {
+  background: #F4A261;
+  color: #FFFFFF;
 }
 
 .detail-header {
@@ -1136,95 +1365,240 @@ watch(filteredStages, (stages) => {
 }
 
 .section-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
 }
 
-/* 里程碑 */
-.milestones {
-  display: grid;
-  gap: 1rem;
+.section-icon :deep(svg) {
+  width: 18px;
+  height: 18px;
+  stroke: var(--color-primary);
 }
 
-.milestone-card {
+/* ================= 里程碑模块 - 高级奶油风 ================= */
+.milestones-section {
+  margin-top: 1.5rem;
+}
+
+.section-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
-  border-radius: 0.75rem;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.milestone-icon {
-  font-size: 2rem;
+.section-header .section-icon {
+  width: 20px;
+  height: 20px;
+  color: #FBBF24;
+  flex-shrink: 0;
 }
 
-.milestone-content {
-  flex: 1;
-}
-
-.milestone-title {
+.section-header .section-title {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.25rem 0;
+  color: #374151;
 }
 
-.milestone-description {
-  color: #64748b;
-  margin: 0 0 0.5rem 0;
-}
-
-.milestone-age {
-  display: inline-block;
-  background: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  color: #f97316;
-  font-weight: 500;
-}
-
-/* 任务预览 */
-.task-preview {
+.milestones-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 16px;
 }
 
-.task-preview-item {
+/* 核心：高级奶油风卡片 */
+.milestone-premium-card {
+  position: relative;
+  /* 剔除刺眼的黄，使用纯白到极浅橘色的微渐变 */
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFF9F5 100%);
+  /* 拟物光边：模拟高光边缘 */
+  border: 1px solid #FFFFFF;
+  border-radius: 20px;
+  padding: 20px;
+  /* 双层阴影：底层环境光 + 暖色发光 */
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.02),
+    0 8px 32px rgba(244, 162, 97, 0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.milestone-premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.03),
+    0 12px 40px rgba(244, 162, 97, 0.06);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.title-with-icon {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 0.5rem;
+  gap: 12px;
 }
 
-.task-dot {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
+/* 替代 Emoji 的精致图标底座 */
+.icon-plate {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  background-color: #FDF3E9;
+  color: #F4A261;
+  border-radius: 10px;
+  flex-shrink: 0;
 }
 
-.task-name {
-  color: #475569;
+.icon-plate svg {
+  width: 18px;
+  height: 18px;
+}
+
+.milestone-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+/* 时间胶囊标签 */
+.time-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  background: #FFFFFF;
+  color: #F4A261;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 100px;
+  box-shadow: 0 2px 6px rgba(244, 162, 97, 0.15);
+  flex-shrink: 0;
+}
+
+.milestone-desc {
+  margin: 0;
+  padding-left: 44px;
+  font-size: 14px;
+  color: #9CA3AF;
+  line-height: 1.5;
+}
+
+/* ========== Overview 任务预览 - 奶油风悬浮卡片 ========== */
+.overview-tasks-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overview-task-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #FFFFFF;
+  border: 2px solid #F5F0E8;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.06);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.overview-task-card:hover {
+  background: linear-gradient(135deg, #FFFBF7 0%, #FFF9F0 100%);
+  border-color: #F4A261;
+  transform: translateX(8px) translateY(-2px);
+  box-shadow: 0 8px 20px rgba(244, 162, 97, 0.15);
+}
+
+.otc-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.otc-icon-wrapper.health {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFDBDB 100%);
+  color: #EF4444;
+}
+
+.otc-icon-wrapper.feeding {
+  background: linear-gradient(135deg, #FFF4E5 0%, #FFEED5 100%);
+  color: #F97316;
+}
+
+.otc-icon-wrapper.training {
+  background: linear-gradient(135deg, #E5F4FF 0%, #D5EAFF 100%);
+  color: #3B82F6;
+}
+
+.otc-icon-wrapper.care {
+  background: linear-gradient(135deg, #E5FFE9 0%, #D5FFDD 100%);
+  color: #22C55E;
+}
+
+.otc-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.otc-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otc-arrow {
+  width: 18px;
+  height: 18px;
+  color: #D1D5DB;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.overview-task-card:hover .otc-arrow {
+  color: #F4A261;
+  transform: translateX(3px);
 }
 
 .view-all-btn {
-  color: #f97316;
-  background: transparent;
+  color: #F4A261;
+  background: linear-gradient(135deg, #FFF4E5 0%, #FFEED5 100%);
   border: none;
-  padding: 0.75rem;
+  padding: 14px 18px;
+  border-radius: 14px;
   cursor: pointer;
-  font-weight: 500;
-  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(244, 162, 97, 0.1);
 }
 
 .view-all-btn:hover {
-  text-decoration: underline;
+  background: linear-gradient(135deg, #FFEED5 0%, #FFE5C5 100%);
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.2);
+  transform: translateY(-1px);
 }
 
 /* 进度条 */
@@ -1267,6 +1641,7 @@ watch(filteredStages, (stages) => {
   gap: 2rem;
 }
 
+/* 任务分类基础 */
 .task-category {
   display: flex;
   flex-direction: column;
@@ -1280,12 +1655,34 @@ watch(filteredStages, (stages) => {
 .category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 13px;
   font-weight: 600;
 }
 
+.category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.category-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+/* 分类徽章颜色 */
+.category-badge.health { background: #fef2f2; color: #dc2626; }
+.category-badge.feeding { background: #eff6ff; color: #2563eb; }
+.category-badge.training { background: #f3e8ff; color: #8A2BE2; }
+.category-badge.care { background: #faf5ff; color: #9333ea; }
+
+/* ================= 核心：任务卡片布局 ================= */
 .category-tasks {
   display: flex;
   flex-direction: column;
@@ -1294,75 +1691,107 @@ watch(filteredStages, (stages) => {
 
 .task-item {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
+  align-items: center;      /* 保证左中右三块垂直居中对齐 */
+  justify-content: space-between; /* 左右两端撑开，把复选框推到最右边 */
+  gap: 14px;
+  padding: 14px 18px;
+  background: #FFFFFF;
   border: 2px solid transparent;
-  border-radius: 0.75rem;
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
 }
 
 .task-item:hover {
-  border-color: #f97316;
+  background-color: #FDF3E9; /* 悬停泛起奶油浅橘色 */
+  transform: translateX(6px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
 }
 
 .task-item.completed {
-  opacity: 0.7;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  opacity: 0.6;
+  background: #F9FAFB; /* 完成态变浅灰，不抢视觉焦点 */
 }
 
 .task-item.completed .task-title {
   text-decoration: line-through;
+  color: #9E968F;
 }
 
-.task-checkbox-wrapper {
-  padding-top: 0.25rem;
+/* ================= 内部区块分配 ================= */
+
+/* 左侧：分类图标 */
+.task-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0; /* 绝对不能被压缩 */
 }
 
-.task-checkbox {
-  width: 1.25rem;
-  height: 1.25rem;
-  accent-color: #f97316;
-  cursor: pointer;
+.task-icon-box.health {
+  background-color: #FEF2F2;
+  color: #DC2626;
 }
 
+.task-icon-box.feeding {
+  background-color: #EFF6FF;
+  color: #2563EB;
+}
+
+.task-icon-box.training {
+  background-color: #F3E8FF;
+  color: #8A2BE2;
+}
+
+.task-icon-box.care {
+  background-color: #FAF5FF;
+  color: #9333EA;
+}
+
+.task-icon-box svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* 中间：文字内容占据剩余全部空间 */
 .task-content {
   flex: 1;
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .task-title {
+  font-size: 15px;
   font-weight: 500;
-  color: #1e293b;
+  color: #5C544E; /* 深咖色文字 */
 }
 
 .task-description {
-  color: #64748b;
-  margin: 0.5rem 0 0 0;
-  font-size: 0.9rem;
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #9E968F;
 }
 
-.task-completion-info {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.completion-date {
-  display: inline-flex;
+/* 右侧：Checkbox 定制样式 */
+.task-checkbox-wrapper {
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.85rem;
-  color: #16a34a;
-  font-weight: 500;
+  justify-content: center;
 }
 
-.completion-notes {
-  color: #64748b;
-  margin: 0.5rem 0 0 0;
-  font-size: 0.9rem;
-  white-space: pre-wrap;
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #F4A261; /* 选中时的打钩颜色设为品牌橘色 */
 }
 
 .task-actions {
@@ -1408,59 +1837,259 @@ watch(filteredStages, (stages) => {
   opacity: 1;
 }
 
-/* 疫苗列表 */
-.vaccines-list {
-  display: grid;
-  gap: 1rem;
+/* ================= 健康屏障 - 时间轴样式 ================= */
+/* 健康进度摘要卡片 */
+.health-summary-card {
+  background: linear-gradient(145deg, #FFFBF7 0%, #FFF9F0 100%);
+  border: 1px solid #FFFFFF;
+  border-radius: 24px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.06);
 }
 
-.vaccine-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border-radius: 0.75rem;
-}
-
-.vaccine-icon {
-  font-size: 2rem;
-}
-
-.vaccine-content {
-  flex: 1;
-}
-
-.vaccine-name {
+.summary-text h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.5rem 0;
+  color: #374151;
 }
 
-.vaccine-description {
-  color: #64748b;
-  margin: 0 0 0.5rem 0;
-}
-
-.vaccine-age {
-  display: inline-block;
-  background: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  color: #2563eb;
-  font-weight: 500;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-}
-
-.empty-text {
-  color: #94a3b8;
+.summary-text p {
   margin: 0;
+  font-size: 13px;
+  color: #9CA3AF;
+}
+
+.progress-track {
+  position: relative;
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 100px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #F4A261 0%, #FB923C 100%);
+  border-radius: 100px;
+  transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.progress-mascot {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* 健康时间轴 */
+.health-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.health-row {
+  display: flex;
+  gap: 16px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* 时间轴节点 */
+.axis-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.status-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+/* 完成状态 */
+.health-row.done .status-indicator {
+  background: #22C55E;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+}
+
+.check-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* 进行中状态 */
+.health-row.active .status-indicator {
+  background: #F4A261;
+  box-shadow: 0 0 0 4px rgba(244, 162, 97, 0.2);
+}
+
+.active-pulse {
+  width: 12px;
+  height: 12px;
+  background: #F4A261;
+  border-radius: 50%;
+  animation: ripple 2s infinite;
+}
+
+@keyframes ripple {
+  0% { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(244, 162, 97, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 162, 97, 0); }
+}
+
+/* 连接线 */
+.connector-line {
+  width: 2px;
+  flex: 1;
+  background: #E5E7EB;
+  margin-top: 4px;
+}
+
+.health-row.done .connector-line {
+  background: #22C55E;
+}
+
+.health-row.active .connector-line {
+  background: linear-gradient(180deg, #F4A261 0%, #E5E7EB 50%);
+}
+
+/* 健康信息卡片 */
+.health-info-card {
+  flex: 1;
+  background: #FFFFFF;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+}
+
+.health-row.done .health-info-card {
+  opacity: 0.6;
+  background: #FAF8F5;
+}
+
+.health-row.active .health-info-card {
+  border-color: #F4A261;
+  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.12);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.category-tag {
+  padding: 4px 12px;
+  background: #FFF7ED;
+  color: #F4A261;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 100px;
+}
+
+.card-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.card-description {
+  margin: 0;
+  font-size: 13px;
+  color: #9CA3AF;
+  line-height: 1.5;
+}
+
+/* 状态徽章 */
+.status-badge {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 100px;
+}
+
+.status-badge.done {
+  background: #DCFCE7;
+  color: #22C55E;
+}
+
+.status-badge.pending {
+  background: #FEF3C7;
+  color: #F59E0B;
+}
+
+/* 卡片底部 */
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #F3F4F6;
+}
+
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+.clock-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* 医学小贴士 */
+.medical-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  border-radius: 12px;
+  border: 1px dashed #FED7AA;
+}
+
+.tip-mascot {
+  flex-shrink: 0;
+}
+
+.medical-tip span {
+  font-size: 12px;
+  color: #9A3412;
+  line-height: 1.4;
+}
+
+/* 健康空状态 */
+.empty-health {
+  text-align: center;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-health .empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: #9CA3AF;
 }
 
 /* 弹窗样式 */
@@ -1642,17 +2271,6 @@ watch(filteredStages, (stages) => {
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-}
-
-/* 响应式 */
-@media (max-width: 968px) {
-  .timeline-container {
-    grid-template-columns: 1fr;
-  }
-
-  .stage-nav {
-    position: static;
-  }
 }
 
 /* 成长记录样式 */
@@ -1881,97 +2499,311 @@ watch(filteredStages, (stages) => {
   cursor: pointer;
 }
 
-/* 记录弹窗样式 */
+/* ================= 奶油风记录弹窗 ================= */
 .record-modal {
   max-width: 560px;
   max-height: 90vh;
   overflow-y: auto;
 }
 
+/* 胶囊类型 Tab */
 .record-type-tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
-.type-tab {
-  padding: 0.375rem 0.75rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 2rem;
-  background: transparent;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #64748b;
-}
-
-.type-tab:hover {
-  border-color: #94a3b8;
-}
-
-.type-tab.active {
+.type-capsule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #FAF8F5;
+  border: 2px solid transparent;
+  border-radius: 100px;
+  color: #9CA3AF;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  white-space: nowrap;
 }
 
-.photos-upload-area {
+.type-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+.type-capsule:hover {
+  background: #FFF9F0;
+}
+
+.type-capsule.is-active {
+  background: #F4A261;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+}
+
+/* 奶油风表单容器 */
+.cream-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-item.half {
+  flex: 1;
+}
+
+.form-item.full {
+  width: 100%;
+}
+
+.cream-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.cream-input {
+  width: 100%;
+  background: #FAF8F5;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.3s ease;
+}
+
+.cream-input:focus {
+  outline: none;
+  background: #FFFFFF;
+  border-color: #F4A261;
+  box-shadow: 0 0 0 4px rgba(244, 162, 97, 0.1);
+}
+
+.cream-input::placeholder {
+  color: #9CA3AF;
+}
+
+.cream-input:read-only {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.cream-textarea {
+  width: 100%;
+  background: #FAF8F5;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.cream-textarea:focus {
+  outline: none;
+  background: #FFFFFF;
+  border-color: #F4A261;
+  box-shadow: 0 0 0 4px rgba(244, 162, 97, 0.1);
+}
+
+.cream-textarea::placeholder {
+  color: #9CA3AF;
+}
+
+.cream-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239CA3AF'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+
+/* 带单位的输入框 */
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-unit .cream-input {
+  padding-right: 50px;
+}
+
+.input-with-unit .unit {
+  position: absolute;
+  right: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #F4A261;
+  pointer-events: none;
+}
+
+/* 奶油风照片上传区 */
+.photo-upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.photo-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #F4A261;
+  background: #FFF7ED;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.premium-photo-area {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
-.photo-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: 0.5rem;
+.photo-thumb-new {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
   overflow: hidden;
-  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.photo-thumb img {
+.photo-thumb-new img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.photo-add-btn {
-  width: 72px;
-  height: 72px;
-  border: 2px dashed #cbd5e1;
-  border-radius: 0.5rem;
+.photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.photo-remove:hover {
+  background: #EF4444;
+  transform: scale(1.1);
+}
+
+.photo-upload-trigger {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #FFFBF7 0%, #FFF9F0 100%);
+  border: 2px dashed #F5F0E8;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   cursor: pointer;
-  font-size: 1.25rem;
-  color: #94a3b8;
-  position: relative;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
-.photo-add-btn:hover {
-  border-color: #f97316;
-  color: #f97316;
+.photo-upload-trigger:hover {
+  border-color: #F4A261;
+  background: linear-gradient(145deg, #FFF9F0 0%, #FFF7ED 100%);
 }
 
-.adoption-day-check {
-  margin-top: 0.5rem;
+.photo-upload-trigger span {
+  font-size: 11px;
+  font-weight: 600;
+  color: #F4A261;
 }
 
-.checkbox-label {
+.hidden-input {
+  display: none;
+}
+
+/* 奶油风复选框 */
+.adoption-check {
+  margin-top: 4px;
+}
+
+.cream-checkbox {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
   cursor: pointer;
-  font-size: 0.9375rem;
-  color: #475569;
+  user-select: none;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 1.125rem;
-  height: 1.125rem;
-  accent-color: #f97316;
+.cream-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-mark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #E5E7EB;
+  border-radius: 6px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.cream-checkbox input[type="checkbox"]:checked ~ .checkbox-mark {
+  background: #F4A261;
+  border-color: #F4A261;
+}
+
+.cream-checkbox input[type="checkbox"]:checked ~ .checkbox-mark::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-icon {
+  width: 18px;
+  height: 18px;
+  color: #FBBF24;
+}
+
+.cream-checkbox span:not(.checkbox-mark):not(.checkbox-icon) {
+  font-size: 14px;
+  color: #4B5563;
 }
 
 /* 月份分隔线 */
@@ -2058,5 +2890,168 @@ watch(filteredStages, (stages) => {
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+/* ===== SVG 图标样式 ===== */
+.icon-date,
+.icon-growth,
+.photo-icon,
+.icon-stat,
+.type-icon,
+.badge-icon,
+.check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.icon-date :deep(svg),
+.icon-growth :deep(svg),
+.photo-icon :deep(svg),
+.icon-stat :deep(svg),
+.type-icon :deep(svg),
+.badge-icon :deep(svg),
+.check-icon :deep(svg) {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+.type-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.type-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.badge-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+}
+
+.badge-icon :deep(svg) {
+  width: 12px;
+  height: 12px;
+  fill: var(--color-warning);
+  stroke: var(--color-warning);
+}
+
+.check-icon :deep(svg) {
+  stroke: var(--color-primary);
+}
+
+/* 记录类型图标 */
+.record-type-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+}
+
+.record-type-icon :deep(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+/* 分类图标 */
+.category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+}
+
+.category-icon :deep(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+/* 标题吉祥物 */
+.title-mascot {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.badge-mascot {
+  margin-right: 6px;
+}
+
+/* 空状态图标 */
+.empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+}
+
+.empty-icon :deep(svg) {
+  width: 48px;
+  height: 48px;
+  stroke: var(--color-text-muted);
+}
+
+/* 领养纪念日样式 */
+.adoption-check-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.adoption-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-warning-light);
+  color: #b45309;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* 任务分类样式 */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.category-badge.health { background: #fef2f2; color: #dc2626; }
+.category-badge.feeding { background: #eff6ff; color: #2563eb; }
+.category-badge.training { background: #f3e8ff; color: #8A2BE2; }
+.category-badge.care { background: #faf5ff; color: #9333ea; }
+
+/* 撤销按钮 */
+.uncomplete-btn {
+  background: var(--color-bg-alt);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text-sub);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.uncomplete-btn:hover {
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 </style>

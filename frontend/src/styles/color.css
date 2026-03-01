@@ -4,14 +4,14 @@
  */
 
 :root {
-  /* ========== 品牌主色 - 猫咪橙 ========== */
-  --color-primary: #F6B26B;
-  --color-primary-hover: #F3A14E;
-  --color-primary-press: #E5903A;
-  --color-primary-light: #FFCC9A;
-  --color-primary-soft: #FFF4E5;
-  --color-primary-bg: #FFE8CC;
-  --color-primary-dim: rgba(246, 178, 107, 0.12);
+  /* ========== 品牌主色 - 暖橘 ========== */
+  --color-primary: #F4A261;
+  --color-primary-hover: #E8904A;
+  --color-primary-press: #D87F35;
+  --color-primary-light: #FDF3E9;
+  --color-primary-soft: #FFF8F2;
+  --color-primary-bg: #FEF0E3;
+  --color-primary-dim: rgba(244, 162, 97, 0.12);
 
   /* ========== 辅助色 - 点缀粉 ========== */
   --color-secondary: #F8C8DC;
@@ -36,7 +36,7 @@
   --color-card: #FFFFFF;
 
   /* ========== 文字色 ========== */
-  --color-text-main: #5A4A42;
+  --color-text-main: #5C544E;
   --color-text-secondary: #9B8C7C;
   --color-text-sub: #9A8E88;
   --color-text-light: #BFB5B0;
@@ -62,4 +62,15 @@
   /* ========== 功能色 ========== */
   --color-link: #F6B26B;
   --color-link-hover: #E59F55;
+
+  /* ========== 动作按钮马卡龙专属底色 ========== */
+  --color-action-orange: #FFF0E5;
+  --color-action-blue: #E8F4FD;
+  --color-action-green: #E6F5EC;
+  --color-action-purple: #F4F0FC;
+
+  /* ========== 数据可视化专用辅色 ========== */
+  --color-chart-line: #F6B26B;
+  --color-chart-fill: rgba(246, 178, 107, 0.1);
+  --color-axis-line: #FAF8F5;
 }

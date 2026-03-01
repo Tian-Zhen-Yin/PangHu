@@ -15,11 +15,12 @@ const selectedCat = ref<Cat | null>(null)
 const todayAdvice = ref<ProactiveAdvice | null>(null)
 
 onMounted(async () => {
-  const cats = await catStore.fetchCats()
-  if (cats && cats.length > 0) {
-    selectedCat.value = cats[0]
+  await catStore.fetchCats()
+  const cats = catStore.cats
+  if (cats.length > 0) {
+    selectedCat.value = cats[0]!
     try {
-      todayAdvice.value = await getProactiveAdvice(selectedCat.value.id, ['vaccine', 'weight', 'general'])
+      todayAdvice.value = await getProactiveAdvice(selectedCat.value!.id, ['vaccine', 'weight', 'general'])
     } catch (err) {
       console.error('获取 AI 建议失败:', err)
     }

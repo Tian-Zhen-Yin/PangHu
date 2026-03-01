@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useChatStore } from '../../stores/chat'
@@ -9,6 +9,7 @@ import ChatMessage from '../../components/chat/ChatMessage.vue'
 import ChatInput from '../../components/chat/ChatInput.vue'
 import ConversationList from '../../components/chat/ConversationList.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
+import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
@@ -114,6 +115,34 @@ function handleBackToList() {
 function navigateToGuide(guideId: string) {
   router.push(`/guides/${guideId}`)
 }
+
+// 根据对话上下文生成智能建议
+const contextualSuggestions = computed(() => {
+  const suggestions: string[] = []
+  const catAge = currentCat.value?.ageMonths || 0
+
+  // 根据猫咪年龄提供不同建议
+  if (catAge < 3) {
+    suggestions.push('如何给小猫保暖？', '小猫多久睁眼？', '新生幼猫喂多少奶？')
+  } else if (catAge < 6) {
+    suggestions.push('什么时候可以打疫苗？', '小猫开始吃辅食了吗？', '如何训练用猫砂？')
+  } else if (catAge < 12) {
+    suggestions.push('什么时候绝育？', '如何换牙期护理？', '驱虫多久做一次？')
+  } else {
+    suggestions.push('成年猫吃什么好？', '如何预防肥胖？', '老年猫要注意什么？')
+  }
+
+  // 根据最近对话内容添加建议
+  const lastMessages = chatStore.messages.slice(-3)
+  const hasWeightQuestion = lastMessages.some(m =>
+    m.content.toLowerCase().includes('体重') || m.content.toLowerCase().includes('胖')
+  )
+  if (hasWeightQuestion) {
+    suggestions.push('如何控制体重？', '猫咪肥胖有什么危害？')
+  }
+
+  return suggestions.slice(0, 3)
+})
 </script>
 
 <template>
@@ -149,54 +178,91 @@ function navigateToGuide(guideId: string) {
       <!-- 移动端返回按钮 -->
       <header v-if="isMobile && !showConversationList" class="chat-header mobile">
         <button class="back-button" @click="handleBackToList">
-          <span class="icon">←</span>
+          <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
           <span>对话列表</span>
         </button>
-        <h1 class="chat-title">喵喵医生</h1>
+        <div class="header-mascot-mobile">
+          <MascotCharacter expression="focused" size="small" :animated="false" />
+        </div>
         <div class="spacer"></div>
       </header>
 
-      <!-- 桌面端标题 -->
+      <!-- 桌面端诊室头部 -->
       <header v-if="!isMobile" class="chat-header desktop">
         <div class="header-left">
-          <div class="ai-avatar">
-            <span>🐱</span>
+          <div class="doctor-avatar-wrapper">
+            <MascotCharacter expression="focused" size="small" :animated="false" />
+            <div class="doctor-status-dot"></div>
           </div>
           <div class="header-info">
             <h1 class="chat-title">喵喵医生</h1>
-            <p class="chat-subtitle">您的专业猫咪医疗顾问</p>
+            <div class="status-line">
+              <span class="status-badge">在线咨询中</span>
+              <span class="status-pulse"></span>
+            </div>
           </div>
         </div>
         <div class="header-right">
+          <!-- 宠物上下文胶囊 -->
+          <div v-if="currentCat" class="pet-context-pill">
+            <div class="pet-avatar-placeholder">
+              <MascotCharacter expression="default" size="small" :animated="false" />
+            </div>
+            <span class="pet-info">{{ currentCat.name }} · {{ currentCat.ageFormatted }}</span>
+          </div>
           <CatSelector />
           <button v-if="chatStore.currentConversationId" class="new-chat-btn" @click="handleNewConversation">
-            <span class="icon">+</span>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
             <span>新对话</span>
           </button>
         </div>
       </header>
 
-      <!-- 当前猫咪上下文提示 -->
-      <div v-if="currentCat" class="cat-context-bar">
-        <span class="cat-context-icon">💬</span>
-        <span>正在为「{{ currentCat.name }}」提供咨询</span>
-        <span class="cat-context-meta">{{ currentCat.ageFormatted }} · {{ currentCat.gender === 'male' ? '公猫' : currentCat.gender === 'female' ? '母猫' : '未知' }}{{ currentCat.weight ? ` · ${currentCat.weight}kg` : '' }}</span>
+      <!-- 宠物上下文状态条（移动端） -->
+      <div v-if="currentCat && isMobile" class="pet-context-bar">
+        <div class="pet-avatar-placeholder small">
+          <MascotCharacter expression="default" size="small" :animated="false" />
+        </div>
+        <div class="pet-context-info">
+          <span class="pet-name">{{ currentCat.name }}</span>
+          <span class="pet-meta">{{ currentCat.ageFormatted }} · {{ currentCat.weight ? `${currentCat.weight}kg` : '' }}</span>
+        </div>
+        <div class="consultation-status">
+          <span class="status-dot"></span>
+          <span class="status-text">咨询中</span>
+        </div>
       </div>
 
       <!-- 消息列表 -->
       <div ref="messagesContainer" class="messages-container">
         <!-- 空状态 -->
         <div v-if="!chatStore.currentConversation && chatStore.messages.length === 0" class="empty-state">
-          <div class="empty-icon">🐱</div>
-          <h2>你好，我是喵喵医生</h2>
-          <p>我是您的专业猫咪医疗顾问和养护专家</p>
+          <div class="empty-mascot-wrapper">
+            <MascotCharacter
+              expression="focused"
+              size="large"
+              :animated="false"
+            />
+            <div class="doctor-badge">
+              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              专业顾问
+            </div>
+          </div>
+          <h2 class="empty-title">你好，我是喵喵医生</h2>
+          <p class="empty-description">我是{{ currentCat?.name || '小猫咪' }}的专属健康顾问</p>
           <div class="suggested-questions">
             <p class="suggested-title">您可以问我：</p>
-            <div class="question-list">
+            <div class="question-chips">
               <button
                 v-for="question in suggestedQuestions"
                 :key="question"
-                class="question-button"
+                class="question-chip"
                 @click="handleSuggestedQuestion(question)"
               >
                 {{ question }}
@@ -216,22 +282,42 @@ function navigateToGuide(guideId: string) {
           />
 
           <!-- 流式输出指示器 -->
-          <div v-if="chatStore.isStreaming" class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
+          <div v-if="chatStore.isStreaming" class="thinking-indicator">
+            <MascotCharacter expression="yawning" size="small" :animated="false" class="thinking-mascot" />
+            <div class="thinking-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="thinking-text">胖虎正在思考...</span>
           </div>
         </template>
       </div>
 
       <!-- 输入区域 -->
       <div class="input-area">
+        <!-- 智能建议芯片 -->
+        <div v-if="chatStore.currentConversation && chatStore.messages.length > 0 && !chatStore.isStreaming" class="smart-suggestions">
+          <button
+            v-for="(suggestion, index) in contextualSuggestions"
+            :key="index"
+            class="suggestion-chip"
+            @click="handleSend(suggestion)"
+          >
+            {{ suggestion }}
+          </button>
+        </div>
         <ChatInput
           :disabled="chatStore.isStreaming"
-          :placeholder="chatStore.currentConversation ? '继续对话...' : '请输入您的问题...'"
+          :placeholder="chatStore.currentConversation ? `继续聊聊关于${currentCat?.name || '小猫咪'}的健康...` : '请输入您的问题...'"
           @send="handleSend"
         />
-        <p class="disclaimer">喵喵医生的建议仅供参考，严重问题请及时就医</p>
+        <p class="disclaimer">
+          <svg class="disclaimer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          喵喵医生的建议仅供参考，严重问题请及时就医
+        </p>
       </div>
     </div>
   </div>
@@ -241,39 +327,142 @@ function navigateToGuide(guideId: string) {
 .ai-chat-page {
   display: flex;
   height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #FAF8F5;
 }
 
+/* ================= 诊室头部 ================= */
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.cat-context-bar {
+/* 医生头像包装器 */
+.doctor-avatar-wrapper {
+  position: relative;
+}
+
+.doctor-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #22C55E;
+  border: 2px solid #FFFFFF;
+  border-radius: 50%;
+}
+
+/* 宠物上下文胶囊 */
+.pet-context-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  background: #FFFFFF;
+  border: 1px solid #F5F0E8;
+  border-radius: 100px;
+}
+
+.pet-avatar-placeholder {
+  width: 28px;
+  height: 28px;
+}
+
+.pet-avatar-placeholder.small {
+  width: 24px;
+  height: 24px;
+}
+
+.pet-info {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* 宠物上下文条（移动端） */
+.pet-context-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #FFFBF7 0%, #FFF9F0 100%);
+  border-bottom: 1px solid #F5F0E8;
+}
+
+.pet-context-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pet-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pet-meta {
+  font-size: 12px;
+  color: #9CA3AF;
+}
+
+.consultation-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #DCFCE7;
+  border-radius: 100px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: #22C55E;
+  border-radius: 50%;
+}
+
+.status-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #22C55E;
+}
+
+/* 状态行 */
+.status-line {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
-  background: #fff8f5;
-  border-bottom: 1px solid #ffe0d0;
-  font-size: 13px;
-  color: #ff6b35;
 }
 
-.cat-context-icon {
-  font-size: 14px;
+.status-badge {
+  padding: 4px 10px;
+  background: #DCFCE7;
+  color: #22C55E;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 100px;
 }
 
-.cat-context-meta {
-  color: #999;
-  font-size: 12px;
+.status-pulse {
+  width: 8px;
+  height: 8px;
+  background: #22C55E;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 .conversation-list-panel {
   width: 280px;
   background-color: #fff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid #E5E7EB;
   flex-shrink: 0;
 }
 
@@ -297,81 +486,80 @@ function navigateToGuide(guideId: string) {
 .chat-header {
   padding: 16px 24px;
   background-color: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #E5E7EB;
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
 .chat-header.mobile {
-  height: 60px;
+  height: 56px;
   padding: 0 16px;
 }
 
 .chat-header.desktop {
-  height: 70px;
+  height: 72px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
-.ai-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
+.header-mascot-mobile {
+  width: 40px;
+  height: 40px;
 }
 
 .chat-title {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.chat-subtitle {
-  font-size: 13px;
-  color: #909399;
+  color: #374151;
   margin: 0;
 }
 
 .new-chat-btn {
-  margin-left: auto;
   padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid #dcdfe6;
+  border-radius: 100px;
+  border: 1px solid #E5E7EB;
   background-color: #fff;
-  color: #606266;
-  font-size: 14px;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .new-chat-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: #F4A261;
+  color: #F4A261;
+  background: #FFF7ED;
+}
+
+.new-chat-btn .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .back-button {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 0;
+  padding: 0;
   border: none;
   background: none;
-  color: #606266;
+  color: #374151;
   font-size: 14px;
   cursor: pointer;
+}
+
+.back-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .spacer {
@@ -384,116 +572,204 @@ function navigateToGuide(guideId: string) {
   padding: 20px 0;
 }
 
+/* ================= 空状态 ================= */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 40px 20px;
+  padding: 40px 24px;
   text-align: center;
 }
 
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+.empty-mascot-wrapper {
+  position: relative;
+  margin-bottom: 20px;
 }
 
-.empty-state h2 {
-  font-size: 24px;
-  color: #303133;
+.doctor-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #F4A261;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 100px;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.3);
+}
+
+.badge-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
   margin: 0 0 8px 0;
 }
 
-.empty-state > p {
+.empty-description {
   font-size: 14px;
-  color: #909399;
-  margin: 0 0 32px 0;
+  color: #9CA3AF;
+  margin: 0 0 24px 0;
 }
 
 .suggested-questions {
-  max-width: 600px;
+  max-width: 500px;
   width: 100%;
 }
 
 .suggested-title {
-  font-size: 14px;
-  color: #606266;
+  font-size: 13px;
+  color: #6B7280;
   margin: 0 0 16px 0;
 }
 
-.question-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+.question-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
 }
 
-.question-button {
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid #dcdfe6;
-  background-color: #fff;
-  color: #606266;
+.question-chip {
+  padding: 10px 18px;
+  border-radius: 100px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  color: #374151;
   font-size: 14px;
   cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.question-button:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background-color: #f0f4ff;
+.question-chip:hover {
+  border-color: #F4A261;
+  background: #FFF7ED;
+  color: #F4A261;
+  transform: translateY(-2px);
 }
 
-.typing-indicator {
+/* ================= 思考指示器 ================= */
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+}
+
+.thinking-mascot {
+  width: 28px;
+  height: 28px;
+}
+
+.thinking-dots {
   display: flex;
   gap: 4px;
-  padding: 16px 24px;
-  align-items: center;
 }
 
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
+.thinking-dots span {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background-color: #dcdfe6;
-  animation: typing 1.4s infinite;
+  background: #F4A261;
+  animation: bounce 1.4s infinite;
 }
 
-.typing-indicator span:nth-child(2) {
+.thinking-dots span:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.typing-indicator span:nth-child(3) {
+.thinking-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
-@keyframes typing {
+@keyframes bounce {
   0%, 60%, 100% {
     transform: translateY(0);
   }
   30% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
+.thinking-text {
+  font-size: 13px;
+  color: #9CA3AF;
+}
+
+/* ================= 输入区域 ================= */
 .input-area {
   background-color: #fff;
-  border-top: 1px solid #e4e7ed;
-  padding: 16px 24px;
+  border-top: 1px solid #E5E7EB;
+  padding: 16px 24px 20px;
+}
+
+/* 智能建议芯片 */
+.smart-suggestions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 12px 0;
+  scrollbar-width: none;
+}
+
+.smart-suggestions::-webkit-scrollbar {
+  display: none;
+}
+
+.suggestion-chip {
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid #F5F0E8;
+  background: #FFFBF7;
+  color: #F4A261;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.suggestion-chip:hover {
+  background: #FFF7ED;
+  border-color: #F4A261;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.15);
 }
 
 .disclaimer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 12px;
-  color: #c0c4cc;
+  color: #9CA3AF;
   text-align: center;
-  margin: 8px 0 0 0;
+  margin: 12px 0 0 0;
+}
+
+.disclaimer-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 767px) {
-  .question-list {
-    grid-template-columns: 1fr;
+  .question-chips {
+    flex-direction: column;
+  }
+
+  .question-chip {
+    width: 100%;
+    text-align: center;
   }
 
   .messages-container {
@@ -501,7 +777,7 @@ function navigateToGuide(guideId: string) {
   }
 
   .input-area {
-    padding: 12px 16px;
+    padding: 12px 16px 16px;
   }
 }
 </style>
