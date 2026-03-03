@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多猫对比功能 - 截图指南</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .screenshot-item {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .screenshot-item h3 {
+            color: #f97316;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .screenshot-item p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .screenshot-item .url {
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #333;
+            display: inline-block;
+            margin: 8px 0;
+        }
+
+        .screenshot-item .steps {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .screenshot-item .steps li {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        .button {
+            display: inline-block;
+            background: #f97316;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .button:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .button.secondary {
+            background: #666;
+        }
+
+        .button.secondary:hover {
+            background: #555;
+        }
+
+        .tips {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 24px;
+        }
+
+        .tips h4 {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .tips p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .progress {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #f97316, #ea580c);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .checkbox {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 多猫对比功能截图指南</h1>
+        <p class="subtitle">哈吉咪养成计划 V3.2 - 产品手册配图</p>
+
+        <div class="progress">
+            <div class="progress-bar" id="progress">0/5 完成</div>
+        </div>
+
+        <div class="screenshot-item">
+            <h3>1️⃣ 入口页面截图</h3>
+            <p>截取"我的猫咪"页面，展示"多猫对比"按钮</p>
+            <div class="url">http://localhost:5173/my-cats</div>
+            <a href="http://localhost:5173/my-cats" target="_blank" class="button">打开页面</a>
+            <ul class="steps">
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 确保能看到"📊 多猫对比"按钮</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 截取整个页面或顶部区域</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 保存为 <code>docs/images/multi-cat-entry.png</code></li>
+            </ul>
+        </div>
+
+        <div class="screenshot-item">
+            <h3>2️⃣ 猫咪选择器截图</h3>
+            <p>截取多猫对比页面的选择器区域</p>
+            <div class="url">http://localhost:5173/my-cats/compare</div>
+            <a href="http://localhost:5173/my-cats/compare" target="_blank" class="button">打开页面</a>
+            <ul class="steps">
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 显示猫咪列表和复选框</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 显示"已选 X / 5 只"提示</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 保存为 <code>docs/images/cat-selector.png</code></li>
+            </ul>
+        </div>
+
+        <div class="screenshot-item">
+            <h3>3️⃣ 体重趋势对比截图</h3>
+            <p>截取多猫体重趋势图表</p>
+            <div class="url">http://localhost:5173/my-cats/compare</div>
+            <a href="http://localhost:5173/my-cats/compare" target="_blank" class="button">打开页面</a>
+            <ul class="steps">
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 选择 2-3 只猫咪</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 点击"开始对比"按钮</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 截取体重趋势图表（不同颜色的折线）</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 保存为 <code>docs/images/weight-trend.png</code></li>
+            </ul>
+        </div>
+
+        <div class="screenshot-item">
+            <h3>4️⃣ 健康状态对比截图</h3>
+            <p>截取健康状态对比卡片</p>
+            <div class="url">http://localhost:5173/my-cats/compare</div>
+            <a href="http://localhost:5173/my-cats/compare" target="_blank" class="button">打开页面</a>
+            <ul class="steps">
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 点击"健康状态"选项卡</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 截取健康状态卡片网格</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 保存为 <code>docs/images/health-status.png</code></li>
+            </ul>
+        </div>
+
+        <div class="screenshot-item">
+            <h3>5️⃣ 基本信息对比截图</h3>
+            <p>截取基本信息对比表格</p>
+            <div class="url">http://localhost:5173/my-cats/compare</div>
+            <a href="http://localhost:5173/my-cats/compare" target="_blank" class="button">打开页面</a>
+            <ul class="steps">
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 点击"基本信息"选项卡</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 截取对比表格</li>
+                <li><input type="checkbox" class="checkbox" onchange="updateProgress()"> 保存为 <code>docs/images/basic-info.png</code></li>
+            </ul>
+        </div>
+
+        <div class="tips">
+            <h4>💡 截图技巧</h4>
+            <p><strong>Windows 用户：</strong>按 <strong>Win + Shift + S</strong> 打开截图工具</p>
+            <p><strong>Chrome/Edge 用户：</strong>按 <strong>F12</strong> → <strong>Ctrl + Shift + P</strong> → 输入 "screenshot"</p>
+            <p><strong>全页截图：</strong>使用浏览器扩展如 "GoFullPage" 或 "Full Page Screen Capture"</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <button class="button" onclick="window.open('http://localhost:5173/my-cats/compare', '_blank')" style="background: #10b981;">
+                🚀 打开多猫对比页面
+            </button>
+            <button class="button secondary" onclick="alert('截图完成后，请将图片保存到 docs/images/ 目录，然后运行: node update-docs-with-images.js')">
+                ℹ️ 截图完成后
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checkbox');
+            const checked = document.querySelectorAll('.checkbox:checked').length;
+            const total = 15; // 总共15个复选框
+            const percentage = Math.round((checked / total) * 100);
+
+            const progressBar = document.getElementById('progress');
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = `${checked}/${total} 完成`;
+
+            if (checked === total) {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                progressBar.textContent = '✅ 全部完成！';
+            }
+        }
+    </script>
+</body>
+</html>
