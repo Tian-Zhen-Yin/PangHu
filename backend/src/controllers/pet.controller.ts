@@ -27,7 +27,12 @@ export async function getPetRecords(req: Request, res: Response) {
       orderBy: { recordDate: 'desc' }
     })
 
-    res.json(successResponse(records.map(r => ({ ...r, photos: JSON.parse(r.photos) }))))
+    // 处理浮点数精度，保留两位小数
+    res.json(successResponse(records.map(r => ({
+      ...r,
+      photos: r.photos ? JSON.parse(r.photos) : [],
+      weight: r.weight !== null ? parseFloat(r.weight.toFixed(2)) : r.weight
+    }))))
   } catch (error) {
     res.status(500).json({ success: false, data: null, message: '获取记录失败' })
   }
@@ -54,7 +59,13 @@ export async function getPetRecordById(req: Request, res: Response) {
       return res.status(404).json({ success: false, data: null, message: '记录不存在' })
     }
 
-    res.json(successResponse(record))
+    // 处理浮点数精度，保留两位小数
+    const processedRecord = {
+      ...record,
+      photos: record.photos ? JSON.parse(record.photos) : [],
+      weight: record.weight !== null ? parseFloat(record.weight.toFixed(2)) : record.weight
+    }
+    res.json(successResponse(processedRecord, '获取记录详情成功'))
   } catch (error) {
     res.status(500).json({ success: false, data: null, message: '获取记录详情失败' })
   }
@@ -75,7 +86,7 @@ export async function createPetRecord(req: Request, res: Response) {
 
     const photosArr: string[] = photos ? JSON.parse(photos) : (photoUrl ? [photoUrl] : [])
 
-    if (photosArr.length === 0 || !ageWeeks || weight === undefined) {
+    if (!ageWeeks || weight === undefined) {
       return res.status(400).json({ success: false, data: null, message: '缺少必要参数' })
     }
 
@@ -97,7 +108,13 @@ export async function createPetRecord(req: Request, res: Response) {
       }
     })
 
-    res.json({ success: true, data: { ...record, photos: JSON.parse(record.photos) }, message: '记录创建成功' })
+    // 处理浮点数精度，保留两位小数
+    const processedRecord = {
+      ...record,
+      photos: record.photos ? JSON.parse(record.photos) : [],
+      weight: parseFloat(record.weight.toFixed(2))
+    }
+    res.json({ success: true, data: processedRecord, message: '记录创建成功' })
   } catch (error) {
     console.error('创建记录失败:', error)
     res.status(500).json({ success: false, data: null, message: '创建记录失败' })
@@ -146,7 +163,13 @@ export async function updatePetRecord(req: Request, res: Response) {
       }
     })
 
-    res.json({ success: true, data: { ...updated, photos: JSON.parse(updated.photos) }, message: '记录更新成功' })
+    // 处理浮点数精度，保留两位小数
+    const processedRecord = {
+      ...updated,
+      photos: updated.photos ? JSON.parse(updated.photos) : [],
+      weight: parseFloat(updated.weight.toFixed(2))
+    }
+    res.json({ success: true, data: processedRecord, message: '记录更新成功' })
   } catch (error) {
     console.error('更新记录失败:', error)
     res.status(500).json({ success: false, data: null, message: '更新记录失败' })
