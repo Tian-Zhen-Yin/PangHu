@@ -30,8 +30,17 @@ export interface DashboardRecentRecord {
   id: string
   catId: string
   catName: string
-  type: string
+  type: string              // 视觉类型（用于 CSS 样式）
+  originalType?: string     // 原始 API 类型
   title: string
   date: string
   icon: string
+  weight?: number           // 体重值
+  weightChange?: {          // 体重变化
+    value: number
+    direction: 'up' | 'down' | 'stable'
+  }
+  notes?: string            // 日记备注
+  photos?: string[]         // 照片数组
+  isAdoptionDay?: boolean   // 是否为领养日/纪念日
 }

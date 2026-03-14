@@ -56,6 +56,7 @@ export interface CatComparisonData {
     id: string
     name: string
     avatar: string | null
+    avatarData: string | null
     breed: string | null
     ageFormatted: string
     gender: string

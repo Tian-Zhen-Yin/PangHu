@@ -1,76 +1,68 @@
 /**
- * 色彩系统 - 品牌视觉手册 v1.0
- * 奶油可爱风格配色
+ * 色彩系统 - 萌宠治愈系 v2.0
+ * 核心逻辑：提升主色的元气感，让背景带有呼吸感（暖灰），用透明度代替生硬边框
  */
 
 :root {
-  /* ========== 品牌主色 - 暖橘 ========== */
-  --color-primary: #F4A261;
-  --color-primary-hover: #E8904A;
-  --color-primary-press: #D87F35;
-  --color-primary-light: #FDF3E9;
-  --color-primary-soft: #FFF8F2;
-  --color-primary-bg: #FEF0E3;
-  --color-primary-dim: rgba(244, 162, 97, 0.12);
+  /* ========== 🍊 品牌主色 (Brand Colors) - 珊瑚橘系列 ========== */
+  --color-primary: #FF8A4C;
+  --color-primary-hover: #FF9F6B;
+  --color-primary-active: #E6783F;
+  --color-primary-light: #FFF4EE;
+  --color-primary-soft: rgba(255, 138, 76, 0.08);
+  --color-primary-gradient: linear-gradient(135deg, #FFA065 0%, #FF7A3E 100%);
 
-  /* ========== 辅助色 - 点缀粉 ========== */
-  --color-secondary: #F8C8DC;
-  --color-secondary-light: #FFD6E8;
-  --color-secondary-dark: #E8B0CC;
-  --color-secondary-soft: #FFF0F6;
-  --color-secondary-dim: rgba(248, 200, 220, 0.15);
+  /* ========== 🍃 状态色 (Status Colors) - 薄荷马卡龙系列 ========== */
+  --color-success: #10B981;
+  --color-success-bg: #E8F8F2;
+  --color-success-light: #D1FAE5;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-light: #FDE68A;
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEE2E2;
+  --color-danger-light: #FECACA;
 
-  /* ========== 强调色 - 健康绿 ========== */
-  --color-accent: #9ED5B8;
-  --color-accent-light: #B8E5CD;
-  --color-accent-dark: #7BC99F;
-  --color-accent-soft: #EAF7F0;
+  /* ========== 💙 功能色 - 辅助蓝/粉 ========== */
+  --color-info: #6366F1;
+  --color-info-bg: #EEF2FF;
+  --color-info-light: #E0E7FF;
 
-  /* ========== 背景色 - 奶油风 ========== */
-  --color-bg-page: #FAF8F5;
-  --color-bg: #FAF8F5;
-  --color-bg-alt: #F5F2ED;
-  --color-bg-muted: #EFECE7;
-  --color-bg-soft: #F7F3EE;
+  /* ========== ☁️ 背景与中性色 (Neutrals & Backgrounds) - 暖灰系列 ========== */
+  --color-bg-page: #F9F8F6;
   --color-bg-card: #FFFFFF;
-  --color-card: #FFFFFF;
-
-  /* ========== 文字色 ========== */
-  --color-text-main: #5C544E;
-  --color-text-secondary: #9B8C7C;
-  --color-text-sub: #9A8E88;
-  --color-text-light: #BFB5B0;
-  --color-text-muted: #DAD4D0;
-  --color-text-white: #FFFFFF;
+  --color-bg-block: #F7F5F3;
+  --color-bg-muted: #EFECE7;
+  --color-bg-hover: #F5F2ED;
 
   /* ========== 边框 ========== */
-  --color-border-light: #F0ECE6;
+  --color-border-light: #EFEBE9;
   --color-border: #EBE7E3;
   --color-border-normal: #E6DFD7;
   --color-divider: #E5E1DD;
 
-  /* ========== 状态色 ========== */
-  --color-success: #9ED5B8;
-  --color-success-soft: #EAF7F0;
-  --color-success-light: #B8E5CD;
-  --color-warning: #F9C97C;
-  --color-warning-light: #FFCC9A;
-  --color-error: #F28B82;
-  --color-error-light: #FFD6E8;
-  --color-info: #B8D4FF;
+  /* ========== ✒️ 文本层级 (Text Colors) ========== */
+  --color-text-primary: #2D2926;
+  --color-text-regular: #666666;
+  --color-text-secondary: #999999;
+  --color-text-light: #BFB5B0;
+  --color-text-white: #FFFFFF;
 
-  /* ========== 功能色 ========== */
-  --color-link: #F6B26B;
-  --color-link-hover: #E59F55;
+  /* ========== 🌟 阴影 (Shadows) - 营造悬浮透气感 ========== */
+  --shadow-card-normal: 0 4px 16px rgba(0, 0, 0, 0.03);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-primary-btn: 0 6px 16px rgba(255, 138, 76, 0.25);
+  --shadow-input: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   /* ========== 动作按钮马卡龙专属底色 ========== */
-  --color-action-orange: #FFF0E5;
-  --color-action-blue: #E8F4FD;
-  --color-action-green: #E6F5EC;
-  --color-action-purple: #F4F0FC;
+  --color-action-orange: #FFF7ED;
+  --color-action-blue: #EFF6FF;
+  --color-action-green: #F0FDF4;
+  --color-action-purple: #FAF5FF;
+  --color-action-pink: #FDF2F8;
 
   /* ========== 数据可视化专用辅色 ========== */
-  --color-chart-line: #F6B26B;
-  --color-chart-fill: rgba(246, 178, 107, 0.1);
-  --color-axis-line: #FAF8F5;
+  --color-chart-weight-up: #FF8A4C;
+  --color-chart-weight-down: #10B981;
+  --color-chart-fill: rgba(255, 138, 76, 0.1);
 }

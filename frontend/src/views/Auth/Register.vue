@@ -64,7 +64,7 @@ function goToLogin() {
   <div class="auth-page">
     <div class="auth-container">
       <div class="auth-header">
-        <h1 class="auth-title">🐱 哈吉咪养成计划</h1>
+        <h1 class="auth-title">胖虎 · 哈吉咪养成计划</h1>
         <p class="auth-subtitle">创建您的账号</p>
       </div>
 

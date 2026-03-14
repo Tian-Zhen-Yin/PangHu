@@ -77,10 +77,14 @@ export async function getCatsByUser(userId: string) {
     const ageMonths = calculateAgeInMonths(cat.birthDate)
     return {
       ...cat,
+      weight: cat.weight !== null ? parseFloat(cat.weight.toFixed(2)) : cat.weight,
       ageMonths,
       ageFormatted: cat.birthDateEstimated ? `约${formatAge(ageMonths)}` : formatAge(ageMonths),
       lastVaccine: cat.vaccines[0] || null,
-      lastRecord: cat.records[0] || null,
+      lastRecord: cat.records[0] ? {
+        ...cat.records[0],
+        weight: cat.records[0].weight !== null ? parseFloat(cat.records[0].weight.toFixed(2)) : cat.records[0].weight
+      } : null,
       timelineTitle: getTimelineTitle(cat.adoptStatus as CatAdoptStatus),
     }
   })
@@ -105,9 +109,14 @@ export async function getCatById(catId: string, userId: string) {
   const ageMonths = calculateAgeInMonths(cat.birthDate)
   return {
     ...cat,
+    weight: cat.weight !== null ? parseFloat(cat.weight.toFixed(2)) : cat.weight,
     ageMonths,
     ageFormatted: cat.birthDateEstimated ? `约${formatAge(ageMonths)}` : formatAge(ageMonths),
     timelineTitle: getTimelineTitle(cat.adoptStatus as CatAdoptStatus),
+    records: cat.records.map(r => ({
+      ...r,
+      weight: r.weight !== null ? parseFloat(r.weight.toFixed(2)) : r.weight
+    }))
   }
 }
 
@@ -236,7 +245,7 @@ export async function getCatContext(catId: string, userId: string) {
     gender: cat.gender,
     ageMonths,
     ageFormatted: formatAge(ageMonths),
-    weight: cat.weight,
+    weight: cat.weight !== null ? parseFloat(cat.weight.toFixed(2)) : cat.weight,
     isNeutered: cat.isNeutered,
     allergies: cat.allergies,
     diseases: cat.diseases,
@@ -247,7 +256,7 @@ export async function getCatContext(catId: string, userId: string) {
     })),
     lastRecord: cat.records[0] ? {
       date: cat.records[0].recordDate.toISOString().split('T')[0],
-      weight: cat.records[0].weight,
+      weight: cat.records[0].weight !== null ? parseFloat(cat.records[0].weight.toFixed(2)) : cat.records[0].weight,
       notes: cat.records[0].notes
     } : null
   }
@@ -273,12 +282,12 @@ export async function getCatWeightHistory(catId: string, userId: string) {
 
   console.log('[getCatWeightHistory] Found', allRecords.length, 'total records for cat')
 
-  // 过滤出有体重的记录
+  // 过滤出有体重的记录，并处理浮点数精度
   const records = allRecords
     .filter(r => r.weight !== null && r.weight !== undefined)
     .map(record => ({
       date: record.recordDate.toISOString().split('T')[0],
-      weight: record.weight!,
+      weight: parseFloat(record.weight!.toFixed(2)),  // 保留两位小数
       notes: record.notes
     }))
 
@@ -314,5 +323,17 @@ export async function updateCatAvatar(catId: string, userId: string, avatarUrl: 
   return prisma.cat.update({
     where: { id: catId },
     data: { avatar: avatarUrl }
+  })
+}
+
+/**
+ * 更新猫咪头像（base64 格式）
+ */
+export async function updateCatAvatarData(catId: string, userId: string, avatarData: string) {
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
+  if (!cat) return null
+  return prisma.cat.update({
+    where: { id: catId },
+    data: { avatarData: avatarData }
   })
 }

@@ -2,16 +2,22 @@
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { computed } from 'vue'
+import {
+  HomeFilled,
+  TrendCharts,
+  Reading,
+  ChatDotRound
+} from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
 
 const navItems = computed(() => [
-  { name: '首页', path: '/', icon: '🏠' },
-  { name: '成长记录', path: '/timeline', icon: '📖' },
-  { name: '养猫指南', path: '/guides', icon: '📚' },
-  { name: '喵星小顾问', path: '/ai-chat', icon: '🤖', requiresAuth: true },
-  { name: '我的猫咪', path: '/my-cats', icon: '🐱', requiresAuth: true }
+  { name: '首页', path: '/', icon: '/src/assets/icon/首页.png', isImage: true },
+  { name: '成长记录', path: '/timeline', icon: '/src/assets/icon/成长记录.png', isImage: true },
+  { name: '养猫指南', path: '/guides', icon: '/src/assets/icon/养猫指南.png', isImage: true },
+  { name: '喵星小顾问', path: '/ai-chat', icon: '/src/assets/icon/喵星顾问.png', isImage: true, requiresAuth: true },
+  { name: '我的猫咪', path: '/my-cats', icon: '/src/assets/mascot/sleepy.png', isImage: true, requiresAuth: true }
 ].filter(item => !item.requiresAuth || authStore.isAuthenticated))
 
 function isActive(path: string): boolean {
@@ -29,7 +35,8 @@ function isActive(path: string): boolean {
         class="nav-item"
         :class="{ 'nav-item--active': isActive(item.path) }"
       >
-        <span class="nav-icon">{{ item.icon }}</span>
+        <img v-if="item.isImage" :src="item.icon" class="nav-icon nav-icon--image" />
+        <component v-else :is="item.icon" class="nav-icon" />
         <span class="nav-text">{{ item.name }}</span>
       </RouterLink>
     </nav>
@@ -80,13 +87,17 @@ function isActive(path: string): boolean {
 
 /* 统一图标大小和过渡 */
 .nav-icon {
-  font-size: 18px;
-  width: 20px;
-  height: 20px;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.nav-icon--image {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 /* 激活时图标微放大 */

@@ -82,7 +82,7 @@ const priorityColors = {
   },
   high: {
     border: '#FECACA',
-    badge: #FEF2F2',
+    badge: '#FEF2F2',
     text: '#EF4444'
   }
 }

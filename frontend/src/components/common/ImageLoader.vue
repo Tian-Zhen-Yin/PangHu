@@ -85,7 +85,7 @@ const imageStyle = computed(() => {
 
     <!-- 错误占位符 -->
     <div v-if="error" class="image-error">
-      <span class="error-icon">🐱</span>
+      <span class="error-icon">❌</span>
       <span class="error-text">图片加载失败</span>
     </div>
 

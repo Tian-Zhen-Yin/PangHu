@@ -25,7 +25,8 @@ const testCats = [
     weight: 2.8,
     color: '蓝色',
     features: '圆脸，大眼睛，性格温顺',
-    birthDateEstimated: false
+    birthDateEstimated: false,
+    avatar: 'cats/奶糖.png'  // 使用文件路径
   },
   // 领养（幼年）- 领养的幼年猫咪
   {
@@ -38,7 +39,8 @@ const testCats = [
     weight: 3.5,
     color: '橘白相间',
     features: '活泼好动，喜欢玩玩具',
-    birthDateEstimated: false
+    birthDateEstimated: false,
+    avatar: 'cats/咪咪.png'  // 使用文件路径
   },
   // 领养（成年）- 领养的成年猫咪
   {
@@ -53,7 +55,8 @@ const testCats = [
     neuteredDate: new Date('2023-03-10'),
     color: '重点色',
     features: '长毛，体型大，喜欢粘人',
-    birthDateEstimated: false
+    birthDateEstimated: false,
+    avatar: 'cats/小白.png'  // 使用文件路径
   },
   // 年龄不详 - 不知道年龄的猫咪
   {
@@ -67,7 +70,8 @@ const testCats = [
     isNeutered: true,
     color: '虎斑纹',
     features: '警惕性高，独立性强',
-    birthDateEstimated: true // 出生日期是估算的
+    birthDateEstimated: true, // 出生日期是估算的
+    avatar: 'cats/花花.png'  // 使用文件路径
   }
 ]
 

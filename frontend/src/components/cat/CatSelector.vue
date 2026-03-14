@@ -3,7 +3,7 @@
     <div class="current-cat" @click="toggleDropdown">
       <div class="cat-avatar">
         <img v-if="currentCat?.avatar" :src="currentCat.avatar" :alt="currentCat.name" />
-        <span v-else class="avatar-placeholder">🐱</span>
+        <span v-else class="avatar-placeholder">{{ currentCat?.name?.charAt(0) || '?' }}</span>
       </div>
       <div class="cat-info" v-if="currentCat">
         <span class="cat-name">{{ currentCat.name }}</span>
@@ -23,7 +23,7 @@
       >
         <div class="cat-avatar small">
           <img v-if="cat.avatar" :src="cat.avatar" :alt="cat.name" />
-          <span v-else class="avatar-placeholder">🐱</span>
+          <span v-else class="avatar-placeholder">{{ cat.name?.charAt(0) || '?' }}</span>
         </div>
         <div class="cat-info">
           <div class="cat-name">{{ cat.name }}</div>

@@ -139,3 +139,34 @@ export async function uploadCatAvatarHandler(req: Request, res: Response) {
     res.status(500).json(errorResponse(error.message || '头像上传失败'))
   }
 }
+
+/**
+ * 上传 base64 格式的头像到数据库
+ */
+export async function uploadCatAvatarBase64Handler(req: Request, res: Response) {
+  try {
+    const userId = (req as any).user.userId
+    const id = req.params.id as string
+    const { avatarData } = req.body
+
+    if (!avatarData) {
+      return res.status(400).json(errorResponse('请提供头像数据'))
+    }
+
+    // 验证 base64 格式
+    if (!avatarData.startsWith('data:image/')) {
+      return res.status(400).json(errorResponse('头像数据格式错误'))
+    }
+
+    const { updateCatAvatarData } = await import('../services/cat.service')
+    const cat = await updateCatAvatarData(id, userId, avatarData)
+
+    if (!cat) {
+      return res.status(404).json(errorResponse('猫咪不存在'))
+    }
+
+    res.json(successResponse({ avatarData: cat.avatarData }, '头像上传成功'))
+  } catch (error: any) {
+    res.status(500).json(errorResponse(error.message || '头像上传失败'))
+  }
+}

@@ -20,7 +20,7 @@
             <th v-for="cat in cats" :key="cat.cat.id" class="cat-column">
               <div class="cat-header">
                 <div class="cat-avatar">
-                  <img v-if="cat.cat.avatar" :src="getAvatarUrl(cat.cat)" :alt="cat.cat.name" />
+                  <img v-if="cat.cat.avatarData || cat.cat.avatar" :src="getAvatarUrl(cat.cat)" :alt="cat.cat.name" />
                   <span v-else class="avatar-placeholder">{{ cat.cat.name?.charAt(0) || '?' }}</span>
                 </div>
                 <span class="cat-name">{{ cat.cat.name }}</span>
@@ -86,10 +86,16 @@ withDefaults(defineProps<Props>(), {
 })
 
 function getAvatarUrl(cat: Cat): string {
+  // 优先使用 base64 头像数据
+  if (cat.avatarData) {
+    return cat.avatarData
+  }
+  // 其次使用文件路径
   if (!cat.avatar) return ''
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
   if (cat.avatar.startsWith('http')) return cat.avatar
-  return `${baseURL}${cat.avatar}`
+  // 移除 /api 前缀，添加斜杠
+  const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace('/api', '')
+  return `${baseURL}/${cat.avatar}`
 }
 
 function getGenderText(gender: string): string {

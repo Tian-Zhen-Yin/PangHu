@@ -60,6 +60,14 @@ const debouncedSearch = debounce((query: string) => {
   })
 }, 500)
 
+// 点击搜索按钮
+function handleSearch() {
+  const query = searchInput.value.trim()
+  if (query) {
+    debouncedSearch(query)
+  }
+}
+
 // 监听搜索输入
 watch(searchInput, (newVal) => {
   if (newVal.trim()) {
@@ -128,13 +136,19 @@ const recommendedGuides = computed(() => {
 
 // 初始化数据
 onMounted(async () => {
-  console.log('[Guides] 初始化指南页面')
+  console.log('[Guides] ===== 开始初始化 =====')
+  console.log('[Guides] 步骤1: 获取所有指南')
   await guideStore.initAllGuides()
-  console.log('[Guides] 所有指南已加载:', guideStore.allGuides.length)
-  guideStore.fetchCategories()
-  console.log('[Guides] 分类已加载:', guideStore.categories.length)
-  guideStore.fetchGuides()
-  console.log('[Guides] 当前显示指南:', guideStore.displayGuides.length)
+  console.log('[Guides] initAllGuides 完成, allGuides:', guideStore.allGuides.length)
+
+  console.log('[Guides] 步骤2: 获取分类')
+  await guideStore.fetchCategories()
+  console.log('[Guides] fetchCategories 完成, categories:', guideStore.categories.length)
+
+  console.log('[Guides] 步骤3: 获取指南列表')
+  await guideStore.fetchGuides()
+  console.log('[Guides] fetchGuides 完成, guides:', guideStore.guides.length)
+  console.log('[Guides] ===== 初始化完成 =====')
 })
 </script>
 
@@ -148,16 +162,16 @@ onMounted(async () => {
       </div>
     </header>
 
-    <!-- 搜索区域 - 胖虎浮动设计 -->
-    <section class="search-hero-container">
-      <!-- 浮动胖虎 -->
-      <div class="mascot-float-wrapper">
-        <MascotCharacter expression="focused" size="large" :animated="true" />
-      </div>
+    <!-- 搜索区域 - 胖虎镶嵌设计 -->
+    <section class="search-embedded-wrapper">
+      <!-- 搜索框卡片 -->
+      <div class="search-card">
+        <!-- 胖虎嵌入在搜索框左侧 -->
+        <div class="mascot-sticker">
+          <MascotCharacter expression="focused" size="small" :animated="true" class="sticker-img" />
+        </div>
 
-      <!-- 玻璃拟态搜索框 -->
-      <div class="search-glass-box">
-        <div class="input-group">
+        <div class="search-input-wrapper">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -168,17 +182,8 @@ onMounted(async () => {
             class="search-input"
           />
         </div>
-        <button class="search-confirm-btn">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          搜索
-        </button>
+        <button class="search-btn-solid">搜 索</button>
       </div>
-
-      <!-- 背景装饰点 -->
-      <div class="bg-decoration-dot pos-left"></div>
-      <div class="bg-decoration-dot pos-right"></div>
     </section>
 
     <!-- 阶段推荐（AI 顾问联动） -->
@@ -317,8 +322,8 @@ onMounted(async () => {
 /* ================= 页面 Hero ================= */
 .page-hero {
   text-align: center;
-  margin-bottom: 16px;
-  padding-top: 20px;
+  padding-top: 8px;
+  margin-bottom: 8px;
 }
 
 .hero-content {
@@ -344,72 +349,80 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
-/* ================= 搜索区域 - 胖虎浮动设计 ================= */
-.search-hero-container {
+/* ================= 搜索区域 - 胖虎镶嵌设计 ================= */
+/* 外层容器：胖虎镶嵌进搜索框 */
+.search-embedded-wrapper {
   position: relative;
-  max-width: 640px;
+  max-width: 700px;
   margin: 40px auto 24px;
   z-index: 10;
 }
 
-/* 浮动胖虎层 */
-.mascot-float-wrapper {
-  position: absolute;
-  top: -70px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.mascot-float-wrapper:hover {
-  transform: translateX(-50%) translateY(-5px);
-}
-
-/* 玻璃拟态搜索框 */
-.search-glass-box {
+/* 搜索框卡片 */
+.search-card {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 10px 12px 10px 24px;
-  border-radius: 100px;
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
+  padding: 10px 20px 10px 58px; /* 左侧留出位置给胖虎 */
+  border-radius: 24px;
   border: 1.5px solid #FDF3E9;
   box-shadow:
-    0 10px 30px rgba(244, 162, 97, 0.12),
+    0 12px 32px rgba(244, 162, 97, 0.12),
     0 4px 12px rgba(0, 0, 0, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
   position: relative;
-  z-index: 10;
 }
 
-.search-glass-box:focus-within {
-  transform: scale(1.01);
+/* 胖虎贴纸 - 嵌入在搜索框左侧内部 */
+.mascot-sticker {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  filter: drop-shadow(0 4px 8px rgba(244, 162, 97, 0.25));
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mascot-sticker:hover {
+  transform: scale(1.1) rotate(-3deg);
+}
+
+.sticker-img {
+  width: 44px;
+  height: 44px;
+}
+
+.search-card:focus-within {
   border-color: #FED7AA;
   box-shadow:
-    0 12px 35px rgba(244, 162, 97, 0.18),
+    0 14px 36px rgba(244, 162, 97, 0.18),
     0 6px 16px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
 }
 
 /* 输入区域 */
-.input-group {
+.search-input-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.search-icon {
-  width: 20px;
-  height: 20px;
+.search-card .search-icon {
+  width: 22px;
+  height: 22px;
   color: #F4A261;
   flex-shrink: 0;
 }
 
-.search-input {
+.search-card .search-input {
   border: none;
   outline: none;
   width: 100%;
@@ -418,66 +431,28 @@ onMounted(async () => {
   background: transparent;
 }
 
-.search-input::placeholder {
+.search-card .search-input::placeholder {
   color: #9CA3AF;
 }
 
 /* 搜索按钮 */
-.search-confirm-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.search-btn-solid {
   background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
-  color: #FFFFFF;
+  color: #fff;
   border: none;
-  padding: 12px 24px;
+  padding: 12px 28px;
   border-radius: 100px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow:
-    0 4px 14px rgba(244, 162, 97, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(244, 162, 97, 0.25);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.search-confirm-btn:hover {
+.search-btn-solid:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 6px 20px rgba(244, 162, 97, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.search-confirm-btn:active {
-  transform: translateY(0);
-}
-
-.btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* 背景装饰点 */
-.bg-decoration-dot {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
-  border-radius: 50%;
-  opacity: 0.3;
-  z-index: 1;
-}
-
-.bg-decoration-dot.pos-left {
-  top: 50%;
-  left: 20px;
-  transform: translateY(-50%);
-}
-
-.bg-decoration-dot.pos-right {
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
+  box-shadow: 0 6px 20px rgba(244, 162, 97, 0.35);
 }
 
 /* ================= 阶段推荐 ================= */
@@ -870,37 +845,37 @@ onMounted(async () => {
     max-width: 280px;
   }
 
-  /* 浮动搜索框 */
-  .search-hero-container {
-    margin: 32px auto 20px;
+  /* 胖虎镶嵌搜索框 - 移动端 */
+  .search-embedded-wrapper {
+    margin: 24px auto 16px;
   }
 
-  .mascot-float-wrapper {
-    top: -55px;
+  .mascot-sticker {
+    left: 6px;
   }
 
-  .search-glass-box {
-    padding: 8px 10px 8px 16px;
-    border-radius: 100px;
+  .sticker-img {
+    width: 38px;
+    height: 38px;
   }
 
-  .search-icon {
-    width: 16px;
-    height: 16px;
+  .search-card {
+    padding: 8px 12px 8px 48px;
+    border-radius: 18px;
   }
 
-  .search-input {
+  .search-card .search-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .search-card .search-input {
     font-size: 13px;
   }
 
-  .search-confirm-btn {
+  .search-btn-solid {
     padding: 10px 16px;
     font-size: 13px;
-  }
-
-  .btn-icon {
-    width: 14px;
-    height: 14px;
   }
 
   .guides-grid {

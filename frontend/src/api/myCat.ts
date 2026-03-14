@@ -45,3 +45,8 @@ export function uploadCatAvatar(catId: string, file: File): Promise<ApiResponse<
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+// 上传猫咪头像（base64 格式）
+export function uploadCatAvatarBase64(catId: string, base64Data: string): Promise<ApiResponse<{ avatarData: string }>> {
+  return api.post(`/my-cats/${catId}/avatar-base64`, { avatarData: base64Data })
+}

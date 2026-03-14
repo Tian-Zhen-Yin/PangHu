@@ -91,10 +91,10 @@ export const usePetStore = defineStore('pet', () => {
     }
   }
 
-  // 获取按日期排序的记录（用于时间线）
+  // 获取按日期排序的记录（用于时间线）- 降序，最新的在前
   const sortedRecords = computed(() => {
     return [...records.value].sort((a, b) => {
-      return new Date(a.recordDate).getTime() - new Date(b.recordDate).getTime()
+      return new Date(b.recordDate).getTime() - new Date(a.recordDate).getTime()
     })
   })
 

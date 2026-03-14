@@ -172,7 +172,7 @@ onMounted(async () => {
         <!-- 用户信息卡片 -->
         <div v-if="authStore.user" class="user-card">
           <div class="user-avatar">
-            🐱
+            {{ authStore.user?.username?.charAt(0).toUpperCase() || '?' }}
           </div>
           <div class="user-info">
             <div class="user-name-row">

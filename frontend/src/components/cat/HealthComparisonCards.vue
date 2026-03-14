@@ -21,7 +21,9 @@
         <div class="card-header">
           <div class="cat-info">
             <div class="cat-avatar">
-              <img v-if="cat.cat.avatar" :src="getAvatarUrl(cat.cat)" :alt="cat.cat.name" />
+              <!-- 调试信息 -->
+              <small style="display:none">avatar: {{ cat.cat.avatar }} | avatarData: {{ !!cat.cat.avatarData }}</small>
+              <img v-if="cat.cat.avatarData || cat.cat.avatar" :src="getAvatarUrl(cat.cat)" :alt="cat.cat.name" @error="e => console.error('Avatar load error:', (e.target as HTMLImageElement).src)" />
               <span v-else class="avatar-placeholder">{{ cat.cat.name?.charAt(0) || '?' }}</span>
             </div>
             <span class="cat-name">{{ cat.cat.name }}</span>
@@ -70,7 +72,6 @@
 <script setup lang="ts">
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import type { CatComparisonData } from '../../types/weight'
-import type { Cat } from '../../types/cat'
 
 interface Props {
   cats: CatComparisonData[]
@@ -78,16 +79,35 @@ interface Props {
   error?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   loading: false,
   error: ''
 })
 
-function getAvatarUrl(cat: Cat): string {
-  if (!cat.avatar) return ''
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-  if (cat.avatar.startsWith('http')) return cat.avatar
-  return `${baseURL}${cat.avatar}`
+// 调试：打印接收到的数据
+console.log('HealthComparisonCards 接收到的数据:', JSON.stringify(props.cats, null, 2))
+
+function getAvatarUrl(cat: any): string {
+  console.log('getAvatarUrl 调用，cat 对象:', cat)
+  // 优先使用 base64 头像数据
+  if (cat.avatarData) {
+    console.log('使用 avatarData')
+    return cat.avatarData
+  }
+  // 其次使用文件路径
+  if (!cat.avatar) {
+    console.log('avatar 为空')
+    return ''
+  }
+  if (cat.avatar.startsWith('http')) {
+    console.log('avatar 是 http URL')
+    return cat.avatar
+  }
+  // 移除 /api 前缀，添加斜杠
+  const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace('/api', '')
+  const url = `${baseURL}/${cat.avatar}`
+  console.log('生成的 URL:', url)
+  return url
 }
 
 function getStatusIcon(status: 'thin' | 'normal' | 'overweight'): string {

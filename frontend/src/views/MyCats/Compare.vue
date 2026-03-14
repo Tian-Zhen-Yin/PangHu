@@ -145,6 +145,7 @@ async function startCompare() {
         id: cat.id,
         name: cat.name,
         avatar: cat.avatar,
+        avatarData: cat.avatarData,
         breed: cat.breed,
         ageFormatted: cat.ageFormatted,
         gender: cat.gender

@@ -37,6 +37,11 @@ function getWeightIcon(status: string): string {
 }
 
 function getAvatarUrl(cat: Cat): string {
+  // 优先使用 base64 头像数据
+  if (cat.avatarData) {
+    return cat.avatarData
+  }
+  // 其次使用文件路径
   if (!cat.avatar) return ''
   const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
   if (cat.avatar.startsWith('http')) return cat.avatar
@@ -79,9 +84,9 @@ const stages = [
   { name: '新生期', age: '0-2周', emoji: '👶' },
   { name: '过渡期', age: '2-4周', emoji: '🔄' },
   { name: '社交期', age: '4-12周', emoji: '🤝' },
-  { name: '幼猫期', age: '3-6个月', emoji: '🐱' },
-  { name: '青春期', age: '6-12个月', emoji: '😼' },
-  { name: '成年期', age: '1岁+', emoji: '😺' }
+  { name: '幼猫期', age: '3-6个月', emoji: '🌱' },
+  { name: '青春期', age: '6-12个月', emoji: '⚡' },
+  { name: '成年期', age: '1岁+', emoji: '🏠' }
 ]
 </script>
 
@@ -114,7 +119,7 @@ const stages = [
       <h2 class="section-title">AI 今日建议</h2>
       <div class="advice-card">
         <div class="cat-info">
-          <img v-if="selectedCat?.avatar" :src="getAvatarUrl(selectedCat)" class="cat-avatar" :alt="selectedCat.name" />
+          <img v-if="selectedCat?.avatarData || selectedCat?.avatar" :src="getAvatarUrl(selectedCat)" class="cat-avatar" :alt="selectedCat.name" />
           <div v-else class="cat-avatar-placeholder">{{ selectedCat?.name?.charAt(0) || '?' }}</div>
           <span class="cat-name">{{ selectedCat?.name }}</span>
         </div>

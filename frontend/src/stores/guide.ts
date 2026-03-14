@@ -46,18 +46,24 @@ export const useGuideStore = defineStore('guide', () => {
     searchResults.value = null // 清空搜索结果
     try {
       const params: any = { page: 1, pageSize: 100 }
+
+      // 如果没有传入 categoryId，或者 categoryId 是 'all'，则获取全部
       const isAllCategory = !categoryId || categoryId === 'all'
 
       if (!isAllCategory) {
         params.category = categoryId
       }
 
+      console.log('[GuideStore] fetchGuides - params:', params, 'isAllCategory:', isAllCategory)
       const response = await getGuides(params)
+      console.log('[GuideStore] fetchGuides - response:', response)
       if (response.success) {
         guides.value = response.data.items
+        console.log('[GuideStore] 获取到指南:', response.data.items.length)
         // 如果是获取全部指南，同步到 allGuides 用于分类计数
         if (isAllCategory) {
           allGuides.value = response.data.items
+          console.log('[GuideStore] 同步到 allGuides')
         }
         pagination.value = {
           total: response.data.total,
@@ -67,6 +73,7 @@ export const useGuideStore = defineStore('guide', () => {
         }
       }
     } catch (err: any) {
+      console.error('[GuideStore] fetchGuides 失败:', err)
       error.value = err.message || '获取指南失败'
     } finally {
       loading.value = false
@@ -106,15 +113,19 @@ export const useGuideStore = defineStore('guide', () => {
 
   // 初始化：获取所有指南用于分类计数
   async function initAllGuides() {
-    // 如果已经获取过所有指南，跳过
-    if (allGuides.value.length > 0) return
+    // 总是重新加载，确保获取最新数据
+    console.log('[GuideStore] 正在调用 getGuides API...')
     try {
       const response = await getGuides({ page: 1, pageSize: 100 })
+      console.log('[GuideStore] API 响应:', response)
       if (response.success) {
         allGuides.value = response.data.items
+        console.log('[GuideStore] allGuides 设置成功:', response.data.items.length)
+      } else {
+        console.error('[GuideStore] API 返回失败:', response.message)
       }
     } catch (err: any) {
-      console.error('初始化指南失败:', err)
+      console.error('[GuideStore] 初始化指南失败:', err)
     }
   }
 

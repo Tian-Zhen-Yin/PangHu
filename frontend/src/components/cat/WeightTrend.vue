@@ -10,11 +10,19 @@
       </div>
     </div>
 
-    <!-- 健康状态分析 -->
-    <div v-if="analysis && !loading" class="health-analysis">
-      <div class="status-badge" :class="analysis.status">
-        <span class="status-icon">{{ getStatusIcon(analysis.status) }}</span>
-        <span class="status-text">{{ getStatusText(analysis.status) }}</span>
+    <!-- 健康状态分析 - 胖虎呼吸灯效果 -->
+    <div v-if="analysis && !loading" class="health-analysis" :class="analysis.status">
+      <div class="status-indicator-pangu">
+        <MascotCharacter
+          :expression="analysis.status === 'normal' ? 'happy' : 'confused'"
+          size="small"
+          :animated="analysis.status === 'normal'"
+          class="status-mascot"
+        />
+        <span class="status-text">
+          <span class="dot"></span>
+          {{ getStatusText(analysis.status) }}
+        </span>
       </div>
       <p class="analysis-message">{{ analysis.message }}</p>
       <div v-if="analysis.min > 0 && analysis.max > 0" class="standard-range">
@@ -64,6 +72,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
+import MascotCharacter from '../mascot/MascotCharacter.vue'
 import { getWeightAnalysis, getWeightHistoryStandards } from '../../api/weightStandard'
 import type { WeightAnalysis, WeightHistoryWithStandard } from '../../types/weight'
 import { useMyCatStore } from '../../stores/myCat'
@@ -123,21 +132,11 @@ const latestWeight = computed(() => {
   return lastWeight ? lastWeight.toFixed(1) : null
 })
 
-// 获取状态图标
-function getStatusIcon(status: 'thin' | 'normal' | 'overweight'): string {
-  switch (status) {
-    case 'thin': return '📉'
-    case 'normal': return '✅'
-    case 'overweight': return '📈'
-    default: return '❓'
-  }
-}
-
 // 获取状态文本
 function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
   switch (status) {
     case 'thin': return '偏瘦'
-    case 'normal': return '正常'
+    case 'normal': return '完美体型'
     case 'overweight': return '超重'
     default: return '未知'
   }
@@ -418,28 +417,32 @@ onUnmounted(() => {
 
 <style scoped>
 .weight-trend {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow:
+    0 4px 20px rgba(244, 162, 97, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.03);
+  border: 1px solid #FDF3E9;
 }
 
 .trend-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .trend-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #333;
+  font-weight: 700;
+  color: #374151;
 }
 
 .current-weight {
   font-size: 14px;
-  color: #666;
+  color: #9CA3AF;
 }
 
 .current-weight strong {
@@ -449,38 +452,92 @@ onUnmounted(() => {
 
 /* 健康分析样式 */
 .health-analysis {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
 }
 
-.status-badge {
+/* 状态颜色 */
+.health-analysis.normal {
+  background: linear-gradient(135deg, #F6FFED 0%, #DCFCE7 100%);
+  border-color: #86EFAC;
+}
+
+.health-analysis.thin {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border-color: #FCD34D;
+}
+
+.health-analysis.overweight {
+  background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%);
+  border-color: #FCA5A5;
+}
+
+/* 胖虎状态指示器 */
+.status-indicator-pangu {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: 20px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.status-mascot {
+  flex-shrink: 0;
+}
+
+.health-analysis.normal .status-mascot {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
+  font-weight: 700;
 }
 
-.status-badge.thin {
-  background: #fff7e6;
-  color: #fa8c16;
-  border: 1px solid #ffd591;
+.health-analysis.normal .status-text {
+  color: #16A34A;
 }
 
-.status-badge.normal {
-  background: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
+.health-analysis.thin .status-text {
+  color: #D97706;
 }
 
-.status-badge.overweight {
-  background: #fff2e8;
-  color: #fa541c;
-  border: 1px solid #ffbb96;
+.health-analysis.overweight .status-text {
+  color: #DC2626;
+}
+
+.status-text .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: blink 2s ease-in-out infinite;
+}
+
+.health-analysis.normal .dot {
+  background: #22C55E;
+}
+
+.health-analysis.thin .dot {
+  background: #F59E0B;
+}
+
+.health-analysis.overweight .dot {
+  background: #EF4444;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .status-icon {
@@ -541,6 +598,11 @@ onUnmounted(() => {
 .chart-container {
   width: 100%;
   height: 280px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.02);
+  margin-bottom: 16px;
 }
 
 .btn-export {

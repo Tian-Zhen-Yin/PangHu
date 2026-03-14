@@ -10,7 +10,8 @@ import {
   getWeightHistory,
   exportWeightCSV,
   updateWeightGoal,
-  uploadCatAvatarHandler
+  uploadCatAvatarHandler,
+  uploadCatAvatarBase64Handler
 } from '../controllers/cats.controller'
 
 const router = Router()
@@ -25,5 +26,6 @@ router.post('/', createCatHandler)
 router.put('/:id', updateCatHandler)
 router.delete('/:id', deleteCatHandler)
 router.post('/:id/avatar', uploadCatAvatar, uploadCatAvatarHandler)
+router.post('/:id/avatar-base64', uploadCatAvatarBase64Handler)
 
 export default router

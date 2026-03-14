@@ -79,6 +79,7 @@ export interface Cat {
   userId: string
   name: string
   avatar: string | null
+  avatarData: string | null  // base64 格式的头像数据
   breed: string | null
   gender: CatGender
   birthDate: string

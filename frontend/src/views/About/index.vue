@@ -4,7 +4,7 @@
 <template>
   <div class="about-page">
     <div class="about-header">
-      <span class="about-emoji">🐱</span>
+      <span class="about-emoji">🌟</span>
       <h1 class="about-title">关于哈吉咪养成计划</h1>
       <p class="about-subtitle">帮助每一位猫友更好地照顾自己的毛孩子</p>
     </div>
@@ -81,7 +81,7 @@
             contact@example.com
           </a>
           <a href="https://github.com" target="_blank" class="contact-link">
-            <span class="contact-icon">🐱</span>
+            <span class="contact-icon">💻</span>
             GitHub
           </a>
         </div>

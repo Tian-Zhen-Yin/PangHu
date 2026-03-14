@@ -10,7 +10,7 @@ const tabItems = computed(() => [
   { name: '首页', path: '/', icon: '🏠' },
   { name: '记录', path: '/timeline', icon: '📖' },
   { name: '指南', path: '/guides', icon: '📚' },
-  { name: '我的', path: '/my-cats', icon: '🐱' }
+  { name: '我的', path: '/my-cats', icon: '👤' }
 ])
 
 function isActive(path: string): boolean {

@@ -166,8 +166,8 @@ watch(() => route.query.q, (newQuery) => {
           <button @click="performSearch('喂养')" class="suggestion-tag">🍽️ 喂养营养</button>
           <button @click="performSearch('训练')" class="suggestion-tag">🎾 行为训练</button>
           <button @click="performSearch('健康')" class="suggestion-tag">🏥 健康医疗</button>
-          <button @click="performSearch('新手')" class="suggestion-tag">🐱 新手指南</button>
-          <button @click="performSearch('成猫')" class="suggestion-tag">😼 成年护理</button>
+          <button @click="performSearch('新手')" class="suggestion-tag">📚 新手指南</button>
+          <button @click="performSearch('成猫')" class="suggestion-tag">🏠 成年护理</button>
         </div>
       </div>
     </div>

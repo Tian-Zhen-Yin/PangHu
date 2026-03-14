@@ -33,7 +33,7 @@ async function main() {
             { title: '开始听声音', description: '耳朵开始张开，能听到声音', ageWeeks: 2, icon: '👂' }
           ]
         },
-        tasks: {
+        taskshttps://github.com/Tian-Zhen-Yin/PangHu/blob/master/frontend/src/assets/cats: {
           create: [
             { title: '保持温暖', description: '确保环境温度在28-30°C', category: 'care', priority: 1 },
             { title: '监测体重', description: '每天称重，确保体重增长', category: 'health', priority: 1 },
