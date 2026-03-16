@@ -7,7 +7,6 @@ import { usePetStore } from '../../../stores/pet'
 import { getProactiveAdvice } from '../../../api/proactive'
 import { getWeightAnalysis } from '../../../api/weightStandard'
 import MascotCharacter from '../../../components/mascot/MascotCharacter.vue'
-import CatsOverview from '../components/CatsOverview.vue'
 import MiniSparkline from '../../../components/charts/MiniSparkline.vue'
 import type { DashboardCatCard, DashboardReminder, DashboardRecentRecord } from '../types'
 import type { Cat } from '../../../types/cat'
@@ -61,6 +60,21 @@ const nextTodo = computed(() => {
   if (urgent) return urgent
   return reminders.value[0]
 })
+
+// 其他猫咪列表（用于网格展示，不包含当前选中的）
+const otherCats = computed(() => {
+  if (!catStore.currentCat) return []
+  return catCards.value.filter(item => item.cat.id !== catStore.currentCat?.id)
+})
+
+// 获取猫咪头像 URL
+function getCatAvatarUrl(cat: any): string {
+  if (cat.avatarData) return cat.avatarData
+  if (!cat.avatar) return ''
+  if (cat.avatar.startsWith('http')) return cat.avatar
+  const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace('/api', '')
+  return `${baseURL}/${cat.avatar}`
+}
 
 function getAgeText(cat: Cat): string {
   if (!cat.birthDate) return '年龄未知'
@@ -205,11 +219,6 @@ function viewAllRecords() {
   router.push('/timeline')
 }
 
-// 查看猫咪档案
-function viewCatProfile(catId: string) {
-  router.push(`/my-cats/${catId}`)
-}
-
 // 查看记录详情
 function viewRecordDetail(record: DashboardRecentRecord) {
   router.push(`/timeline?record=${record.id}`)
@@ -337,13 +346,6 @@ onMounted(async () => {
 
     <!-- 已登录 Dashboard -->
     <div v-else class="dashboard-content">
-      <!-- 1. 多猫切换滑块 -->
-      <CatsOverview
-        :cats="catCards"
-        :current-cat="catStore.currentCat"
-        @select="onCatSelect"
-      />
-
       <!-- 加载状态 -->
       <div v-if="isLoading" class="loading-state">
         <MascotCharacter expression="yawning" size="large" :animated="true" />
@@ -351,122 +353,140 @@ onMounted(async () => {
       </div>
 
       <template v-else-if="catStore.currentCat">
-        <!-- 2. 健康仪表盘 - 新版通栏布局 -->
-        <section class="health-overview-card">
-          <div class="card-header">
-            <h3 class="title">{{ catStore.currentCat.name }} 的健康概览</h3>
-            <button class="action-link" @click="viewCatProfile(catStore.currentCat.id)">
-              查看档案
-              <svg class="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
+        <!-- 1. Hero Card: 主视图 - 融合猫咪档案与健康概览 -->
+        <section class="hero-card">
+          <!-- 装饰背景 -->
+          <div class="hero-decor"></div>
+
+          <div class="hero-content">
+            <!-- 左侧：猫咪档案 + 快捷操作 -->
+            <div class="hero-left">
+              <div class="cat-profile">
+                <div class="profile-avatar">
+                  <img
+                    v-if="catStore.currentCat.avatarData || catStore.currentCat.avatar"
+                    :src="getCatAvatarUrl(catStore.currentCat)"
+                    :alt="catStore.currentCat.name"
+                  />
+                  <div v-else class="avatar-placeholder">
+                    {{ catStore.currentCat.name?.charAt(0) || '?' }}
+                  </div>
+                </div>
+                <div class="profile-info">
+                  <div class="profile-name-row">
+                    <h2 class="profile-name">{{ catStore.currentCat.name }}</h2>
+                    <span class="current-badge">当前</span>
+                  </div>
+                  <p class="profile-meta">{{ getAgeText(catStore.currentCat) }} · {{ catStore.currentCat.weight || '--' }}kg</p>
+                </div>
+              </div>
+
+              <div class="hero-actions">
+                <button class="hero-action-btn primary" @click="addRecord">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                  </svg>
+                  记一笔
+                </button>
+                <button class="hero-action-btn secondary" @click="goToAIChat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                  </svg>
+                  AI 咨询
+                </button>
+              </div>
+            </div>
+
+            <!-- 右侧：健康数据面板 -->
+            <div class="hero-right">
+              <!-- AI 健康状态 -->
+              <div class="ai-status-card" @click="goToAIChat">
+                <div class="ai-status-icon">
+                  <MascotCharacter
+                    :expression="healthAnalysis?.weightAdvice?.status === 'normal' ? 'happy' : 'confused'"
+                    size="small"
+                    :animated="healthAnalysis?.weightAdvice?.status === 'normal'"
+                  />
+                </div>
+                <div class="ai-status-content">
+                  <span v-if="healthAnalysis?.weightAdvice?.status === 'normal'" class="status-tag normal">● 体型正常</span>
+                  <span v-else-if="healthAnalysis?.weightAdvice?.status" class="status-tag warning">● 需关注</span>
+                  <span v-else class="status-tag neutral">点击咨询</span>
+                  <p class="status-desc">{{ healthAnalysis?.generalAdvice || `${catStore.currentCat.name}最近状态很棒，继续保持哦！` }}</p>
+                </div>
+              </div>
+
+              <!-- 数据网格 -->
+              <div class="data-grid">
+                <div class="data-item">
+                  <div class="data-label">当前体重</div>
+                  <div class="data-value-row">
+                    <span class="data-value">{{ catStore.currentCat.weight || '--' }}</span>
+                    <span v-if="catStore.currentCat.weight" class="data-unit">kg</span>
+                    <span v-if="weightTrend" class="data-trend-badge" :class="weightTrend.direction">
+                      {{ weightTrend.direction === 'up' ? '↑' : weightTrend.direction === 'down' ? '↓' : '→' }}
+                      {{ weightTrend.direction === 'up' ? '增' : weightTrend.direction === 'down' ? '减' : '持平' }}
+                    </span>
+                  </div>
+                  <div v-if="weightHistoryData.length >= 2" class="mini-sparkline">
+                    <MiniSparkline :data="weightHistoryData" :color="sparklineColor" />
+                  </div>
+                </div>
+
+                <div class="data-item">
+                  <div class="data-label">待办事项</div>
+                  <div v-if="nextTodo" class="todo-mini" :class="{ urgent: nextTodo.urgency === 'high' }">
+                    <span class="todo-checkbox"></span>
+                    <span class="todo-text">{{ nextTodo.title }}</span>
+                  </div>
+                  <div v-else class="todo-mini empty">
+                    <span class="todo-checkbox done"></span>
+                    <span class="todo-text">暂无待办</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 其他家庭成员 - 胶囊横向列表 -->
+        <section v-if="otherCats.length > 0" class="other-cats-section">
+          <div class="section-header-row">
+            <h3 class="section-title">其他家庭成员</h3>
+            <span class="cat-count-text">共 {{ catCards.length }} 只</span>
+          </div>
+
+          <div class="cats-pills">
+            <button
+              v-for="item in otherCats"
+              :key="item.cat.id"
+              class="cat-pill"
+              @click="onCatSelect(item.cat)"
+            >
+              <div class="pill-avatar">
+                <img
+                  v-if="item.cat.avatarData || item.cat.avatar"
+                  :src="getCatAvatarUrl(item.cat)"
+                  :alt="item.cat.name"
+                />
+                <div v-else class="avatar-placeholder pill">
+                  {{ item.cat.name?.charAt(0) || '?' }}
+                </div>
+              </div>
+              <div class="pill-info">
+                <span class="pill-name">{{ item.cat.name }}</span>
+                <span class="pill-weight">{{ item.cat.weight || '--' }}kg</span>
+              </div>
+            </button>
+
+            <!-- 添加猫咪按钮 -->
+            <button class="add-cat-pill" @click="router.push('/my-cats/new')">
+              <span class="plus-icon-pill">+</span>
             </button>
           </div>
-
-          <!-- AI 健康分析通栏 Banner -->
-          <div class="ai-banner" @click="goToAIChat">
-            <div class="ai-content">
-              <MascotCharacter
-                :expression="healthAnalysis?.weightAdvice?.status === 'normal' ? 'happy' : 'confused'"
-                size="small"
-                :animated="healthAnalysis?.weightAdvice?.status === 'normal'"
-              />
-              <div class="ai-text">
-                <span v-if="healthAnalysis?.weightAdvice?.status === 'normal'" class="ai-tag highlight-green">
-                  ● 体型正常
-                </span>
-                <span v-else-if="healthAnalysis?.weightAdvice?.status" class="ai-tag highlight-warning">
-                  ● 需关注
-                </span>
-                <span v-else class="ai-tag highlight-neutral">点击咨询</span>
-                <span class="ai-desc">
-                  {{ healthAnalysis?.generalAdvice || `${catStore.currentCat.name}最近状态很棒，继续保持哦！` }}
-                </span>
-              </div>
-            </div>
-            <svg class="text-gray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-
-          <!-- 下层数据分割区 -->
-          <div class="data-split">
-            <!-- 体重数据块 -->
-            <div class="data-block weight-block">
-              <div class="block-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M3 6l3-3h12l3 3M7 19l4-4m4 4l-4-4M3 6v14a2 2 0 002 2h14a2 2 0 002-2V6"/>
-                </svg>
-                当前体重
-              </div>
-              <div class="block-value">
-                <div class="weight-number">
-                  <span class="num">{{ catStore.currentCat.weight || '--' }}</span>
-                  <span v-if="catStore.currentCat.weight" class="unit">kg</span>
-                </div>
-                <div v-if="weightTrend" class="trend" :class="weightTrend.direction">
-                  <span v-if="weightTrend.direction === 'up'">↑ {{ weightTrend.change }}</span>
-                  <span v-else-if="weightTrend.direction === 'down'">↓ {{ weightTrend.change }}</span>
-                  <span v-else>体重稳定</span>
-                </div>
-              </div>
-              <!-- 趋势线图表 -->
-              <div v-if="weightHistoryData.length >= 2" class="sparkline-container">
-                <MiniSparkline :data="weightHistoryData" :color="sparklineColor" />
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- 待办事项数据块 -->
-            <div class="data-block todo-block">
-              <div class="block-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                下一项待办
-              </div>
-              <div v-if="nextTodo" class="todo-content" :class="{ urgent: nextTodo.urgency === 'high' }">
-                <span class="todo-icon">{{ nextTodo.icon }}</span>
-                <div class="todo-text">
-                  <div class="todo-title">{{ nextTodo.title }}</div>
-                  <div v-if="nextTodo.description" class="todo-desc">{{ nextTodo.description }}</div>
-                </div>
-              </div>
-              <div v-else class="todo-content empty">
-                <span class="todo-icon">✓</span>
-                <div class="todo-text">
-                  <div class="todo-title">暂无待办</div>
-                  <div class="todo-desc">一切正常</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
-        <!-- 3. 快捷操作区 -->
-        <section class="quick-actions">
-          <button class="action-pill" @click="addRecord">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            添加记录
-          </button>
-          <button class="action-pill secondary" @click="goToAIChat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-            </svg>
-            AI 咨询
-          </button>
-          <button class="action-pill secondary" @click="viewAllRecords">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            时间线
-          </button>
-        </section>
-
-        <!-- 4. 成长线 (Timeline) -->
+        <!-- 3. 成长足迹 - 左侧单线时间轴风格 -->
         <section v-if="limitedRecentRecords.length > 0" class="timeline-section">
           <div class="section-header">
             <h3 class="section-title">成长足迹</h3>
@@ -475,26 +495,33 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="timeline-container">
+          <!-- 垂直时间轴容器 -->
+          <div class="timeline-vertical">
             <div
               v-for="(record, index) in limitedRecentRecords"
               :key="record.id"
-              class="timeline-item"
-              :class="index % 2 === 0 ? 'item-left' : 'item-right'"
+              class="timeline-item-vertical"
               @click="viewRecordDetail(record)"
             >
-              <!-- 时间点 -->
-              <div class="timeline-dot" :class="`dot-${record.type}`"></div>
+              <!-- 左侧时间轴线与圆点 -->
+              <div class="timeline-left">
+                <div class="timeline-line" :class="{ 'first': index === 0, 'last': index === limitedRecentRecords.length - 1 }"></div>
+                <div class="timeline-dot" :class="`dot-${record.type}`"></div>
+              </div>
 
-              <!-- 内容卡片 -->
-              <div class="timeline-content">
-                <!-- 类型图标 -->
-                <div class="icon-box" :class="`icon-bg-${record.type}`">
-                  <span class="svg-icon" v-html="getRecordIcon(record.type)"></span>
+              <!-- 右侧内容卡片 -->
+              <div class="timeline-card">
+                <!-- 卡片头部：日期和类型 -->
+                <div class="card-header-row">
+                  <div class="type-icon" :class="`icon-bg-${record.type}`">
+                    <span class="svg-icon" v-html="getRecordIcon(record.type)"></span>
+                  </div>
+                  <span class="record-type">{{ getRecordTypeLabel(record.originalType || record.type) }}</span>
+                  <span class="record-date">{{ record.date }}</span>
                 </div>
 
-                <!-- 信息内容 -->
-                <div class="info-box">
+                <!-- 主内容区域 -->
+                <div class="card-body-row">
                   <div class="main-info">
                     <span v-if="record.type === 'weight'" class="value-text">
                       {{ getWeightValue(record) }}<span class="unit">kg</span>
@@ -504,34 +531,33 @@ onMounted(async () => {
                           <path v-if="record.weightChange.direction === 'up'" d="M12 19V5M5 12l7-7 7 7"/>
                           <path v-else d="M12 5v14M5 12l7 7 7-7"/>
                         </svg>
-                        <span class="trend-value">{{ formatWeight(record.weightChange.value) }}</span>
+                        <span class="trend-value">{{ formatWeight(record.weightChange.value) }}kg</span>
                       </span>
                     </span>
                     <span v-else class="title-text">{{ record.title }}</span>
                   </div>
-                  <div class="date-text">{{ record.date }}</div>
-                  <!-- 日记备注 -->
-                  <div v-if="record.notes" class="notes-text">{{ record.notes }}</div>
                 </div>
 
-                <!-- 照片墙 -->
-                <div v-if="record.photos && record.photos.length > 0" class="photo-wall">
-                  <img
-                    v-for="(photo, idx) in record.photos.slice(0, 3)"
-                    :key="idx"
-                    :src="photo"
-                    class="mini-photo"
-                    alt="记录照片"
-                  />
-                  <span v-if="record.photos.length > 3" class="more-photos">+{{ record.photos.length - 3 }}</span>
-                </div>
+                <!-- 日记备注 -->
+                <div v-if="record.notes" class="notes-text">{{ record.notes }}</div>
 
-                <!-- 标签 -->
-                <div class="tag-box">
-                  <span v-if="record.isAdoptionDay" class="status-tag anniversary-tag">
-                    🎉 纪念日
-                  </span>
-                  <span v-else class="status-tag">{{ getRecordTypeLabel(record.originalType || record.type) }}</span>
+                <!-- 照片墙和标签 -->
+                <div class="card-footer-row">
+                  <div v-if="record.photos && record.photos.length > 0" class="photo-wall">
+                    <img
+                      v-for="(photo, idx) in record.photos.slice(0, 3)"
+                      :key="idx"
+                      :src="photo"
+                      class="mini-photo"
+                      alt="记录照片"
+                    />
+                    <span v-if="record.photos.length > 3" class="more-photos">+{{ record.photos.length - 3 }}</span>
+                  </div>
+                  <div class="tag-box">
+                    <span v-if="record.isAdoptionDay" class="status-tag anniversary-tag">
+                      🎉 纪念日
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -570,7 +596,8 @@ onMounted(async () => {
 
 .guest-content {
   text-align: center;
-  max-width: 360px;
+  width: 100%;
+  max-width: 500px;
 }
 
 .welcome-icon {
@@ -630,25 +657,509 @@ onMounted(async () => {
   background: #F9FAFB;
 }
 
-/* Dashboard 内容区 */
-.dashboard-content {
+/* Hero Card 主视图 */
+.hero-card {
+  position: relative;
+  background: var(--color-bg-card);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-card-normal);
+  overflow: hidden;
+}
+
+.hero-decor {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 160px;
+  height: 160px;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, rgba(255, 138, 76, 0.1) 100%);
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 16px;
 }
 
-/* 加载状态 */
-.loading-state {
+@media (min-width: 768px) {
+  .hero-content {
+    flex-direction: row;
+    gap: 32px;
+  }
+}
+
+/* 左侧：猫咪档案 */
+.hero-left {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+  padding: 8px 0;
+}
+
+@media (min-width: 768px) {
+  .hero-left {
+    flex: 0 0 260px;
+    padding-right: 24px;
+    margin-right: 24px;
+    border-right: 1px solid #f3f4f6;
+  }
+}
+
+.cat-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--color-primary-light);
+  flex-shrink: 0;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--color-primary-gradient);
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  color: white;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.current-badge {
+  font-size: 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+
+.profile-meta {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 6px 0 0 0;
+}
+
+/* 快捷操作按钮 */
+.hero-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.hero-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hero-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.hero-action-btn.primary {
+  background: var(--color-primary-gradient);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow-primary-btn);
+}
+
+.hero-action-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 138, 76, 0.35);
+}
+
+.hero-action-btn.secondary {
+  background: var(--color-bg-block);
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border-light);
+}
+
+.hero-action-btn.secondary:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 右侧：健康数据面板 */
+.hero-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  color: #9CA3AF;
+}
+
+/* AI 状态卡片 */
+.ai-status-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--color-success-bg);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-status-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.ai-status-icon {
+  flex-shrink: 0;
+}
+
+.ai-status-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-tag {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-tag.normal {
+  color: var(--color-success);
+}
+
+.status-tag.warning {
+  color: var(--color-warning);
+}
+
+.status-tag.neutral {
+  color: var(--color-text-secondary);
+}
+
+.status-desc {
+  font-size: 12px;
+  color: var(--color-text-regular);
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 数据网格 */
+.data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.data-item {
+  background: var(--color-bg-block);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 体重趋势Badge */
+.data-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.data-trend-badge.up {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.data-trend-badge.down {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.data-trend-badge.stable {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.data-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.data-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.data-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.data-unit {
+  font-size: 13px;
+  color: var(--color-text-regular);
+}
+
+.mini-sparkline {
+  height: 28px;
+  margin-top: 4px;
+}
+
+/* 待办迷你卡片 - 复选框样式 */
+.todo-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.todo-mini:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.todo-mini.urgent {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.todo-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.todo-checkbox.done {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.todo-checkbox.done::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.todo-mini .todo-text {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.todo-mini.empty {
+  background: var(--color-bg-block);
+  cursor: default;
+}
+
+.todo-mini.urgent .todo-checkbox {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+
+.todo-mini .todo-icon {
+  font-size: 16px;
+}
+
+.todo-mini .todo-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.todo-mini.empty .todo-text {
+  color: var(--color-success);
+}
+
+/* 其他家庭成员网格 */
+.other-cats-section {
+  margin-top: 8px;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.section-header-row .section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.cat-count-text {
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+/* 胶囊式猫咪列表 - 替代网格布局 */
+.cats-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.cat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 6px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cat-pill:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(251, 146, 60, 0.15);
+}
+
+.pill-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.pill-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pill-avatar .avatar-placeholder.pill {
+  width: 100%;
+  height: 100%;
+  background: var(--color-primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pill-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-right: 10px;
+}
+
+.pill-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  line-height: 1.2;
+}
+
+.pill-weight {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
+.add-cat-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-cat-pill:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.plus-icon-pill {
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1;
 }
 
 /* 健康概览卡片 - 新版通栏布局 */
@@ -753,22 +1264,19 @@ onMounted(async () => {
 
 /* 下层数据分割区 */
 .health-overview-card .data-split {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-lg);
 }
 
 .health-overview-card .data-block {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .health-overview-card .divider {
-  width: 1px;
-  background-color: #f0f0f0;
-  margin: 0 20px;
+  display: none;
 }
 
 .health-overview-card .block-label {
@@ -888,62 +1396,370 @@ onMounted(async () => {
   color: #6b7280;
 }
 
-/* 快捷操作 - 金刚区 */
-.quick-actions {
+/* 内嵌快捷操作按钮 */
+.health-overview-card .inline-actions {
   display: flex;
-  gap: 10px;
-  width: 100%;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
 }
 
-.quick-actions .action-pill {
+.health-overview-card .inline-action-btn {
   flex: 1;
-  justify-content: center;
-  padding: 12px 8px;
-  border-radius: 12px;
-}
-
-.action-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  background: var(--color-primary-gradient);
-  color: var(--color-text-white);
-  border: none;
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 600;
+  justify-content: center;
+  padding: 8px;
+  background: var(--color-bg-block);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-primary-btn);
+  transition: all 0.2s ease;
 }
 
-.action-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 138, 76, 0.35);
+.health-overview-card .inline-action-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-.action-pill svg {
+.health-overview-card .inline-action-btn svg {
   width: 16px;
   height: 16px;
 }
 
-.action-pill.secondary {
-  background: var(--color-bg-card);
-  color: var(--color-text-secondary);
-  border: 1.5px solid var(--color-border);
-  box-shadow: none;
+/* 成长足迹 - 垂直时间轴 */
+.timeline-section {
+  margin-top: 24px;
 }
 
-.action-pill.secondary:hover {
-  border-color: var(--color-primary);
+.timeline-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.timeline-section .section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.timeline-section .view-all {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.timeline-section .view-all:hover {
   color: var(--color-primary);
 }
 
-/* 成长线 (Timeline) */
-.timeline-section {
-  margin-top: 24px;
+.timeline-section .arrow-icon {
+  font-size: 16px;
+  margin-left: 2px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+/* 垂直时间轴容器 */
+.timeline-vertical {
+  position: relative;
+  padding-left: 20px;
+}
+
+/* 左侧垂直连接线 */
+.timeline-vertical::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-border-light) 100%);
+  border-radius: 1px;
+}
+
+/* 垂直时间轴项目 */
+.timeline-item-vertical {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.timeline-item-vertical:last-child {
+  padding-bottom: 0;
+}
+
+/* 左侧圆点和线 */
+.timeline-item-vertical .timeline-left {
+  position: relative;
+  flex-shrink: 0;
+  width: 16px;
+}
+
+.timeline-item-vertical .timeline-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border-light);
+}
+
+.timeline-item-vertical .timeline-line.first {
+  top: 8px;
+}
+
+.timeline-item-vertical .timeline-line.last {
+  bottom: auto;
+  height: 12px;
+}
+
+/* 橙色圆点 */
+.timeline-item-vertical .timeline-dot {
+  position: absolute;
+  left: -6px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid var(--color-bg-page);
+  z-index: 1;
+}
+
+.timeline-item-vertical .timeline-dot.dot-weight {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.timeline-item-vertical .timeline-dot.dot-vaccine {
+  background: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.timeline-item-vertical .timeline-dot.dot-general {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(255, 138, 76, 0.15);
+}
+
+.timeline-item-vertical .timeline-dot.dot-medical {
+  background: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* 右侧内容卡片 - 紧凑版 */
+.timeline-item-vertical .timeline-card {
+  flex: 1;
+  background: var(--color-bg-card);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow-card-normal);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid #f3f4f6;
+}
+
+.timeline-item-vertical .timeline-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-light);
+}
+
+/* 卡片头部：日期在左侧 */
+.timeline-item-vertical .card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.timeline-item-vertical .record-date {
+  font-size: 11px;
+  color: var(--color-text-light);
+  font-weight: 500;
+  order: -1;
+}
+
+.timeline-item-vertical .type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timeline-item-vertical .type-icon .svg-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.timeline-item-vertical .type-icon.icon-bg-weight {
+  background: var(--color-action-green);
+  color: var(--color-success);
+}
+
+.timeline-item-vertical .type-icon.icon-bg-vaccine {
+  background: var(--color-action-blue);
+  color: var(--color-info);
+}
+
+.timeline-item-vertical .type-icon.icon-bg-general {
+  background: var(--color-action-orange);
+  color: var(--color-primary);
+}
+
+.timeline-item-vertical .type-icon.icon-bg-medical {
+  background: var(--color-action-pink);
+  color: var(--color-danger);
+}
+
+.timeline-item-vertical .record-type {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* 主内容区域 - 突出体重数值 */
+.timeline-item-vertical .card-body-row {
+  margin-bottom: 4px;
+}
+
+.timeline-item-vertical .main-info {
+  display: flex;
+  align-items: baseline;
+}
+
+.timeline-item-vertical .value-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'DIN Alternate', 'Roboto', sans-serif;
+}
+
+.timeline-item-vertical .unit {
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--color-text-regular);
+  margin-left: 2px;
+}
+
+.timeline-item-vertical .title-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* 体重变化趋势指标 */
+.timeline-item-vertical .trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.timeline-item-vertical .trend-indicator .trend-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* 上升趋势 - 橙色（增重） */
+.timeline-item-vertical .trend-indicator.up {
+  background: rgba(255, 138, 76, 0.12);
+  color: var(--color-primary);
+}
+
+/* 下降趋势 - 绿色（减重） */
+.timeline-item-vertical .trend-indicator.down {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-success);
+}
+
+/* 日记备注 - 紧凑版 */
+.timeline-item-vertical .notes-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 6px;
+  margin-bottom: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 卡片底部：照片和标签 */
+.timeline-item-vertical .card-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 照片墙 */
+.timeline-item-vertical .photo-wall {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+}
+
+.timeline-item-vertical .mini-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-light);
+}
+
+.timeline-item-vertical .more-photos {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-block);
+  padding: 0 8px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+/* 标签区域 */
+.timeline-item-vertical .tag-box {
+  margin-left: auto;
+}
+
+.timeline-item-vertical .status-tag {
+  background: var(--color-bg-block);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* 纪念日标签 - 红色高亮 */
+.timeline-item-vertical .anniversary-tag {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: var(--color-danger);
+  font-weight: 600;
 }
 
 .timeline-section .section-header {
@@ -981,359 +1797,36 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
-/* 时间轴容器 */
-.timeline-container {
-  position: relative;
-  padding: 0 4px;
-}
-
-/* 中轴线 */
-.timeline-container::before {
-  content: '';
-  position: absolute;
-  left: 17px;
-  top: 20px;
-  bottom: 20px;
-  width: 2px;
-  background: var(--color-border-light);
-  border-radius: 2px;
-}
-
-/* 时间轴项目 */
-.timeline-item {
-  position: relative;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: flex-start;
-}
-
-.timeline-item:last-child {
-  margin-bottom: 0;
-}
-
-/* 时间点（彩色糖果点） */
-.timeline-dot {
-  position: absolute;
-  left: 9px;
-  top: 20px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 3px solid var(--color-bg-page);
-  z-index: 1;
-  flex-shrink: 0;
-}
-
-.timeline-dot.dot-weight {
-  background: var(--color-success);
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
-}
-
-.timeline-dot.dot-vaccine {
-  background: var(--color-info);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-}
-
-.timeline-dot.dot-general {
-  background: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(255, 138, 76, 0.15);
-}
-
-.timeline-dot.dot-medical {
-  background: var(--color-danger);
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
-}
-
-/* 时间轴内容卡片 */
-.timeline-content {
-  position: relative;
-  margin-left: 44px;
-  padding: 14px 16px;
-  background: var(--color-bg-card);
-  border-radius: 16px;
-  box-shadow: var(--shadow-card-normal);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-
-.timeline-content:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
-}
-
-.timeline-content:active {
-  transform: scale(0.99);
-}
-
-/* 气泡箭头指向左侧 */
-.timeline-content::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 18px;
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 8px solid var(--color-bg-card);
-}
-
-/* 图标区域 */
-.timeline-content .icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.timeline-content .svg-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.timeline-content .svg-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* 不同类型的图标颜色 */
-.timeline-content .icon-box.icon-bg-weight {
-  background: var(--color-action-green);
-  color: var(--color-success);
-}
-
-.timeline-content .icon-box.icon-bg-vaccine {
-  background: var(--color-action-blue);
-  color: var(--color-info);
-}
-
-.timeline-content .icon-box.icon-bg-general {
-  background: var(--color-action-orange);
-  color: var(--color-primary);
-}
-
-.timeline-content .icon-box.icon-bg-medical {
-  background: var(--color-action-pink);
-  color: var(--color-danger);
-}
-
-/* 信息区域 */
-.timeline-content .info-box {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.timeline-content .main-info {
-  display: flex;
-  align-items: baseline;
-}
-
-.timeline-content .value-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'DIN Alternate', 'Roboto', sans-serif;
-}
-
-.timeline-content .unit {
-  font-size: 12px;
-  font-weight: normal;
-  color: var(--color-text-regular);
-  margin-left: 2px;
-}
-
-/* 体重变化趋势指标 */
-.timeline-content .trend-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  margin-left: 6px;
-  padding: 2px 6px;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: -apple-system, BlinkMacSystemFont, 'DIN Alternate', 'Roboto', sans-serif;
-}
-
-.timeline-content .trend-indicator .trend-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.timeline-content .trend-indicator .trend-value {
-  font-weight: 600;
-}
-
-/* 上升趋势 - 橙色（增重） */
-.timeline-content .trend-indicator.up {
-  background: rgba(255, 138, 76, 0.12);
-  color: var(--color-primary);
-}
-
-/* 下降趋势 - 绿色（减重） */
-.timeline-content .trend-indicator.down {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--color-success);
-}
-
-.timeline-content .title-text {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.timeline-content .date-text {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-/* 日记备注 */
-.timeline-content .notes-text {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* 照片墙 */
-.timeline-content .photo-wall {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-left: 12px;
-  flex-shrink: 0;
-}
-
-.timeline-content .mini-photo {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid var(--color-border-light);
-}
-
-.timeline-content .more-photos {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-block);
-  padding: 0 6px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-/* 标签区域 */
-.timeline-content .tag-box {
-  margin-left: 8px;
-}
-
-.timeline-content .status-tag {
-  background: var(--color-bg-block);
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-/* 纪念日标签 - 红色高亮 */
-.timeline-content .anniversary-tag {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: var(--color-danger);
-  font-weight: 600;
-}
-
-/* 桌面端：左右交替布局 */
+/* 垂直时间轴 - 桌面端优化 */
 @media (min-width: 768px) {
-  .timeline-container {
-    padding: 0;
+  .timeline-vertical {
+    padding-left: 28px;
   }
 
-  /* 中轴线居中 */
-  .timeline-container::before {
-    left: 50%;
-    transform: translateX(-50%);
+  .timeline-vertical::before {
+    left: 8px;
   }
 
-  .timeline-item {
-    display: block;
-    width: 50%;
-    margin-bottom: 32px;
-    clear: both;
+  .timeline-item-vertical .timeline-left {
+    width: 20px;
   }
 
-  /* 左侧项目（奇数项） */
-  .timeline-item.item-left {
-    float: left;
-    padding-right: 40px;
-    clear: both;
+  .timeline-item-vertical .timeline-dot {
+    width: 16px;
+    height: 16px;
+    left: -7px;
   }
 
-  .timeline-item.item-left .timeline-dot {
-    left: auto;
-    right: -9px;
+  .timeline-item-vertical .timeline-card {
+    padding: 14px;
   }
 
-  .timeline-item.item-left .timeline-content {
-    margin-left: 0;
-    margin-right: 0;
+  .timeline-item-vertical .value-text {
+    font-size: 22px;
   }
 
-  .timeline-item.item-left .timeline-content::before {
-    left: auto;
-    right: -8px;
-    border-right: none;
-    border-left: 8px solid var(--color-bg-card);
-  }
-
-  .timeline-item.item-left .info-box,
-  .timeline-item.item-left .tag-box {
-    text-align: left;
-  }
-
-  /* 右侧项目（偶数项） */
-  .timeline-item.item-right {
-    float: right;
-    padding-left: 40px;
-    clear: right;
-  }
-
-  .timeline-item.item-right .timeline-dot {
-    left: -9px;
-  }
-
-  .timeline-item.item-right .timeline-content {
-    margin-left: 0;
-  }
-
-  .timeline-item.item-right .timeline-content::before {
-    left: -8px;
-    border-right: 8px solid var(--color-bg-card);
-    border-left: none;
-  }
-
-  /* 清除浮动 */
-  .timeline-container::after {
-    content: '';
-    display: table;
-    clear: both;
+  .timeline-item-vertical .record-date {
+    font-size: 12px;
   }
 }
 
@@ -1379,14 +1872,12 @@ onMounted(async () => {
   }
 
   .health-overview-card .data-split {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .health-overview-card .divider {
-    width: 100%;
-    height: 1px;
-    margin: 0;
+    display: none;
   }
 
   .health-overview-card .weight-block .num {
@@ -1397,74 +1888,89 @@ onMounted(async () => {
     height: 28px;
   }
 
-  /* Timeline 移动端 */
-  .timeline-container::before {
-    left: 17px;
+  /* Timeline 移动端 - 垂直时间轴适配 */
+  .timeline-vertical {
+    padding-left: 16px;
   }
 
-  .timeline-item {
-    display: flex;
-    width: 100%;
-    margin-bottom: 20px;
+  .timeline-vertical::before {
+    left: 4px;
   }
 
-  .timeline-item.item-left,
-  .timeline-item.item-right {
-    float: none;
-    width: 100%;
-    padding: 0;
+  .timeline-item-vertical .timeline-left {
+    width: 12px;
   }
 
-  .timeline-dot {
-    left: 9px !important;
-    right: auto !important;
+  .timeline-item-vertical .timeline-dot {
+    width: 10px;
+    height: 10px;
+    left: -4px;
+    top: 6px;
   }
 
-  .timeline-content {
-    margin-left: 44px;
-    margin-right: 0;
+  .timeline-item-vertical .timeline-card {
+    padding: 12px;
   }
 
-  .timeline-content::before {
-    left: -8px !important;
-    right: auto !important;
-    border-right: 8px solid var(--color-bg-card) !important;
-    border-left: none !important;
+  .timeline-item-vertical .card-header-row {
+    margin-bottom: 8px;
+    gap: 8px;
   }
 
-  .timeline-content .icon-box {
-    width: 36px;
-    height: 36px;
+  .timeline-item-vertical .type-icon {
+    width: 28px;
+    height: 28px;
   }
 
-  .timeline-content .svg-icon svg {
-    width: 18px;
-    height: 18px;
+  .timeline-item-vertical .type-icon .svg-icon svg {
+    width: 14px;
+    height: 14px;
   }
 
-  .timeline-content .value-text {
-    font-size: 15px;
+  .timeline-item-vertical .record-type {
+    font-size: 11px;
   }
 
-  .timeline-content .title-text {
+  .timeline-item-vertical .record-date {
+    font-size: 11px;
+  }
+
+  .timeline-item-vertical .value-text {
+    font-size: 18px;
+  }
+
+  .timeline-item-vertical .title-text {
     font-size: 14px;
   }
 
   /* 移动端照片墙和笔记适配 */
-  .timeline-content .photo-wall {
-    margin-left: 8px;
-    gap: 4px;
+  .timeline-item-vertical .card-footer-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
-  .timeline-content .mini-photo {
+  .timeline-item-vertical .photo-wall {
+    width: 100%;
+  }
+
+  .timeline-item-vertical .mini-photo {
     width: 36px;
     height: 36px;
   }
 
-  .timeline-content .more-photos {
+  .timeline-item-vertical .more-photos {
     height: 36px;
     font-size: 10px;
     padding: 0 4px;
+  }
+
+  .timeline-item-vertical .notes-text {
+    font-size: 12px;
+  }
+
+  .timeline-item-vertical .tag-box {
+    margin-left: 0;
   }
 
   .timeline-content .notes-text {
