@@ -6,8 +6,7 @@ import { useMyCatStore } from '../../../stores/myCat'
 import { usePetStore } from '../../../stores/pet'
 import { getProactiveAdvice } from '../../../api/proactive'
 import { getWeightAnalysis } from '../../../api/weightStandard'
-import MascotCharacter from '../../../components/mascot/MascotCharacter.vue'
-import MiniSparkline from '../../../components/charts/MiniSparkline.vue'
+import WeightGauge from '../../../components/charts/WeightGauge.vue'
 import type { DashboardCatCard, DashboardReminder, DashboardRecentRecord } from '../types'
 import type { Cat } from '../../../types/cat'
 
@@ -22,44 +21,6 @@ const recentRecords = ref<DashboardRecentRecord[]>([])
 const isLoading = ref(true)
 const healthAnalysis = ref<any>(null)
 const weightAnalysis = ref<any>(null)
-
-// 获取当前猫咪的体重趋势
-const weightTrend = computed(() => {
-  if (!weightAnalysis.value) return null
-  const deviation = weightAnalysis.value.deviation
-  if (!deviation) return null
-  const direction = deviation > 0 ? 'up' : deviation < 0 ? 'down' : 'stable'
-  const change = Math.abs(deviation).toFixed(1)
-  return { direction, change, value: deviation }
-})
-
-// 获取体重历史数据（用于 Sparkline 图表）
-const weightHistoryData = computed(() => {
-  const history = petStore.weightHistory
-  if (history.length === 0) return []
-
-  // 取最近 6 次记录，最多 6 个点
-  const recentHistory = history.slice(-6)
-
-  // 提取体重值数组
-  return recentHistory.map(h => h.weight)
-})
-
-// Sparkline 图表颜色（根据体重趋势）
-const sparklineColor = computed(() => {
-  if (!weightTrend.value) return '#10b981'
-  if (weightTrend.value.direction === 'up') return '#ff9a62'
-  if (weightTrend.value.direction === 'down') return '#10b981'
-  return '#9ca3af'
-})
-
-// 下一个待办事项
-const nextTodo = computed(() => {
-  if (reminders.value.length === 0) return null
-  const urgent = reminders.value.find(r => r.urgency === 'high')
-  if (urgent) return urgent
-  return reminders.value[0]
-})
 
 // 其他猫咪列表（用于网格展示，不包含当前选中的）
 const otherCats = computed(() => {
@@ -399,49 +360,53 @@ onMounted(async () => {
 
             <!-- 右侧：健康数据面板 -->
             <div class="hero-right">
-              <!-- AI 健康状态 -->
-              <div class="ai-status-card" @click="goToAIChat">
-                <div class="ai-status-icon">
-                  <MascotCharacter
-                    :expression="healthAnalysis?.weightAdvice?.status === 'normal' ? 'happy' : 'confused'"
-                    size="small"
-                    :animated="healthAnalysis?.weightAdvice?.status === 'normal'"
-                  />
-                </div>
-                <div class="ai-status-content">
-                  <span v-if="healthAnalysis?.weightAdvice?.status === 'normal'" class="status-tag normal">● 体型正常</span>
-                  <span v-else-if="healthAnalysis?.weightAdvice?.status" class="status-tag warning">● 需关注</span>
-                  <span v-else class="status-tag neutral">点击咨询</span>
-                  <p class="status-desc">{{ healthAnalysis?.generalAdvice || `${catStore.currentCat.name}最近状态很棒，继续保持哦！` }}</p>
-                </div>
+              <!-- 精简状态 Banner -->
+              <div class="status-banner" @click="goToAIChat">
+                <span v-if="healthAnalysis?.weightAdvice?.status === 'normal'" class="status-dot normal"></span>
+                <span v-else-if="healthAnalysis?.weightAdvice?.status" class="status-dot warning"></span>
+                <span v-else class="status-dot neutral"></span>
+                <span v-if="healthAnalysis?.weightAdvice?.status === 'normal'" class="status-text normal">体型正常</span>
+                <span v-else-if="healthAnalysis?.weightAdvice?.status" class="status-text warning">需关注</span>
+                <span v-else class="status-text neutral">点击咨询</span>
+                <span class="status-divider"></span>
+                <span class="status-desc">{{ healthAnalysis?.generalAdvice || `${catStore.currentCat.name}最近状态很棒，继续保持哦！` }}</span>
               </div>
 
               <!-- 数据网格 -->
               <div class="data-grid">
-                <div class="data-item">
-                  <div class="data-label">当前体重</div>
-                  <div class="data-value-row">
-                    <span class="data-value">{{ catStore.currentCat.weight || '--' }}</span>
-                    <span v-if="catStore.currentCat.weight" class="data-unit">kg</span>
-                    <span v-if="weightTrend" class="data-trend-badge" :class="weightTrend.direction">
-                      {{ weightTrend.direction === 'up' ? '↑' : weightTrend.direction === 'down' ? '↓' : '→' }}
-                      {{ weightTrend.direction === 'up' ? '增' : weightTrend.direction === 'down' ? '减' : '持平' }}
-                    </span>
+                <!-- 体重仪表盘 -->
+                <div class="data-item gauge-card">
+                  <div class="gauge-header">
+                    <span class="data-label">当前体重</span>
+                    <span v-if="weightAnalysis" class="standard-range">标准: {{ weightAnalysis.min }}-{{ weightAnalysis.max }}kg</span>
                   </div>
-                  <div v-if="weightHistoryData.length >= 2" class="mini-sparkline">
-                    <MiniSparkline :data="weightHistoryData" :color="sparklineColor" />
+                  <div class="gauge-container">
+                    <WeightGauge
+                      :value="catStore.currentCat.weight || 0"
+                      :min="weightAnalysis?.min || 1.5"
+                      :max="weightAnalysis?.max || 5.0"
+                      :standard-min="weightAnalysis?.min || 2.5"
+                      :standard-max="weightAnalysis?.max || 4.0"
+                    />
                   </div>
                 </div>
 
-                <div class="data-item">
-                  <div class="data-label">待办事项</div>
-                  <div v-if="nextTodo" class="todo-mini" :class="{ urgent: nextTodo.urgency === 'high' }">
-                    <span class="todo-checkbox"></span>
-                    <span class="todo-text">{{ nextTodo.title }}</span>
-                  </div>
-                  <div v-else class="todo-mini empty">
-                    <span class="todo-checkbox done"></span>
-                    <span class="todo-text">暂无待办</span>
+                <!-- 近期待办 -->
+                <div class="data-item todos-card">
+                  <span class="data-label">近期待办</span>
+                  <div class="todos-list">
+                    <label v-for="todo in reminders.slice(0, 3)" :key="todo.id" class="todo-item">
+                      <input type="checkbox" class="todo-checkbox" />
+                      <div class="todo-content">
+                        <span class="todo-title">{{ todo.title }}</span>
+                        <span v-if="todo.urgency === 'high'" class="todo-date urgent">{{ todo.description }}</span>
+                        <span v-else class="todo-date">{{ todo.description }}</span>
+                      </div>
+                    </label>
+                    <div v-if="reminders.length === 0" class="todos-empty">
+                      <span class="todo-checkbox done"></span>
+                      <span class="todo-text">暂无待办</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -833,59 +798,73 @@ onMounted(async () => {
   gap: 16px;
 }
 
-/* AI 状态卡片 */
-.ai-status-card {
+/* 精简状态 Banner */
+.status-banner {
   display: flex;
-  gap: 12px;
-  padding: 14px;
-  background: var(--color-success-bg);
-  border-radius: 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.ai-status-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+.status-banner:hover {
+  background: #d1fae5;
 }
 
-.ai-status-icon {
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
-.ai-status-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.status-dot.normal {
+  background: #10b981;
 }
 
-.status-tag {
+.status-dot.warning {
+  background: #f59e0b;
+}
+
+.status-dot.neutral {
+  background: #d1d5db;
+}
+
+.status-text {
   font-size: 13px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
-.status-tag.normal {
-  color: var(--color-success);
+.status-text.normal {
+  color: #059669;
 }
 
-.status-tag.warning {
-  color: var(--color-warning);
+.status-text.warning {
+  color: #d97706;
 }
 
-.status-tag.neutral {
-  color: var(--color-text-secondary);
+.status-text.neutral {
+  color: #6b7280;
+}
+
+.status-divider {
+  width: 1px;
+  height: 14px;
+  background: #d1d5db;
+  flex-shrink: 0;
 }
 
 .status-desc {
   font-size: 12px;
-  color: var(--color-text-regular);
-  margin: 0;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: #047857;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
 }
 
 /* 数据网格 */
@@ -893,15 +872,134 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  flex: 1;
 }
 
 .data-item {
-  background: var(--color-bg-block);
+  background: #f9fafb;
   border-radius: 12px;
   padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* 体重仪表盘卡片 */
+.gauge-card {
+  min-height: 140px;
+}
+
+.gauge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.standard-range {
+  font-size: 10px;
+  color: #9ca3af;
+  background: #ffffff;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid #e5e7eb;
+}
+
+.gauge-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+/* 待办卡片 */
+.todos-card {
+  min-height: 140px;
+}
+
+.todos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.todo-item:hover {
+  background: #ffffff;
+}
+
+.todo-item input[type="checkbox"] {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.todo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.todo-title {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.todo-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.todo-date.urgent {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.todos-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.todos-empty .todo-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #10b981;
+  background: #10b981;
+  border-radius: 4px;
+  position: relative;
+}
+
+.todos-empty .todo-checkbox::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
 }
 
 /* 体重趋势Badge */
@@ -928,113 +1026,6 @@ onMounted(async () => {
 .data-trend-badge.stable {
   background: #dbeafe;
   color: #2563eb;
-}
-
-.data-label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.data-value-row {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.data-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.data-unit {
-  font-size: 13px;
-  color: var(--color-text-regular);
-}
-
-.mini-sparkline {
-  height: 28px;
-  margin-top: 4px;
-}
-
-/* 待办迷你卡片 - 复选框样式 */
-.todo-mini {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid var(--color-border-light);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.todo-mini:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-}
-
-.todo-mini.urgent {
-  border-color: #fcd34d;
-  background: #fffbeb;
-}
-
-.todo-checkbox {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #d1d5db;
-  border-radius: 4px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.todo-checkbox.done {
-  background: var(--color-success);
-  border-color: var(--color-success);
-}
-
-.todo-checkbox.done::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.todo-mini .todo-text {
-  font-size: 13px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-.todo-mini.empty {
-  background: var(--color-bg-block);
-  cursor: default;
-}
-
-.todo-mini.urgent .todo-checkbox {
-  border-color: #f59e0b;
-  background: #fef3c7;
-}
-
-.todo-mini .todo-icon {
-  font-size: 16px;
-}
-
-.todo-mini .todo-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.todo-mini.empty .todo-text {
-  color: var(--color-success);
 }
 
 /* 其他家庭成员网格 */
