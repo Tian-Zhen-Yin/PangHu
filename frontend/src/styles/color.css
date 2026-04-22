@@ -11,6 +11,9 @@
   --color-primary-light: #FFF4EE;
   --color-primary-soft: rgba(255, 138, 76, 0.08);
   --color-primary-gradient: linear-gradient(135deg, #FFA065 0%, #FF7A3E 100%);
+  --color-primary-medium: #FFB88C;         /* medium brand bg, replaces #F4A261 */
+  --color-primary-dark: #E06A30;           /* dark brand text, replaces #E76F51/#ea580c */
+  --color-primary-gradient-hover: linear-gradient(135deg, #FFB088 0%, #FF8848 100%);
 
   /* ========== 🍃 状态色 (Status Colors) - 薄荷马卡龙系列 ========== */
   --color-success: #10B981;
@@ -34,6 +37,9 @@
   --color-bg-block: #F7F5F3;
   --color-bg-muted: #EFECE7;
   --color-bg-hover: #F5F2ED;
+  --color-bg-block-hover: #F1F0ED;         /* warm hover state, replaces cool-gray hovers */
+  --color-bg-warm: #FAF8F5;                /* warm page bg, consolidates cream tints */
+  --color-bg-cream: #FDF3E9;               /* cream accent bg, replaces #FDF3E9/#FFF7ED */
 
   /* ========== 边框 ========== */
   --color-border-light: #EFEBE9;
@@ -46,6 +52,7 @@
   --color-text-regular: #666666;
   --color-text-secondary: #999999;
   --color-text-light: #BFB5B0;
+  --color-text-placeholder: #B5B0AB;       /* warm placeholder, replaces #94a3b8/#9CA3AF */
   --color-text-white: #FFFFFF;
 
   /* ========== 🌟 阴影 (Shadows) - 营造悬浮透气感 ========== */
