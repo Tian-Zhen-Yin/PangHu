@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCatStore } from '../../../stores/cat'
 import { useMyCatStore } from '../../../stores/myCat'
+import { useAuthStore } from '../../../stores/auth'
 import type { Stage } from '../../../types/cat'
 
 /**
@@ -22,6 +23,7 @@ function storageKey(catId: string): string {
 export function useTimelineState() {
   const catStore = useCatStore()
   const myCatStore = useMyCatStore()
+  const authStore = useAuthStore()
   const { currentCat } = storeToRefs(myCatStore)
 
   // ------------------------------------------------------------------ state
@@ -148,6 +150,10 @@ export function useTimelineState() {
   }
 
   return {
+    catStore,
+    myCatStore,
+    authStore,
+    currentCat,
     // state
     selectedStage,
     taskStates,
