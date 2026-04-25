@@ -87,21 +87,6 @@ const priorityColors = {
   }
 }
 
-// 趋势图标
-const trendIcon = computed(() => {
-  switch (props.trend?.direction) {
-    case 'up':
-      return 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
-    case 'down':
-      return 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'
-    case 'stable':
-      return 'M5 12h14'
-    default:
-      return ''
-  }
-})
-
-// 趋势颜色
 const trendColor = computed(() => {
   if (!props.trend) return 'var(--color-text-regular)'
   switch (props.trend.status) {

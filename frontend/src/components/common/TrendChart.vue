@@ -37,7 +37,7 @@ const changePercent = computed(() => {
   if (props.data.length < 2) return 0
   const first = props.data[0]!.value
   if (first === 0) return 0
-  return ((changeValue.value / first) * 100).toFixed(1)
+  return Number(((changeValue.value / first) * 100).toFixed(1))
 })
 
 // 状态颜色
@@ -85,18 +85,6 @@ const areaPath = computed(() => {
 })
 
 // 趋势图标
-const trendIcon = computed(() => {
-  switch (props.direction) {
-    case 'up':
-      return 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6'
-    case 'down':
-      return 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'
-    case 'stable':
-      return 'M5 12h14'
-    default:
-      return ''
-  }
-})
 </script>
 
 <template>

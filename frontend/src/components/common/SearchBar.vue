@@ -27,17 +27,6 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
-function toggleExpand() {
-  isExpanded.value = !isExpanded.value
-  if (isExpanded.value) {
-    // Focus input when expanded
-    nextTick(() => {
-      const input = document.querySelector('.search-input') as HTMLInputElement
-      input?.focus()
-    })
-  }
-}
-
 function clearSearch() {
   searchQuery.value = ''
   emit('search', '')

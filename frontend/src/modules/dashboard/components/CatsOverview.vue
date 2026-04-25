@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { DashboardCatCard } from '../types'
 import type { Cat } from '../../../types/cat'
 import { useMyCatStore } from '../../../stores/myCat'

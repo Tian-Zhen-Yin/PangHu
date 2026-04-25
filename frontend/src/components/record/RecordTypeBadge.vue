@@ -57,35 +57,14 @@ const props = withDefaults(defineProps<Props>(), {
   isAdoptionDay: false
 })
 
-const config = computed(() => RECORD_TYPE_CONFIG[props.type])
+const config = computed(() => RECORD_TYPE_CONFIG[props.type] ?? RECORD_TYPE_CONFIG.daily)
 
 const typeClass = computed(() => {
   if (props.isAdoptionDay) return 'is-adoption'
   return `is-${props.type}`
 })
 
-// SVG 图标
-const iconSvg = computed(() => {
-  const icons: Record<string, unknown> = {
-    daily: 'svg',
-    vaccine: 'svg',
-    deworm: 'svg',
-    health: 'svg',
-    free: 'svg'
-  }
-  return 'svg'
-})
-</script>
 
-<script lang="ts">
-// 图标 SVG 路径定义
-const iconPaths = {
-  daily: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />',
-  vaccine: '<path stroke-linecap="round" stroke-linejoin="round" d="M9 2h6a2 2 0 012 2v2a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 10V6a3 3 0 016 0v4" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14v4" /><path stroke-linecap="round" stroke-linejoin="round" d="M10 16h4" />',
-  deworm: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z" />',
-  health: '<path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" />',
-  free: '<path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />'
-}
 </script>
 
 <style scoped>

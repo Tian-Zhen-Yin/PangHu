@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, useRoute } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
 import { computed } from 'vue'
-import {
-  HomeFilled,
-  TrendCharts,
-  Reading,
-  ChatDotRound
-} from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 const route = useRoute()

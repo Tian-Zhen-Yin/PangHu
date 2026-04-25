@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, readonly, provide, type Ref } from 'vue'
+import { ref, inject, readonly, provide } from 'vue'
 import type { MascotExpression } from './MascotCharacter.vue'
 
 const props = defineProps<{
@@ -26,10 +26,10 @@ provide(MASCOT_CONTEXT_KEY, {
 
 // Export composable for child components
 export function useMascot() {
-  const context = inject<ReturnType<typeof provideMascotContext>>(MASCOT_CONTEXT_KEY)
+  const context = inject(MASCOT_CONTEXT_KEY)
   if (!context) {
     return {
-      expression: readonly(ref(props.defaultExpression ?? 'default')),
+      expression: readonly(ref('default' as MascotExpression)),
       setExpression: () => {},
       resetExpression: () => {}
     }

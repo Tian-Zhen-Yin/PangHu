@@ -1,7 +1,13 @@
 import { ref } from 'vue'
-import type { ToastItem } from '../components/common/Toast'
 
 const toasts = ref<ToastItem[]>([])
+
+interface ToastItem {
+  id: string
+  message: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  duration?: number
+}
 
 let idCounter = 0
 

@@ -13,7 +13,8 @@ const dailyQuotes = [
 ]
 
 onMounted(() => {
-  quote.value = dailyQuotes[Math.floor(Math.random() * dailyQuotes.length)]
+  const idx = Math.floor(Math.random() * dailyQuotes.length)
+  quote.value = dailyQuotes[idx]!
 })
 </script>
 
