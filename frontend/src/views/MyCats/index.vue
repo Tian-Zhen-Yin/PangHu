@@ -63,15 +63,15 @@
 
         <div class="pet-main-info">
           <div class="avatar-ring">
-            <img v-if="cat.avatarData || cat.avatar" :src="getAvatarUrl(cat)" :alt="cat.name" class="pet-avatar" />
-            <span v-else class="avatar-placeholder">🐱</span>
+            <img v-if="hasAvatar(cat)" :src="getAvatarUrl(cat)" :alt="cat.name" class="pet-avatar" @error="onAvatarError(cat)" />
+            <span v-else class="avatar-initials">{{ cat.name?.charAt(0) || '?' }}</span>
           </div>
           <h3 class="pet-name">{{ cat.name }}</h3>
           <p class="pet-meta">{{ cat.breed || '未知品种' }} · {{ cat.gender === 'male' ? '公' : cat.gender === 'female' ? '母' : '未知' }}</p>
           <div class="pet-stats-pill">
             <span>{{ cat.ageFormatted }}</span>
             <span class="divider">|</span>
-            <span>{{ cat.weight || '--' }} kg</span>
+            <span>{{ formatWeight(cat.weight) }}</span>
           </div>
         </div>
 
@@ -109,10 +109,13 @@ import { storeToRefs } from 'pinia'
 import { useMyCatStore } from '../../stores/myCat'
 import EmptyState from '../../components/common/EmptyState.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
+import { formatWeight, getAvatarUrl } from '../../utils/format'
 import type { Cat } from '../../types/cat'
 
 const catStore = useMyCatStore()
 const { cats, currentCat, loading } = storeToRefs(catStore)
+
+const failedAvatars = ref<Set<string>>(new Set())
 
 // 长按删除相关
 const pressTimer = ref<ReturnType<typeof setTimeout> | null>(null)
@@ -125,16 +128,12 @@ function handleSelectCat(cat: Cat) {
   catStore.selectCat(cat)
 }
 
-// 获取头像完整URL
-function getAvatarUrl(cat: Cat) {
-  // 优先使用 base64 头像数据
-  if (cat.avatarData) {
-    return cat.avatarData
-  }
-  // 其次使用文件路径
-  if (!cat.avatar) return ''
-  if (cat.avatar.startsWith('http')) return cat.avatar
-  return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:3000'}/${cat.avatar}`
+function hasAvatar(cat: Cat): boolean {
+  return !!(cat.avatarData || cat.avatar) && !failedAvatars.value.has(cat.id)
+}
+
+function onAvatarError(cat: Cat) {
+  failedAvatars.value.add(cat.id)
 }
 
 // 普通的点击删除确认
@@ -150,12 +149,12 @@ async function handleDelete(cat: Cat) {
   margin: 0 auto;
   padding: 24px 16px;
   position: relative;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 /* 背景胖虎水印 */
 .page-bg-mascot {
-  position: fixed;
+  position: absolute;
   right: -60px;
   bottom: -60px;
   opacity: 0.06;
@@ -176,13 +175,13 @@ async function handleDelete(cat: Cat) {
 .header-left h1 {
   font-size: 26px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 13px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   margin: 4px 0 0 0;
 }
 
@@ -193,7 +192,7 @@ async function handleDelete(cat: Cat) {
 
 /* 按钮样式 */
 .btn-primary {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -214,14 +213,14 @@ async function handleDelete(cat: Cat) {
 }
 
 .btn-secondary {
-  background: #FFFFFF;
-  color: #6B7280;
-  border: 1.5px solid #E5E7EB;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  border: 1.5px solid var(--color-text-secondary);
   padding: 10px 18px;
   border-radius: 100px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -229,9 +228,9 @@ async function handleDelete(cat: Cat) {
 }
 
 .btn-secondary:hover {
-  background: #F9FAFB;
-  border-color: #D1D5DB;
-  color: #374151;
+  background: var(--color-primary-medium);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
 }
 
 .btn-icon {
@@ -251,7 +250,7 @@ async function handleDelete(cat: Cat) {
 
 .loading-text {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   margin: 0;
 }
 
@@ -266,7 +265,7 @@ async function handleDelete(cat: Cat) {
 
 /* 高级猫咪卡片 */
 .pet-premium-card {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFF9F5 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 28px;
   padding: 24px;
   border: 2px solid transparent;
@@ -282,12 +281,12 @@ async function handleDelete(cat: Cat) {
 .pet-premium-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(244, 162, 97, 0.12);
-  border-color: #FED7AA;
+  border-color: var(--color-primary-medium);
 }
 
 /* 当前选中状态 */
 .pet-premium-card.is-active {
-  border-color: #F4A261;
+  border-color: var(--color-primary-medium);
   box-shadow: 0 12px 32px rgba(244, 162, 97, 0.18);
 }
 
@@ -296,7 +295,7 @@ async function handleDelete(cat: Cat) {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: #FFFFFF;
   font-size: 11px;
   font-weight: 700;
@@ -311,7 +310,7 @@ async function handleDelete(cat: Cat) {
   height: 80px;
   border-radius: 50%;
   padding: 4px;
-  background: linear-gradient(135deg, #FDF3E9 0%, #FED7AA 100%);
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -325,44 +324,53 @@ async function handleDelete(cat: Cat) {
   object-fit: cover;
 }
 
-.avatar-placeholder {
-  font-size: 36px;
+.avatar-initials {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--color-bg-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
 /* 猫咪信息 */
 .pet-name {
   font-size: 18px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0 0 4px 0;
 }
 
 .pet-meta {
   font-size: 13px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   margin: 0 0 12px 0;
 }
 
 /* 状态药丸 */
 .pet-stats-pill {
-  background: #F9FAFB;
+  background: var(--color-bg-page);
   padding: 6px 18px;
   border-radius: 100px;
   font-size: 12px;
-  color: #6B7280;
+  color: var(--color-text-regular);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .pet-stats-pill .divider {
-  color: #D1D5DB;
+  color: var(--color-text-secondary);
 }
 
 /* 操作按钮dock */
 .pet-action-dock {
   display: flex;
-  background: #F3F4F6;
+  background: var(--color-bg-block-hover);
   border-radius: 16px;
   padding: 4px;
   width: 100%;
@@ -386,7 +394,7 @@ async function handleDelete(cat: Cat) {
 .dock-item svg {
   width: 18px;
   height: 18px;
-  color: #6B7280;
+  color: var(--color-text-regular);
   transition: color 0.2s;
 }
 
@@ -395,7 +403,7 @@ async function handleDelete(cat: Cat) {
 }
 
 .dock-item:hover svg {
-  color: #F4A261;
+  color: var(--color-primary);
 }
 
 /* 删除按钮特殊样式 */
@@ -404,7 +412,7 @@ async function handleDelete(cat: Cat) {
 }
 
 .dock-item.delete:hover svg {
-  color: #EF4444;
+  color: var(--color-danger);
 }
 
 /* 移动端适配 */

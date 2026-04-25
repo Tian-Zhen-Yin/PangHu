@@ -259,7 +259,7 @@ onMounted(() => {
 /* ================= 页面容器 ================= */
 .guide-detail-refined {
   min-height: 100vh;
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   padding: 24px;
   animation: fadeIn 0.4s ease-out;
 }
@@ -297,14 +297,14 @@ onMounted(() => {
 .error-text,
 .empty-text {
   font-size: 14px;
-  color: #9CA3AF;
+  color: var(--color-text-regular);
   margin: 0 0 20px 0;
 }
 
 .retry-btn,
 .action-btn {
   padding: 12px 28px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: #FFFFFF;
   border: none;
   border-radius: 100px;
@@ -334,7 +334,7 @@ onMounted(() => {
 .reading-sidebar {
   position: sticky;
   top: 24px;
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 20px;
   padding: 20px;
   border: 1px solid #F5F0E8;
@@ -348,15 +348,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-bg-cream) 100%);
   border-radius: 16px;
-  border: 1px solid #FED7AA;
+  border: 1px solid var(--color-primary-medium);
 }
 
 .sidebar-title {
   font-size: 14px;
   font-weight: 700;
-  color: #F4A261;
+  color: var(--color-primary);
   margin: 0 0 16px 0;
   text-align: center;
   text-transform: uppercase;
@@ -375,7 +375,7 @@ onMounted(() => {
   padding: 8px;
   border: none;
   background: transparent;
-  color: #6B7280;
+  color: var(--color-text-primary);
   font-size: 13px;
   border-radius: 8px;
   cursor: pointer;
@@ -383,12 +383,12 @@ onMounted(() => {
 }
 
 .toc-item:hover {
-  background: #FFF7ED;
-  color: #F4A261;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  color: #7C2D12;
 }
 
 .toc-item.active {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: #FFFFFF;
   font-weight: 600;
 }
@@ -404,9 +404,9 @@ onMounted(() => {
   gap: 6px;
   padding: 10px 20px;
   background: #FFFFFF;
-  border: 1.5px solid #E5E7EB;
+  border: 1.5px solid var(--color-border-light);
   border-radius: 100px;
-  color: #6B7280;
+  color: var(--color-text-primary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -415,9 +415,9 @@ onMounted(() => {
 }
 
 .back-button:hover {
-  background: #FFFBF7;
-  border-color: #F4A261;
-  color: #F4A261;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  border-color: var(--color-primary-medium);
+  color: #7C2D12;
 }
 
 .back-icon {
@@ -427,7 +427,7 @@ onMounted(() => {
 
 /* ================= 文章卡片 ================= */
 .guide-article {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF8 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 24px;
   padding: 32px;
   border: 1px solid #FFFFFF;
@@ -455,12 +455,12 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%);
-  border: 1px solid #FED7AA;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  border: 1px solid var(--color-primary-medium);
   border-radius: 100px;
   font-size: 12px;
   font-weight: 700;
-  color: #F4A261;
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -469,7 +469,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #9CA3AF;
+  color: var(--color-text-regular);
   font-size: 12px;
 }
 
@@ -481,21 +481,21 @@ onMounted(() => {
 .article-title {
   font-size: 28px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0 0 12px 0;
   line-height: 1.3;
 }
 
 .article-excerpt {
   font-size: 16px;
-  color: #6B7280;
+  color: var(--color-text-regular);
   line-height: 1.7;
   margin: 0;
 }
 
 /* ================= Markdown 内容 ================= */
 .markdown-content {
-  color: #374151;
+  color: var(--color-text-primary);
   line-height: 1.8;
 }
 
@@ -505,7 +505,7 @@ onMounted(() => {
 .markdown-content :deep(h4),
 .markdown-content :deep(h5),
 .markdown-content :deep(h6) {
-  color: #374151;
+  color: var(--color-text-primary);
   font-weight: 700;
   margin-top: 2rem;
   margin-bottom: 1rem;
@@ -532,16 +532,16 @@ onMounted(() => {
 }
 
 .markdown-content :deep(code) {
-  background: #FFF7ED;
+  background: var(--color-bg-cream);
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   font-size: 0.875em;
-  color: #F4A261;
+  color: var(--color-primary);
   font-family: 'Courier New', monospace;
 }
 
 .markdown-content :deep(pre) {
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   padding: 1rem;
   border-radius: 12px;
   overflow-x: auto;
@@ -551,24 +551,24 @@ onMounted(() => {
 
 .markdown-content :deep(pre code) {
   background: transparent;
-  color: #374151;
+  color: var(--color-text-primary);
   padding: 0;
 }
 
 .markdown-content :deep(blockquote) {
-  border-left: 3px solid #F4A261;
+  border-left: 3px solid var(--color-primary-medium);
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #6B7280;
-  background: linear-gradient(90deg, #FFF7ED 0%, transparent 100%);
+  color: var(--color-text-regular);
+  background: linear-gradient(90deg, var(--color-bg-cream) 0%, transparent 100%);
   padding: 12px 16px;
   border-radius: 0 12px 12px 0;
 }
 
 .markdown-content :deep(a) {
-  color: #F4A261;
+  color: var(--color-primary);
   text-decoration: none;
-  border-bottom: 1px dashed #F4A261;
+  border-bottom: 1px dashed var(--color-primary-medium);
   transition: all 0.2s;
 }
 
@@ -592,9 +592,9 @@ onMounted(() => {
 }
 
 .markdown-content :deep(th) {
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .markdown-content :deep(img) {
@@ -616,9 +616,9 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-bg-cream) 100%);
   border-radius: 16px;
-  border: 1px solid #FED7AA;
+  border: 1px solid var(--color-primary-medium);
 }
 
 .feedback-mascot {
@@ -634,7 +634,7 @@ onMounted(() => {
 .feedback-question {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0 0 12px 0;
 }
 
@@ -658,25 +658,26 @@ onMounted(() => {
 
 .feedback-btn.helpful {
   background: #FFFFFF;
-  border-color: #22C55E;
-  color: #22C55E;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .feedback-btn.helpful:hover {
-  background: #22C55E;
+  background: var(--color-success);
   color: #FFFFFF;
   transform: scale(1.05);
 }
 
 .feedback-btn.not-helpful {
   background: #FFFFFF;
-  border-color: #9CA3AF;
-  color: #9CA3AF;
+  border-color: var(--color-text-secondary);
+  color: var(--color-text-regular);
 }
 
 .feedback-btn.not-helpful:hover {
-  background: #9CA3AF;
-  color: #FFFFFF;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
   transform: scale(1.05);
 }
 
@@ -692,16 +693,16 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   padding: 24px;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-bg-cream) 100%);
   border-radius: 16px;
-  border: 1px solid #FED7AA;
+  border: 1px solid var(--color-primary-medium);
   text-align: center;
 }
 
 .thanks-text {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0;
 }
 

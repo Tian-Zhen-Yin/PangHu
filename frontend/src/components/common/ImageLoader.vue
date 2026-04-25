@@ -99,7 +99,7 @@ const imageStyle = computed(() => {
   position: relative;
   display: inline-block;
   overflow: hidden;
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
   border-radius: 0.5rem;
 }
 
@@ -119,7 +119,7 @@ const imageStyle = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--color-bg-page) 0%, var(--color-border-light) 100%);
 }
 
 .placeholder-spinner {
@@ -130,8 +130,8 @@ const imageStyle = computed(() => {
 .spinner-ring {
   width: 100%;
   height: 100%;
-  border: 3px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -144,7 +144,7 @@ const imageStyle = computed(() => {
 
 .placeholder-text {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
 }
 
 /* 错误占位符 */
@@ -166,6 +166,6 @@ const imageStyle = computed(() => {
 
 .error-text {
   font-size: 0.875rem;
-  color: #ef4444;
+  color: var(--color-danger);
 }
 </style>

@@ -80,7 +80,7 @@ const timeDisplay = computed(() => {
 <template>
   <div :class="['chat-message', isAssistant ? 'assistant' : 'user']">
     <div class="message-avatar">
-      <MascotCharacter v-if="isAssistant" expression="focused" size="small" :animated="false" />
+      <MascotCharacter v-if="isAssistant" expression="focused" size="tiny" :animated="false" />
       <div v-else class="user-avatar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -160,17 +160,20 @@ const timeDisplay = computed(() => {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-full);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
-  background: #E5E7EB;
+  background: linear-gradient(135deg, var(--color-primary-medium) 0%, var(--color-primary-gradient) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9CA3AF;
+  color: #78350F;
+  border: var(--color-primary-medium);
 }
 
 .user-avatar svg {
@@ -189,24 +192,26 @@ const timeDisplay = computed(() => {
   line-height: 1.6;
 }
 
-/* AI 气泡 - 奶油风 */
+/* AI 气泡 - 医疗建议卡风格 */
 .cream-bubble {
-  padding: 14px 18px;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
-  border: 1px solid #FED7AA;
-  border-radius: 4px 18px 18px 18px;
-  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.08);
-  color: #4B5563;
+  padding: 16px 20px;
+  background: #FFFFFF;
+  border: none;
+  border-left: 3px solid var(--color-primary);
+  border-radius: 2px 16px 16px 16px;
+  box-shadow: 0 2px 12px rgba(90, 74, 66, 0.08);
+  color: var(--color-text-regular);
+  position: relative;
 }
 
-/* 用户气泡 - 纯白 */
+/* 用户气泡 - 品牌色调 */
 .user-bubble {
   padding: 12px 18px;
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 18px 4px 18px 18px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  color: #374151;
+  background: var(--color-primary-light);
+  border: none;
+  border-radius: 20px 4px 20px 20px;
+  box-shadow: 0 2px 8px rgba(255, 138, 76, 0.1);
+  color: var(--color-text-primary);
 }
 
 /* Markdown 内容样式 */
@@ -227,7 +232,7 @@ const timeDisplay = computed(() => {
 .markdown-content :deep(h3) {
   margin: 12px 0 8px 0;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .markdown-content :deep(h1) {
@@ -253,16 +258,16 @@ const timeDisplay = computed(() => {
 }
 
 .markdown-content :deep(code) {
-  background-color: #FFF7ED;
+  background-color: var(--color-bg-cream);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 13px;
   font-family: 'Courier New', monospace;
-  color: #F4A261;
+  color: var(--color-primary);
 }
 
 .markdown-content :deep(pre) {
-  background-color: #FAF8F5;
+  background-color: var(--color-bg-warm);
   padding: 12px;
   border-radius: 8px;
   overflow-x: auto;
@@ -273,19 +278,19 @@ const timeDisplay = computed(() => {
 .markdown-content :deep(pre code) {
   background-color: transparent;
   padding: 0;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .markdown-content :deep(blockquote) {
-  border-left: 3px solid #F4A261;
+  border-left: 3px solid var(--color-primary-medium);
   padding-left: 12px;
   margin: 8px 0;
-  color: #6B7280;
+  color: var(--color-text-regular);
 }
 
 .markdown-content :deep(strong) {
   font-weight: 600;
-  color: #F4A261;
+  color: var(--color-primary);
 }
 
 .plain-content {
@@ -294,13 +299,14 @@ const timeDisplay = computed(() => {
   font-size: 14px;
 }
 
-/* 引用来源样式 */
+/* 引用来源样式 - 标签化 */
 .message-citations {
   margin-top: 8px;
-  padding: 10px 12px;
-  background: #FAF8F5;
+  padding: 10px 14px;
+  background: #FFFFFF;
   border-radius: 10px;
-  border: 1px solid #F5F0E8;
+  border: none;
+  box-shadow: 0 1px 6px rgba(90, 74, 66, 0.06);
 }
 
 .citations-header {
@@ -309,15 +315,15 @@ const timeDisplay = computed(() => {
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #F4A261;
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .citations-icon {
   width: 12px;
   height: 12px;
+  color: var(--color-primary);
 }
 
 .citations-list {
@@ -327,23 +333,24 @@ const timeDisplay = computed(() => {
 }
 
 .citation-item {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  background: white;
-  border: 1px solid #E5E7EB;
+  padding: 4px 12px;
+  background: var(--color-primary-light);
+  border: none;
   border-radius: 100px;
   font-size: 12px;
-  color: #4B5563;
+  color: var(--color-primary-dark);
   cursor: pointer;
   transition: all 0.2s;
+  font-weight: 500;
 }
 
 .citation-item:hover {
-  background: #FFF7ED;
-  border-color: #F4A261;
-  color: #F4A261;
+  background: var(--color-primary);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(255, 138, 76, 0.25);
 }
 
 .citation-title {
@@ -355,7 +362,7 @@ const timeDisplay = computed(() => {
 
 .citation-score {
   font-size: 10px;
-  color: #F4A261;
+  opacity: 0.7;
   font-weight: 600;
 }
 
@@ -366,35 +373,50 @@ const timeDisplay = computed(() => {
   justify-content: space-between;
   margin-top: 4px;
   padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.chat-message:hover .message-footer {
+  opacity: 1;
 }
 
 .message-time {
   font-size: 11px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 .action-button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border: none;
-  background: none;
-  color: #9CA3AF;
-  font-size: 12px;
+  background: transparent;
+  color: var(--color-text-placeholder);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s;
+  opacity: 0;
+}
+
+.chat-message:hover .action-button {
+  opacity: 1;
 }
 
 .action-button:hover {
-  background-color: #F3F4F6;
-  color: #6B7280;
+  background-color: var(--color-bg-cream);
+  color: var(--color-primary);
 }
 
 .action-button .icon {
   width: 14px;
   height: 14px;
+}
+
+.action-button span {
+  display: none;
 }
 
 @media (max-width: 767px) {

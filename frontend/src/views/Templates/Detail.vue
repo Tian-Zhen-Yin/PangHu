@@ -592,7 +592,7 @@ watch(() => planStore.plans, () => {
 <style scoped>
 .template-detail-page {
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   padding: 1rem;
 }
 
@@ -609,8 +609,8 @@ watch(() => planStore.plans, () => {
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 4px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -623,7 +623,7 @@ watch(() => planStore.plans, () => {
 
 .retry-btn {
   padding: 0.75rem 1.5rem;
-  background: #f97316;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -647,9 +647,9 @@ watch(() => planStore.plans, () => {
 .back-btn {
   padding: 0.625rem 1.25rem;
   background: white;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -657,9 +657,9 @@ watch(() => planStore.plans, () => {
 }
 
 .back-btn:hover {
-  background: #f8fafc;
-  border-color: #f97316;
-  color: #f97316;
+  background: var(--color-bg-page);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .action-buttons {
@@ -671,9 +671,9 @@ watch(() => planStore.plans, () => {
 .action-btn {
   padding: 0.625rem 1.25rem;
   background: white;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -681,20 +681,20 @@ watch(() => planStore.plans, () => {
 }
 
 .action-btn:hover {
-  border-color: #f97316;
-  color: #f97316;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .action-btn.saved {
   background: #ecfdf5;
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .progress-saved {
   padding: 0.5rem 1rem;
   background: #ecfdf5;
-  color: #16a34a;
+  color: var(--color-success);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -706,9 +706,9 @@ watch(() => planStore.plans, () => {
   right: 2rem;
   padding: 1rem 1.5rem;
   background: #ecfdf5;
-  border: 1px solid #22c55e;
+  border: 1px solid var(--color-success);
   border-radius: 0.5rem;
-  color: #16a34a;
+  color: var(--color-success);
   font-weight: 500;
   z-index: 100;
   animation: slideIn 0.3s ease;
@@ -737,7 +737,7 @@ watch(() => planStore.plans, () => {
 
 /* 计划信息栏 */
 .plan-info-bar {
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, #ffedd5 100%);
   border: 1px solid #fdba74;
   border-radius: 1rem;
   padding: 1.25rem 1.5rem;
@@ -754,7 +754,7 @@ watch(() => planStore.plans, () => {
 .plan-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #ea580c;
+  color: var(--color-primary-dark);
 }
 
 .progress-info {
@@ -781,21 +781,21 @@ watch(() => planStore.plans, () => {
 .progress-bar-bg {
   flex: 1;
   height: 8px;
-  background: #fed7aa;
+  background: var(--color-primary-medium);
   border-radius: 9999px;
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   transition: width 0.3s ease;
 }
 
 .progress-text {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #ea580c;
+  color: var(--color-primary-dark);
   min-width: 3rem;
   text-align: right;
 }
@@ -818,8 +818,8 @@ watch(() => planStore.plans, () => {
 
 .category-tag {
   padding: 0.375rem 0.875rem;
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--color-bg-cream);
+  color: var(--color-primary-dark);
   border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -828,7 +828,7 @@ watch(() => planStore.plans, () => {
 .edit-mode-badge {
   padding: 0.375rem 0.875rem;
   background: #dbeafe;
-  color: #2563eb;
+  color: var(--color-info);
   border-radius: 9999px;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -837,12 +837,12 @@ watch(() => planStore.plans, () => {
 .template-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .template-description {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 1.125rem;
   line-height: 1.6;
   margin: 0;
@@ -865,13 +865,13 @@ watch(() => planStore.plans, () => {
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .section-hint {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
 }
 
 .task-section,
@@ -894,10 +894,10 @@ watch(() => planStore.plans, () => {
 .category-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 2px solid var(--color-bg-block-hover);
 }
 
 .task-list {
@@ -911,14 +911,14 @@ watch(() => planStore.plans, () => {
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   border-radius: 0.75rem;
   border: 2px solid transparent;
   transition: all 0.2s ease;
 }
 
 .task-item:hover {
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
 }
 
 .task-item.completed {
@@ -950,7 +950,7 @@ watch(() => planStore.plans, () => {
   display: block;
   width: 24px;
   height: 24px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -958,8 +958,8 @@ watch(() => planStore.plans, () => {
 }
 
 .task-checkbox input[type="checkbox"]:checked + label {
-  background: #22c55e;
-  border-color: #22c55e;
+  background: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .task-checkbox input[type="checkbox"]:checked + label::after {
@@ -986,13 +986,13 @@ watch(() => planStore.plans, () => {
 .task-title {
   font-size: 1rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
 }
 
 .task-description {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0;
   line-height: 1.5;
 }
@@ -1009,13 +1009,13 @@ watch(() => planStore.plans, () => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   border-radius: 0.75rem;
   transition: all 0.2s ease;
 }
 
 .schedule-item:hover {
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
 }
 
 .schedule-item.completed {
@@ -1040,7 +1040,7 @@ watch(() => planStore.plans, () => {
   display: block;
   width: 24px;
   height: 24px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1048,8 +1048,8 @@ watch(() => planStore.plans, () => {
 }
 
 .schedule-checkbox input[type="checkbox"]:checked + label {
-  background: #22c55e;
-  border-color: #22c55e;
+  background: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .schedule-checkbox input[type="checkbox"]:checked + label::after {
@@ -1067,7 +1067,7 @@ watch(() => planStore.plans, () => {
 .schedule-age {
   min-width: 80px;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-weight: 500;
 }
 
@@ -1075,7 +1075,7 @@ watch(() => planStore.plans, () => {
   flex: 1;
   font-size: 1rem;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
 .schedule-status {
@@ -1091,12 +1091,12 @@ watch(() => planStore.plans, () => {
 
 .status-badge.done {
   background: #f0fdf4;
-  color: #22c55e;
+  color: var(--color-success);
 }
 
 .status-badge.pending {
   background: #fef3c7;
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .reminders {
@@ -1180,7 +1180,7 @@ watch(() => planStore.plans, () => {
 .modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -1188,10 +1188,10 @@ watch(() => planStore.plans, () => {
   width: 32px;
   height: 32px;
   border: none;
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
   border-radius: 0.5rem;
   font-size: 1.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1199,7 +1199,7 @@ watch(() => planStore.plans, () => {
 }
 
 .modal-close:hover {
-  background: #e2e8f0;
+  background: var(--color-border-light);
 }
 
 .modal-body {
@@ -1217,19 +1217,19 @@ watch(() => planStore.plans, () => {
 .form-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-regular);
 }
 
 .form-input {
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
   font-size: 1rem;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #f97316;
+  border-color: var(--color-primary);
 }
 
 .modal-actions {
@@ -1250,16 +1250,16 @@ watch(() => planStore.plans, () => {
 
 .btn-secondary {
   background: white;
-  border: 2px solid #e2e8f0;
-  color: #64748b;
+  border: 2px solid var(--color-border-light);
+  color: var(--color-text-regular);
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
+  background: var(--color-bg-page);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border: none;
   color: white;
 }
@@ -1275,7 +1275,7 @@ watch(() => planStore.plans, () => {
 
 .share-text {
   font-size: 0.9375rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0;
 }
 
@@ -1287,15 +1287,15 @@ watch(() => planStore.plans, () => {
 .share-input {
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
-  background: #f8fafc;
+  background: var(--color-bg-page);
 }
 
 .copy-btn {
   padding: 0.75rem 1.5rem;
-  background: #f97316;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -1305,7 +1305,7 @@ watch(() => planStore.plans, () => {
 }
 
 .copy-btn:hover {
-  background: #ea580c;
+  background: var(--color-primary-dark);
 }
 
 /* 通用内容 */
@@ -1318,13 +1318,13 @@ watch(() => planStore.plans, () => {
 
 .rich-content {
   line-height: 1.8;
-  color: #334155;
+  color: var(--color-text-primary);
 }
 
 .rich-content :deep(h1),
 .rich-content :deep(h2),
 .rich-content :deep(h3) {
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin-top: 2rem;
   margin-bottom: 1rem;
 }

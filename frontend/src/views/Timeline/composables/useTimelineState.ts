@@ -20,15 +20,18 @@ function storageKey(catId: string): string {
   return `${STORAGE_KEY_PREFIX}_${catId}`
 }
 
+// ------------------------------------------------------------------ state
+// Shared singleton state — every consumer of useTimelineState() sees the
+// same selectedStage and taskStates, so TimelineLayout and each tab page
+// stay in sync without props or events.
+const selectedStage = ref<Stage | null>(null)
+const taskStates = ref<Record<string, TaskState>>({})
+
 export function useTimelineState() {
   const catStore = useCatStore()
   const myCatStore = useMyCatStore()
   const authStore = useAuthStore()
   const { currentCat } = storeToRefs(myCatStore)
-
-  // ------------------------------------------------------------------ state
-  const selectedStage = ref<Stage | null>(null)
-  const taskStates = ref<Record<string, TaskState>>({})
 
   // ------------------------------------------------------------- computed
   /** All stages from the cat store, unfiltered. */

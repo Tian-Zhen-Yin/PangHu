@@ -6,6 +6,7 @@ import { useMyCatStore } from '../../stores/myCat'
 import { getProactiveAdvice } from '../../api/proactive'
 import type { ProactiveAdvice } from '../../types/proactive'
 import type { Cat } from '../../types/cat'
+import { getAvatarUrl } from '../../utils/format'
 import heroImage from '../../assets/images/hero-home.png'
 
 const authStore = useAuthStore()
@@ -34,18 +35,6 @@ function getWeightIcon(status: string): string {
     case 'overweight': return '📈'
     default: return '❓'
   }
-}
-
-function getAvatarUrl(cat: Cat): string {
-  // 优先使用 base64 头像数据
-  if (cat.avatarData) {
-    return cat.avatarData
-  }
-  // 其次使用文件路径
-  if (!cat.avatar) return ''
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-  if (cat.avatar.startsWith('http')) return cat.avatar
-  return `${baseURL}${cat.avatar}`
 }
 
 const features = [
@@ -96,25 +85,28 @@ const stages = [
     <section class="hero">
       <img :src="heroImage" alt="哈吉咪养成计划" class="hero-image" />
       <div class="hero-overlay">
-        <div class="hero-content">
-          <h1 class="hero-title">哈吉咪养成计划</h1>
-          <p class="hero-subtitle">
-            从相遇那天起，陪你的每一位喵星小居民，好好长大。
-          </p>
-          <div class="hero-actions">
-            <RouterLink to="/timeline" class="hero-btn primary">
-              开始记录
-              <span class="arrow">→</span>
-            </RouterLink>
-            <RouterLink to="/guides" class="hero-btn secondary">
-              养猫指南
-            </RouterLink>
+        <div class="page-container">
+          <div class="hero-content">
+            <h1 class="hero-title">哈吉咪养成计划</h1>
+            <p class="hero-subtitle">
+              从相遇那天起，陪你的每一位喵星小居民，好好长大。
+            </p>
+            <div class="hero-actions">
+              <RouterLink to="/timeline" class="hero-btn primary">
+                开始记录
+                <span class="arrow">→</span>
+              </RouterLink>
+              <RouterLink to="/guides" class="hero-btn secondary">
+                养猫指南
+              </RouterLink>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- AI 今日建议（仅登录用户显示） -->
+    <div class="page-container">
+      <!-- AI 今日建议（仅登录用户显示） -->
     <section v-if="authStore.isAuthenticated && todayAdvice" class="ai-advice-section">
       <h2 class="section-title">AI 今日建议</h2>
       <div class="advice-card">
@@ -209,6 +201,7 @@ const stages = [
         </div>
       </div>
     </section>
+    </div>
   </div>
 </template>
 
@@ -228,6 +221,12 @@ const stages = [
   }
 }
 
+.page-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
 /* Hero Section */
 .hero {
   position: relative;
@@ -235,7 +234,7 @@ const stages = [
   min-height: 500px;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-bottom: var(--space-3xl);
+  margin: 0 -32px var(--space-3xl);
 }
 
 .hero-image {
@@ -250,7 +249,7 @@ const stages = [
   bottom: 0;
   left: 0;
   right: 0;
-  padding: var(--space-3xl) var(--space-xl);
+  padding: var(--space-3xl) 32px;
   background: linear-gradient(to top, rgba(90, 74, 66, 0.7), transparent);
 }
 

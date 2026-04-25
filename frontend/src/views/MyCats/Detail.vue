@@ -12,7 +12,7 @@
     </div>
 
     <div v-else-if="cat" class="detail-content">
-      <!-- 档案头部卡片 - 玻璃拟态设计 -->
+      <!-- 档案头部卡片 - 横向布局 -->
       <section class="profile-hero-card">
         <div class="hero-main">
           <div class="avatar-container" @click="handleAvatarClick">
@@ -51,20 +51,20 @@
                 {{ genderText }}
               </span>
               <span class="pill age">
-                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <circle cx="12" cy="12" r="10"/>
                   <path d="M12 6v6l4 2"/>
                 </svg>
                 {{ cat.ageFormatted }}
               </span>
               <span v-if="cat.weight" class="pill weight">
-                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M12 3v18M6 12h12"/>
                 </svg>
-                {{ cat.weight }} kg
+                {{ formatWeight(cat.weight) }}
               </span>
               <span class="pill neutered" :class="{ 'is-neutered': cat.isNeutered }">
-                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <path d="M5 12l5 5L20 7"/>
                 </svg>
                 {{ cat.isNeutered ? '已绝育' : '未绝育' }}
@@ -97,17 +97,24 @@
         </div>
       </section>
 
-      <!-- 体重趋势图 -->
-      <WeightTrend :cat-id="cat.id" :cat-name="cat.name" />
+      <!-- 栅格布局：体重趋势 + 健康状态 -->
+      <div class="grid-layout-middle">
+        <!-- 左侧：体重趋势图 (8/12) -->
+        <div class="chart-section">
+          <WeightTrend :cat-id="cat.id" :cat-name="cat.name" />
+        </div>
 
-      <!-- AI 健康分析 - 对话气泡风格 -->
-      <AIHealthAdvice
-        v-if="cat"
-        :cat-id="cat.id"
-        :types="['weight', 'vaccine', 'age', 'general']"
-      />
+        <!-- 右侧：健康状态看板 (4/12) -->
+        <div class="status-section">
+          <AIHealthAdvice
+            v-if="cat"
+            :cat-id="cat.id"
+            :types="['weight', 'vaccine', 'age', 'general']"
+          />
+        </div>
+      </div>
 
-      <!-- 底部功能入口 - 双栏大卡片 -->
+      <!-- 底部功能入口 -->
       <footer class="bottom-action-dock">
         <button class="action-card record" @click="$router.push('/timeline')">
           <div class="icon-bg">
@@ -144,6 +151,7 @@ import WeightTrend from '../../components/cat/WeightTrend.vue'
 import AIHealthAdvice from '../../components/cat/AIHealthAdvice.vue'
 import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
 import { toast } from '../../composables/useToast'
+import { formatWeight, getAvatarUrl } from '../../utils/format'
 import type { Cat } from '../../types/cat'
 
 const route = useRoute()
@@ -162,21 +170,7 @@ const genderText = computed(() => {
 
 const avatarUrl = computed(() => {
   if (!cat.value?.avatar) return ''
-  const avatarPath = cat.value.avatar
-
-  // 如果是完整的 URL，直接返回
-  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
-    return avatarPath
-  }
-
-  // 基础 URL（不含 /api）
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-  const baseURL = apiBase.replace('/api', '').replace(/\/$/, '')
-
-  // 处理路径前导斜杠
-  const path = avatarPath.startsWith('/') ? avatarPath : '/' + avatarPath
-
-  return baseURL + path
+  return getAvatarUrl(cat.value)
 })
 
 function handleAvatarClick() {
@@ -282,7 +276,7 @@ onMounted(() => {
 
 <style scoped>
 .cat-detail-page {
-  max-width: 800px;
+  max-width: 1024px;
   margin: 0 auto;
   padding: 24px 16px;
 }
@@ -296,12 +290,12 @@ onMounted(() => {
   justify-content: center;
   min-height: 400px;
   gap: 20px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 .retry-btn {
   padding: 10px 24px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 100px;
@@ -313,25 +307,23 @@ onMounted(() => {
 .detail-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-/* ================= 档案头部卡片 - 玻璃拟态 ================= */
+/* ================= 档案头部卡片 - 横向布局 ================= */
 .profile-hero-card {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FDF3E9 100%);
-  border-radius: 32px;
-  padding: 28px;
-  box-shadow:
-    0 8px 32px rgba(244, 162, 97, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.03);
-  border: 2px solid #FFFFFF;
-  position: relative;
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-cream) 100%);
+  border-radius: 24px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 24px rgba(244, 162, 97, 0.12), 0 1px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-bg-cream);
 }
 
 .hero-main {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
 }
 
 /* 头像容器 */
@@ -342,15 +334,15 @@ onMounted(() => {
 }
 
 .avatar-ring-large {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  padding: 4px;
-  background: linear-gradient(135deg, #FDF3E9 0%, #FED7AA 100%);
+  padding: 3px;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.2);
+  box-shadow: 0 2px 12px rgba(244, 162, 97, 0.15);
 }
 
 .pet-avatar-large {
@@ -361,7 +353,7 @@ onMounted(() => {
 }
 
 .avatar-placeholder {
-  font-size: 44px;
+  font-size: 36px;
 }
 
 .avatar-upload-overlay {
@@ -385,11 +377,11 @@ onMounted(() => {
 }
 
 .upload-icon {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .uploading {
-  font-size: 10px;
+  font-size: 9px;
   color: white;
   text-align: center;
   padding: 0 4px;
@@ -397,29 +389,29 @@ onMounted(() => {
 
 /* 猫咪名称 */
 .pet-name-hero {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
-  color: #374151;
-  margin: 0 0 12px 0;
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .breed-tag {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  color: #9CA3AF;
-  background: #F3F4F6;
-  padding: 4px 10px;
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-block-hover);
+  padding: 3px 8px;
   border-radius: 100px;
 }
 
 /* 微缩胶囊标签 */
 .meta-pills {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -427,15 +419,17 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: 100px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight:  500;
+  line-height: 1;
 }
 
 .pill-icon {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 }
 
 .pill.gender {
@@ -450,12 +444,12 @@ onMounted(() => {
 
 .pill.age {
   background: #F0FDF4;
-  color: #16A34A;
+  color: var(--color-success);
 }
 
 .pill.weight {
   background: #FEF3C7;
-  color: #D97706;
+  color: var(--color-warning);
 }
 
 .pill.neutered {
@@ -465,64 +459,61 @@ onMounted(() => {
 
 .pill.neutered.is-neutered {
   background: #DCFCE7;
-  color: #16A34A;
+  color: var(--color-success);
 }
 
 /* 快捷操作按钮 */
 .hero-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #F3F4F6;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .btn-outline-pill,
 .btn-primary-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
+  gap: 5px;
+  padding: 8px 14px;
   border-radius: 100px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-outline-pill {
   background: #FFFFFF;
-  border: 1.5px solid #E5E7EB;
-  color: #6B7280;
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-regular);
 }
 
 .btn-outline-pill:hover {
-  border-color: #F4A261;
-  color: #F4A261;
+  border-color: var(--color-primary-medium);
+  color: var(--color-primary);
 }
 
 .btn-primary-pill {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   border: none;
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.25);
 }
 
 .btn-primary-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(244, 162, 97, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
 }
 
 .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 /* 健康备注 */
 .health-notes {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px dashed #E5E7EB;
+  display: none; /* 横向布局时隐藏健康备注 */
 }
 
 .note-item {
@@ -530,11 +521,28 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #6B7280;
+  color: var(--color-text-regular);
 }
 
 .note-emoji {
   font-size: 14px;
+}
+
+/* ================= 中部网格布局 ================= */
+.grid-layout-middle {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.chart-section,
+.status-section {
+  background: #FFFFFF;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* ================= 底部功能入口 ================= */
@@ -546,20 +554,20 @@ onMounted(() => {
 
 .action-card {
   background: #FFFFFF;
-  border-radius: 20px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  border: 1.5px solid #F3F4F6;
+  border: 1px solid var(--color-bg-block-hover);
 }
 
 .action-card:hover {
-  border-color: #FED7AA;
-  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.1);
+  border-color: var(--color-primary-medium);
+  box-shadow: 0 4px 20px rgba(244, 162, 97, 0.15), 0 1px 6px rgba(0, 0, 0, 0.08);
 }
 
 .action-card:active {
@@ -567,10 +575,10 @@ onMounted(() => {
 }
 
 .icon-bg {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -578,56 +586,71 @@ onMounted(() => {
 }
 
 .icon-bg svg {
-  width: 24px;
-  height: 24px;
-  color: #F4A261;
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
 }
 
 .action-card .text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  flex: 1;
 }
 
 .action-card .text strong {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .action-card .text span {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 /* 移动端适配 */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .cat-detail-page {
+    padding: 16px 12px;
+  }
+
   .profile-hero-card {
-    padding: 20px;
-    border-radius: 24px;
+    padding: 16px;
+    border-radius: 20px;
   }
 
   .hero-main {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    gap: 12px;
   }
 
   .avatar-ring-large {
-    width: 90px;
-    height: 90px;
+    width: 64px;
+    height: 64px;
   }
 
   .pet-name-hero {
-    justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
   }
 
   .meta-pills {
-    justify-content: center;
+    gap: 4px;
+  }
+
+  .pill {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .pill-icon {
+    width: 12px;
+    height: 12px;
   }
 
   .hero-actions {
+    width: 100%;
     flex-direction: column;
   }
 
@@ -637,12 +660,41 @@ onMounted(() => {
     width: 100%;
   }
 
+  .grid-layout-middle {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-section {
+    order: 2;
+  }
+
+  .status-section {
+    order: 1;
+  }
+
   .bottom-action-dock {
     grid-template-columns: 1fr;
   }
 
   .action-card {
-    padding: 16px;
+    padding: 14px 16px;
+  }
+
+  .icon-bg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .icon-bg svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* 平板适配 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-layout-middle {
+    grid-template-columns: 1fr;
   }
 }
 </style>

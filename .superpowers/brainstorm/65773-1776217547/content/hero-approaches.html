@@ -1,0 +1,193 @@
+<h2>Hero Card 优化方案</h2>
+<p class="subtitle">选择你喜欢的视觉方向，点击卡片进行选择</p>
+
+<div class="cards">
+  <!-- Option A: Unified Card -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%); border-radius: 16px; padding: 20px; max-width: 400px; margin: 0 auto; font-family: -apple-system, 'PingFang SC', sans-serif;">
+        <!-- Profile bar -->
+        <div style="display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid #F3E8D8;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #F6B26B, #E8913A); display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; font-weight: 700; box-shadow: 0 4px 12px rgba(246,178,107,0.3);">橘</div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:20px; font-weight:700; color:#374151;">胖虎</span>
+              <span style="font-size:10px; background:#FFF7ED; color:#E8913A; padding:2px 10px; border-radius:100px; font-weight:600;">当前</span>
+            </div>
+            <div style="font-size:12px; color:#9CA3AF; margin-top:4px;">2岁3个月 · 4.5kg</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <div style="background:#10B981; width:8px; height:8px; border-radius:50%; margin-top:2px;"></div>
+            <span style="font-size:12px; font-weight:600; color:#059669;">体型正常</span>
+          </div>
+        </div>
+
+        <!-- Action buttons row -->
+        <div style="display:flex; gap:10px; padding-top:14px; margin-bottom:16px;">
+          <button style="flex:1; padding:10px; background:linear-gradient(135deg,#F6B26B,#E8913A); color:white; border:none; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">+ 记一笔</button>
+          <button style="flex:1; padding:10px; background:#F9FAFB; color:#6B7280; border:1.5px solid #E5E7EB; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">AI 咨询</button>
+        </div>
+
+        <!-- Status tip -->
+        <div style="background:#ECFDF5; border-radius:10px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:14px;">💡</span>
+          <span style="font-size:12px; color:#047857;">胖虎最近状态很棒，继续保持哦！</span>
+        </div>
+
+        <!-- Data grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="background:#F9FAFB; border-radius:12px; padding:14px; text-align:center;">
+            <div style="font-size:11px; color:#9CA3AF; margin-bottom:8px;">当前体重</div>
+            <div style="font-size:28px; font-weight:700; color:#374151;">4.5<span style="font-size:13px; color:#9CA3AF;">kg</span></div>
+            <div style="font-size:10px; color:#9CA3AF; margin-top:4px;">标准: 3.0-5.0kg</div>
+            <!-- mini gauge -->
+            <div style="margin-top:8px; height:6px; background:#E5E7EB; border-radius:3px; position:relative;">
+              <div style="position:absolute; left:25%; width:50%; height:100%; background:#10B981; border-radius:3px;"></div>
+              <div style="position:absolute; left:45%; top:-3px; width:12px; height:12px; background:#F6B26B; border-radius:50%; border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.15);"></div>
+            </div>
+          </div>
+          <div style="background:#F9FAFB; border-radius:12px; padding:14px;">
+            <div style="font-size:11px; color:#9CA3AF; margin-bottom:10px;">近期待办</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:14px; height:14px; border:1.5px solid #D1D5DB; border-radius:4px; flex-shrink:0;"></div>
+                <span style="font-size:12px; color:#374151;">疫苗提醒</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <div style="width:14px; height:14px; border:1.5px solid #D1D5DB; border-radius:4px; flex-shrink:0;"></div>
+                <span style="font-size:12px; color:#374151;">体重关注</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 统一通栏布局</h3>
+      <p>Profile 信息和状态横置顶部通栏，数据网格下方并排展示。层次清晰，视觉统一。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>信息层次清晰：身份→操作→状态→数据</li><li>移动端适配自然，无需大改布局</li><li>去除左右分栏，视觉更统一</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>垂直空间占用较多</li><li>头像展示面积减小</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Profile-Focused -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%); border-radius: 16px; padding: 20px; max-width: 400px; margin: 0 auto; font-family: -apple-system, 'PingFang SC', sans-serif; position:relative; overflow:hidden;">
+        <!-- Decorative blob -->
+        <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:linear-gradient(135deg, rgba(246,178,107,0.2), rgba(232,145,58,0.1)); border-radius:50%; filter:blur(20px);"></div>
+
+        <!-- Profile section - larger -->
+        <div style="text-align:center; padding-bottom:16px; border-bottom:1px solid #F3E8D8; position:relative;">
+          <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, #F6B26B, #E8913A); margin:0 auto 12px; display:flex; align-items:center; justify-content:center; color:white; font-size:32px; font-weight:700; box-shadow: 0 6px 20px rgba(246,178,107,0.35); border:3px solid rgba(255,255,255,0.8);">橘</div>
+          <div style="font-size:22px; font-weight:700; color:#374151;">胖虎</div>
+          <div style="font-size:13px; color:#9CA3AF; margin-top:4px;">2岁3个月 · 中华田园猫</div>
+
+          <!-- Status + weight inline -->
+          <div style="display:flex; justify-content:center; gap:12px; margin-top:12px;">
+            <span style="display:inline-flex; align-items:center; gap:4px; background:#ECFDF5; padding:4px 12px; border-radius:100px; font-size:12px; color:#059669; font-weight:600;">
+              <span style="width:6px; height:6px; background:#10B981; border-radius:50%; display:inline-block;"></span> 健康
+            </span>
+            <span style="background:#FFF7ED; padding:4px 12px; border-radius:100px; font-size:12px; color:#E8913A; font-weight:600;">4.5 kg</span>
+          </div>
+        </div>
+
+        <!-- Quick stats row -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:14px;">
+          <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.7); border-radius:10px;">
+            <div style="font-size:18px; font-weight:700; color:#374151;">4.5</div>
+            <div style="font-size:10px; color:#9CA3AF;">体重kg</div>
+          </div>
+          <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.7); border-radius:10px;">
+            <div style="font-size:18px; font-weight:700; color:#10B981;">正常</div>
+            <div style="font-size:10px; color:#9CA3AF;">体态</div>
+          </div>
+          <div style="text-align:center; padding:8px; background:rgba(255,255,255,0.7); border-radius:10px;">
+            <div style="font-size:18px; font-weight:700; color:#374151;">2</div>
+            <div style="font-size:10px; color:#9CA3AF;">待办</div>
+          </div>
+        </div>
+
+        <!-- Actions row -->
+        <div style="display:flex; gap:10px; margin-top:14px;">
+          <button style="flex:1; padding:10px; background:linear-gradient(135deg,#F6B26B,#E8913A); color:white; border:none; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">+ 记一笔</button>
+          <button style="flex:1; padding:10px; background:#F9FAFB; color:#6B7280; border:1.5px solid #E5E7EB; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer;">AI 咨询</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 个人档案中心布局</h3>
+      <p>大头像居中展示，身份信息突出，快速数据以三列指标呈现。更有个性。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>猫咪成为视觉焦点，品牌感强</li><li>三列指标区信息密度高且简洁</li><li>情感化设计，用户粘性好</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>与当前布局差异大，改动幅度大</li><li>体重仪表盘需重新设计展示方式</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Data-First -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%); border-radius: 16px; padding: 20px; max-width: 400px; margin: 0 auto; font-family: -apple-system, 'PingFang SC', sans-serif;">
+        <!-- Compact profile bar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, #F6B26B, #E8913A); display:flex; align-items:center; justify-content:center; color:white; font-size:16px; font-weight:700;">橘</div>
+            <div>
+              <div style="font-size:16px; font-weight:700; color:#374151;">胖虎</div>
+              <div style="font-size:11px; color:#9CA3AF;">2岁3个月</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button style="padding:6px 14px; background:linear-gradient(135deg,#F6B26B,#E8913A); color:white; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;">+ 记一笔</button>
+            <button style="padding:6px 14px; background:transparent; color:#6B7280; border:1px solid #E5E7EB; border-radius:8px; font-size:12px; cursor:pointer;">AI</button>
+          </div>
+        </div>
+
+        <!-- Hero data: weight gauge prominent -->
+        <div style="background:#F9FAFB; border-radius:14px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:12px; color:#9CA3AF; font-weight:500;">体重趋势</span>
+            <span style="font-size:10px; color:#9CA3AF; background:white; padding:2px 8px; border-radius:100px; border:1px solid #E5E7EB;">标准 3.0-5.0kg</span>
+          </div>
+          <!-- Semi-circle gauge -->
+          <div style="text-align:center; margin-bottom:8px;">
+            <div style="font-size:36px; font-weight:700; color:#374151; font-family:'DIN Alternate',-apple-system,sans-serif;">4.5<span style="font-size:14px; color:#9CA3AF; font-weight:400;">kg</span></div>
+            <div style="margin:8px auto 0; width:160px; height:80px; position:relative; overflow:hidden;">
+              <svg viewBox="0 0 160 80" style="width:100%;height:100%;">
+                <path d="M 15 78 A 65 65 0 0 1 145 78" fill="none" stroke="#E5E7EB" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 15 78 A 65 65 0 0 1 145 78" fill="none" stroke="#10B981" stroke-width="10" stroke-linecap="round" stroke-dasharray="204" stroke-dashoffset="60"/>
+                <circle cx="95" cy="32" r="8" fill="#F6B26B" stroke="white" stroke-width="3"/>
+              </svg>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:#9CA3AF;">
+            <span>偏瘦</span><span>标准</span><span>偏胖</span>
+          </div>
+        </div>
+
+        <!-- Status + todos inline -->
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1; background:#ECFDF5; border-radius:10px; padding:10px 12px;">
+            <div style="font-size:11px; color:#059669; font-weight:600; margin-bottom:4px;">健康状态</div>
+            <div style="font-size:12px; color:#047857;">状态很棒，继续保持！</div>
+          </div>
+          <div style="flex:1; background:#F9FAFB; border-radius:10px; padding:10px 12px;">
+            <div style="font-size:11px; color:#9CA3AF; font-weight:600; margin-bottom:4px;">待办 <span style="color:#E8913A;">2</span></div>
+            <div style="font-size:12px; color:#374151;">疫苗 · 体重</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 数据驱动布局</h3>
+      <p>精简 profile 为小条，体重仪表盘作为视觉中心突出展示。数据优先。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>数据一目了然，体重是核心焦点</li><li>Profile 精简不占空间</li><li>适合数据驱动的用户场景</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>猫咪个性化展示较弱</li><li>仪表盘在移动端占空间大</li><li>情感化不足</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

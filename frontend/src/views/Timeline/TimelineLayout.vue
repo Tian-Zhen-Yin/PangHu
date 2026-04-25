@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
@@ -10,13 +10,47 @@ import { usePetStore } from '../../stores/pet'
 const route = useRoute()
 const petStore = usePetStore()
 const {
+  catStore,
   authStore,
+  myCatStore,
   currentCat,
   selectedStage,
+  stages,
   filteredStages,
   pageSubtitle,
   taskProgress,
+  loadTaskStates,
 } = useTimelineState()
+
+onMounted(async () => {
+  await catStore.fetchStages()
+  await myCatStore.fetchCats()
+
+  if (currentCat.value) {
+    loadTaskStates(currentCat.value.id)
+  }
+
+  if (authStore.isAuthenticated) {
+    await petStore.fetchRecords(currentCat.value?.id)
+  }
+
+  if (filteredStages.value.length > 0 && !selectedStage.value) {
+    selectedStage.value = filteredStages.value[0]!
+  }
+})
+
+watch(filteredStages, (stages) => {
+  if (stages.length > 0 && (!selectedStage.value || !stages.find(s => s.id === selectedStage.value!.id))) {
+    selectedStage.value = stages[0]!
+  }
+})
+
+watch(currentCat, async (newCat) => {
+  if (newCat) loadTaskStates(newCat.id)
+  if (authStore.isAuthenticated) {
+    await petStore.fetchRecords(newCat?.id)
+  }
+})
 
 const activeTab = computed(() => {
   const path = route.path
@@ -270,7 +304,7 @@ const activeTab = computed(() => {
   border: none;
   border-radius: var(--radius-full);
   cursor: pointer;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -293,8 +327,8 @@ const activeTab = computed(() => {
   border-radius: 100px;
   font-size: 11px;
   font-weight: 700;
-  background: #E5E7EB;
-  color: #6B7280;
+  background: var(--color-border-light);
+  color: var(--color-text-regular);
   transition: all 0.3s ease;
 }
 
@@ -303,14 +337,14 @@ const activeTab = computed(() => {
 /* 1. 滑块变身：纯白背景 + 物理悬浮投影 */
 .tab-btn.is-active {
   background: #FFFFFF;
-  color: #F4A261;
+  color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 /* 2. 文字提亮加粗 */
 .tab-btn.is-active .tab-text {
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 /* 3. 选中态的图标微微放大 */
@@ -320,13 +354,13 @@ const activeTab = computed(() => {
 
 /* 4. 微标变化：变成浅橘色底 + 深橘色字 */
 .tab-btn.is-active .tab-badge {
-  background: #FFF7ED;
-  color: #F4A261;
+  background: var(--color-bg-cream);
+  color: var(--color-primary);
 }
 
 /* 如果有需要特别警告的微标 (比如疫苗待打)，反向高亮 */
 .tab-btn.is-active .tab-badge.warning {
-  background: #F4A261;
+  background: var(--color-primary-medium);
   color: #FFFFFF;
 }
 

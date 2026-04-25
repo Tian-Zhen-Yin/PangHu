@@ -1,15 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import AppTabbar from './components/AppTabbar.vue'
+
+const route = useRoute()
+
+const isAiChat = computed(() => route.name === 'AIChat')
 </script>
 
 <template>
   <div class="mobile-layout">
-    <AppHeader />
-    <main class="main-content">
+    <AppHeader v-if="!isAiChat" />
+    <main class="main-content" :class="{ 'full-bleed': isAiChat }">
       <slot />
     </main>
-    <AppTabbar />
+    <AppTabbar v-if="!isAiChat" />
   </div>
 </template>
 
@@ -24,7 +30,13 @@ import AppTabbar from './components/AppTabbar.vue'
 
 .main-content {
   padding: 1rem;
-  padding-bottom: 80px; /* 为 TabBar 留出空间 */
-  min-height: calc(100vh - 56px - 64px); /* 减去 header 和 tabbar 高度 */
+  padding-top: calc(56px + 1rem);
+  padding-bottom: 80px;
+  min-height: calc(100vh - 56px - 64px);
+}
+
+.main-content.full-bleed {
+  padding: 0;
+  min-height: 100vh;
 }
 </style>

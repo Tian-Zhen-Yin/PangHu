@@ -37,6 +37,12 @@ const updateChart = () => {
   const standardStartRatio = (standardMin - min) / (max - min)
   const standardEndRatio = (standardMax - min) / (max - min)
 
+  // 当前值对应的状态颜色
+  const valueRatio = (props.value - min) / (max - min)
+  let valueColor = '#10b981' // 正常绿
+  if (valueRatio < standardStartRatio) valueColor = '#f59e0b' // 偏瘦黄
+  else if (valueRatio > standardEndRatio) valueColor = 'var(--color-danger)' // 超重红
+
   const option: EChartsOption = {
     series: [
       {
@@ -45,51 +51,72 @@ const updateChart = () => {
         endAngle: 0,
         min,
         max,
-        splitNumber: 3,
-        radius: '75%',
-        center: ['50%', '65%'],
+        splitNumber: 4,
+        radius: '90%',
+        center: ['50%', '70%'],
         axisLine: {
           lineStyle: {
-            width: 12,
+            width: 18,
             color: [
               [standardStartRatio, '#fbbf24'], // 偏瘦区 (黄)
               [standardEndRatio, '#10b981'], // 正常区 (绿)
-              [1, '#ef4444'] // 超重区 (红)
+              [1, 'var(--color-danger)'] // 超重区 (红)
             ]
           }
         },
         pointer: {
           icon: 'path://M0,0 L10,5 L0,10 L-10,5 Z',
-          length: '55%',
-          width: 8,
-          offsetCenter: [0, '-10%'],
+          length: '60%',
+          width: 10,
+          offsetCenter: [0, '-15%'],
           itemStyle: {
-            color: '#475569'
+            color: 'var(--color-text-primary)'
           }
         },
         axisTick: {
-          show: false
+          show: true,
+          distance: -22,
+          length: 4,
+          lineStyle: {
+            color: 'var(--color-text-placeholder)',
+            width: 1
+          }
         },
         splitLine: {
-          show: false
+          show: true,
+          distance: -24,
+          length: 10,
+          lineStyle: {
+            color: 'var(--color-text-regular)',
+            width: 1.5
+          }
         },
         axisLabel: {
-          show: false
+          show: true,
+          distance: -32,
+          fontSize: 10,
+          color: 'var(--color-text-regular)',
+          fontWeight: 500,
+          formatter: (value: number) => value.toFixed(1)
         },
         detail: {
           valueAnimation: true,
           formatter: '{value}',
-          color: '#1e293b',
-          fontSize: 20,
+          color: valueColor,
+          fontSize: 26,
           fontWeight: 'bold',
-          offsetCenter: [0, '20%'],
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: 8,
-          padding: [4, 12]
+          fontFamily: '-apple-system, BlinkMacSystemFont, "DIN Alternate", sans-serif',
+          offsetCenter: [0, '15%'],
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 10,
+          padding: [6, 16],
+          shadowColor: 'rgba(0, 0, 0, 0.06)',
+          shadowBlur: 8,
+          shadowOffsetY: 2
         },
         data: [
           {
-            value: props.value
+            value: parseFloat(props.value.toFixed(1))
           }
         ],
         title: {
@@ -120,6 +147,6 @@ watch(() => [props.value, props.min, props.max, props.standardMin, props.standar
 .weight-gauge-chart {
   width: 100%;
   height: 100%;
-  min-height: 100px;
+  min-height: 160px;
 }
 </style>

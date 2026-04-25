@@ -4,8 +4,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGuideStore } from '../../stores/guide'
 import { useTemplateStore } from '../../stores/template'
 import SearchBar from '../../components/common/SearchBar.vue'
-import GuideCard from '../../components/guides/GuideCard.vue'
-import TemplateCard from '../../components/templates/TemplateCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -177,7 +175,7 @@ watch(() => route.query.q, (newQuery) => {
 <style scoped>
 .search-page {
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   padding: 2rem 1rem;
   animation: fadeIn 0.3s ease;
 }
@@ -203,7 +201,7 @@ watch(() => route.query.q, (newQuery) => {
 .page-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
   text-align: center;
 }
@@ -221,8 +219,8 @@ watch(() => route.query.q, (newQuery) => {
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 4px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -248,12 +246,12 @@ watch(() => route.query.q, (newQuery) => {
 
 .no-results h3 {
   font-size: 1.25rem;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .no-results p {
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0;
 }
 
@@ -264,12 +262,12 @@ watch(() => route.query.q, (newQuery) => {
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.9375rem;
 }
 
 .highlight {
-  color: #f97316;
+  color: var(--color-primary);
   font-weight: 600;
   font-size: 1rem;
 }
@@ -279,8 +277,8 @@ watch(() => route.query.q, (newQuery) => {
 }
 
 .query {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--color-bg-cream);
+  color: var(--color-primary-dark);
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
   font-weight: 500;
@@ -296,13 +294,13 @@ watch(() => route.query.q, (newQuery) => {
   gap: 0.5rem;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
 }
 
 .result-count {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-regular);
   padding: 0.125rem 0.5rem;
   border-radius: 1rem;
   font-size: 0.75rem;
@@ -332,7 +330,7 @@ watch(() => route.query.q, (newQuery) => {
 .guide-category {
   display: inline-block;
   background: #dbeafe;
-  color: #2563eb;
+  color: var(--color-info);
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.75rem;
@@ -343,12 +341,12 @@ watch(() => route.query.q, (newQuery) => {
 .guide-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .guide-excerpt {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.9375rem;
   line-height: 1.6;
   margin: 0;
@@ -382,7 +380,7 @@ watch(() => route.query.q, (newQuery) => {
 .template-category {
   display: inline-block;
   background: #fef3c7;
-  color: #d97706;
+  color: var(--color-warning);
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.75rem;
@@ -393,12 +391,12 @@ watch(() => route.query.q, (newQuery) => {
 .template-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .template-description {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   line-height: 1.5;
   margin: 0;
@@ -419,7 +417,7 @@ watch(() => route.query.q, (newQuery) => {
 .suggestions-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1.5rem 0;
   text-align: center;
 }
@@ -433,10 +431,10 @@ watch(() => route.query.q, (newQuery) => {
 
 .suggestion-tag {
   padding: 0.75rem 1.25rem;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background: var(--color-bg-page);
+  border: 2px solid var(--color-border-light);
   border-radius: 2rem;
-  color: #475569;
+  color: var(--color-text-regular);
   font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
@@ -444,9 +442,9 @@ watch(() => route.query.q, (newQuery) => {
 }
 
 .suggestion-tag:hover {
-  background: #fff7ed;
-  border-color: #f97316;
-  color: #ea580c;
+  background: var(--color-bg-cream);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
   transform: translateY(-2px);
 }
 

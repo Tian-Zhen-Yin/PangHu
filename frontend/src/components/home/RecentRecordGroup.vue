@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import MascotCharacter, { type MascotExpression } from '../mascot/MascotCharacter.vue'
 import WeightSparkline from '../record/WeightSparkline.vue'
+import { formatWeightValue } from '../../utils/format'
 
 interface RecordItem {
   id: string
@@ -49,7 +50,7 @@ const weightData = computed(() => {
 const latestWeight = computed(() => {
   if (weightData.value.length === 0) return '--'
   const lastItem = weightData.value[weightData.value.length - 1]
-  return lastItem ? lastItem.weight.toFixed(1) : '--'
+  return lastItem ? formatWeightValue(lastItem.weight) : '--'
 })
 
 // 最大最小值
@@ -104,8 +105,8 @@ const aiTip = computed(() => {
   const first = firstItem.weight
   const change = latest - first
 
-  if (change > 1) return `${props.catName}最近长肉肉啦！体重增加了 ${change.toFixed(1)}kg`
-  if (change < -1) return `${props.catName}体重下降了 ${Math.abs(change).toFixed(1)}kg，要注意营养补充哦`
+  if (change > 1) return `${props.catName}最近长肉肉啦！体重增加了 ${formatWeightValue(change)}kg`
+  if (change < -1) return `${props.catName}体重下降了 ${formatWeightValue(Math.abs(change))}kg，要注意营养补充哦`
   return `${props.catName}的体重保持得很稳定，继续加油！`
 })
 
@@ -149,8 +150,8 @@ function getTypeLabel(type: string) {
 
             <!-- 最大最小值标签 -->
             <div v-if="weightData.length > 1" class="range-labels">
-              <span class="min-val">{{ minWeight.toFixed(1) }}kg</span>
-              <span class="max-val">{{ maxWeight.toFixed(1) }}kg</span>
+              <span class="min-val">{{ formatWeightValue(minWeight) }}kg</span>
+              <span class="max-val">{{ formatWeightValue(maxWeight) }}kg</span>
             </div>
           </div>
 
@@ -186,13 +187,13 @@ function getTypeLabel(type: string) {
             <div class="record-bubble-card">
               <div class="time-meta">{{ record.date }}</div>
               <div class="data-row">
-                <span class="weight">{{ record.weight }}kg</span>
+                <span class="weight">{{ formatWeightValue(record.weight) }}kg</span>
                 <span
                   v-if="record.diff !== 0"
                   class="status-indicator"
                   :class="record.diff > 0 ? 'plus' : 'minus'"
                 >
-                  {{ record.diff > 0 ? '+' : '' }}{{ record.diff.toFixed(2) }}
+                  {{ record.diff > 0 ? '+' : '' }}{{ formatWeightValue(record.diff) }}
                 </span>
               </div>
               <div class="type-label">{{ getTypeLabel(record.type) }}</div>

@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import type { DashboardCatCard } from '../types'
 import type { Cat } from '../../../types/cat'
 import { useMyCatStore } from '../../../stores/myCat'
+import { formatWeightValue, getAvatarUrl } from '../../../utils/format'
 import MascotCharacter from '../../../components/mascot/MascotCharacter.vue'
 
 const props = defineProps<{
@@ -17,30 +18,6 @@ const emit = defineEmits<{
 
 const catStore = useMyCatStore()
 const router = useRouter()
-
-function getAvatarUrl(cat: any): string {
-  // 优先使用 base64 头像数据
-  if (cat.avatarData) {
-    return cat.avatarData
-  }
-
-  if (!cat.avatar) return ''
-  const avatarPath = cat.avatar
-
-  // 如果是完整的 URL，直接返回
-  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
-    return avatarPath
-  }
-
-  // 基础 URL（不含 /api）
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-  const baseURL = apiBase.replace('/api', '').replace(/\/$/, '')
-
-  // 处理路径前导斜杠
-  const path = avatarPath.startsWith('/') ? avatarPath : '/' + avatarPath
-
-  return baseURL + path
-}
 
 function getAgeText(birthDate?: string | null): string {
   if (!birthDate) return '年龄未知'
@@ -123,7 +100,7 @@ function goToAddCat() {
 
             <!-- 体重 -->
             <div v-if="item.cat.weight" class="card-weight">
-              <span class="weight-val">{{ item.cat.weight }}</span>
+              <span class="weight-val">{{ formatWeightValue(item.cat.weight) }}</span>
               <span class="weight-unit">kg</span>
             </div>
           </div>
@@ -153,9 +130,9 @@ function goToAddCat() {
   align-items: center;
   gap: 16px;
   padding: 40px 20px;
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFF9F5 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 24px;
-  border: 2px dashed #FED7AA;
+  border: 2px dashed var(--color-primary-medium);
 }
 
 .empty-mascot {
@@ -164,7 +141,7 @@ function goToAddCat() {
 
 .empty-text {
   font-size: 15px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   margin: 0;
 }
 
@@ -173,7 +150,7 @@ function goToAddCat() {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 100px;
@@ -201,14 +178,14 @@ function goToAddCat() {
 .slider-title {
   font-size: 18px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .cat-count {
   font-size: 13px;
-  color: #9CA3AF;
-  background: #F3F4F6;
+  color: var(--color-text-placeholder);
+  background: var(--color-bg-block-hover);
   padding: 4px 12px;
   border-radius: 100px;
 }
@@ -321,7 +298,7 @@ function goToAddCat() {
 .card-name {
   font-size: 15px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
@@ -330,7 +307,7 @@ function goToAddCat() {
 
 .card-meta {
   font-size: 12px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 /* 体重 */
@@ -339,19 +316,19 @@ function goToAddCat() {
   align-items: baseline;
   gap: 2px;
   padding: 4px 12px;
-  background: #F9FAFB;
+  background: var(--color-bg-page);
   border-radius: 100px;
 }
 
 .weight-val {
   font-size: 16px;
   font-weight: 700;
-  color: #F4A261;
+  color: var(--color-primary);
 }
 
 .weight-unit {
   font-size: 11px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 /* 添加卡片 */
@@ -359,9 +336,9 @@ function goToAddCat() {
   flex-shrink: 0;
   width: 100px;
   padding: 16px;
-  background: #F9FAFB;
+  background: var(--color-bg-page);
   border-radius: 20px;
-  border: 2px dashed #E5E7EB;
+  border: 2px dashed var(--color-border-light);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;

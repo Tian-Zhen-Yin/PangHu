@@ -51,7 +51,7 @@ function isActive(path: string): boolean {
   position: sticky;
   top: 56px;
   height: calc(100vh - 56px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .sidebar-nav {

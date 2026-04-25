@@ -19,8 +19,8 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .footer {
-  background: #1e293b;
-  color: #94a3b8;
+  background: var(--color-text-primary);
+  color: var(--color-text-placeholder);
   padding: 2rem 1rem;
   margin-top: auto;
 }
@@ -45,16 +45,16 @@ const year = new Date().getFullYear()
 }
 
 .footer-links a {
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .footer-links a:hover {
-  color: #f97316;
+  color: var(--color-primary);
 }
 
 .separator {
-  color: #475569;
+  color: var(--color-text-regular);
 }
 </style>

@@ -24,6 +24,7 @@ import AppFooter from '../components/common/AppFooter.vue'
 .main-content {
   flex: 1;
   padding: 2rem 1rem;
+  padding-top: calc(56px + 2rem);
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;

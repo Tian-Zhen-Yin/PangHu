@@ -1,0 +1,72 @@
+<h2>PangHu 全应用 UI 体检</h2>
+<p class="subtitle">覆盖 18 个页面、50 个组件、80+ 设计 token 的系统性审计</p>
+
+<div class="section">
+  <h3>审计维度</h3>
+  <div class="options">
+    <div class="option" data-choice="consistency" onclick="toggleSelect(this)">
+      <div class="letter">1</div>
+      <div class="content">
+        <h3>设计一致性</h3>
+        <p>颜色、字体、间距、圆角是否统一使用 token？硬编码值有多少？组件间风格是否一致？</p>
+      </div>
+    </div>
+    <div class="option" data-choice="hierarchy" onclick="toggleSelect(this)">
+      <div class="letter">2</div>
+      <div class="content">
+        <h3>视觉层次与信息架构</h3>
+        <p>页面信息密度是否合理？重点数据是否突出？用户视觉动线是否清晰？</p>
+      </div>
+    </div>
+    <div class="option" data-choice="interaction" onclick="toggleSelect(this)">
+      <div class="letter">3</div>
+      <div class="content">
+        <h3>交互与可用性</h3>
+        <p>操作反馈是否充分？导航是否直觉？空状态/加载态/错误态是否覆盖？</p>
+      </div>
+    </div>
+    <div class="option" data-choice="responsive" onclick="toggleSelect(this)">
+      <div class="letter">4</div>
+      <div class="content">
+        <h3>响应式与跨端</h3>
+        <p>移动端/桌面端布局是否合理？过渡是否流畅？是否充分利用了屏幕空间？</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>审计范围（18 页面）</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
+    <div style="padding: 8px 12px; background: rgba(255,138,76,0.08); border-radius: 8px; border-left: 3px solid #FF8A4C;">
+      <strong>Dashboard 首页</strong><br><span style="font-size: 13px; opacity: 0.7;">核心入口，数据聚合</span>
+    </div>
+    <div style="padding: 8px 12px; background: rgba(16,185,129,0.08); border-radius: 8px; border-left: 3px solid #10B981;">
+      <strong>Timeline 成长记录</strong><br><span style="font-size: 13px; opacity: 0.7;">记录创建/浏览</span>
+    </div>
+    <div style="padding: 8px 12px; background: rgba(99,102,241,0.08); border-radius: 8px; border-left: 3px solid #6366F1;">
+      <strong>MyCats 猫咪管理</strong><br><span style="font-size: 13px; opacity: 0.7;">5 个子页面</span>
+    </div>
+    <div style="padding: 8px 12px; background: rgba(239,68,68,0.08); border-radius: 8px; border-left: 3px solid #EF4444;">
+      <strong>AIChat 喵星小顾问</strong><br><span style="font-size: 13px; opacity: 0.7;">AI 对话界面</span>
+    </div>
+    <div style="padding: 8px 12px; background: rgba(245,158,11,0.08); border-radius: 8px; border-left: 3px solid #F59E0B;">
+      <strong>Guides 养猫指南</strong><br><span style="font-size: 13px; opacity: 0.7;">列表 + 详情</span>
+    </div>
+    <div style="padding: 8px 12px; background: rgba(107,114,128,0.08); border-radius: 8px; border-left: 3px solid #6B7280;">
+      <strong>Auth + Profile + 其他</strong><br><span style="font-size: 13px; opacity: 0.7;">登录/注册/搜索/关于</span>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem; padding: 16px; background: rgba(255,138,76,0.06); border-radius: 12px;">
+  <h3 style="margin-top: 0;">当前状态摘要</h3>
+  <p>基于代码审查的初步发现：</p>
+  <ul style="line-height: 1.8;">
+    <li>✅ <strong>设计系统成熟</strong> — 80+ token，暖色主题，统一圆角/间距</li>
+    <li>✅ <strong>响应式框架完整</strong> — Desktop/Mobile 双布局自动切换</li>
+    <li>⚠️ <strong>Dashboard 刚完成重构</strong> — 但其他页面仍有大量硬编码值</li>
+    <li>⚠️ <strong>50 个组件中约 12 个 common 组件</strong> — 复用率有待分析</li>
+    <li>❓ <strong>Element Plus 使用程度</strong> — 需确认是否与自定义设计系统冲突</li>
+  </ul>
+</div>

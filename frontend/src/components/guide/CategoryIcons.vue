@@ -25,16 +25,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 马卡龙色系
 const colors = {
-  all: '#F4A261',        // 橙色
+  all: 'var(--color-primary)',        // 橙色
   kitten: '#A78BFA',     // 紫色
   feeding: '#FBBF24',    // 黄色
   health: '#F87171',     // 红色
   vaccine: '#38BDF8',    // 蓝色
-  behavior: '#FB923C',   // 橙红
+  behavior: 'var(--color-primary)',   // 橙红
   environment: '#34D399',// 绿色
   grooming: '#F472B6',   // 粉色
-  emergency: '#EF4444',  // 深红
-  default: '#9CA3AF'     // 灰色
+  emergency: 'var(--color-danger)',  // 深红
+  default: 'var(--color-text-placeholder)'     // 灰色
 }
 
 // 图标路径

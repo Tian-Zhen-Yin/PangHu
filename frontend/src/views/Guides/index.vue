@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { useGuideStore } from '../../stores/guide'
 import { useMyCatStore } from '../../stores/myCat'
 import { storeToRefs } from 'pinia'
-import EmptyState from '../../components/common/EmptyState.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CategoryIcons, { type CategoryIconType } from '../../components/guide/CategoryIcons.vue'
 
@@ -17,7 +16,6 @@ const selectedCategory = ref('全部')
 const searchInput = ref('')
 const isSearching = ref(false)
 
-// 分类名称到图标类型的映射
 function getCategoryIconType(slug: string): CategoryIconType {
   const iconMap: Record<string, CategoryIconType> = {
     'all': 'all',
@@ -35,7 +33,6 @@ function getCategoryIconType(slug: string): CategoryIconType {
   return iconMap[slug] || 'default'
 }
 
-// 防抖函数
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): T {
   let timeoutId: ReturnType<typeof setTimeout>
   return ((...args: any[]) => {
@@ -44,15 +41,12 @@ function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): T {
   }) as T
 }
 
-// 选择分类
 function selectCategory(category: string) {
   selectedCategory.value = category
   const categoryId = guideStore.getCategoryIdByName(category)
-  console.log('[Guides] 选择分类:', category, 'categoryId:', categoryId)
   guideStore.fetchGuides(categoryId)
 }
 
-// 搜索功能（防抖）
 const debouncedSearch = debounce((query: string) => {
   isSearching.value = true
   guideStore.fetchSearchGuides(query).finally(() => {
@@ -60,7 +54,6 @@ const debouncedSearch = debounce((query: string) => {
   })
 }, 500)
 
-// 点击搜索按钮
 function handleSearch() {
   const query = searchInput.value.trim()
   if (query) {
@@ -68,36 +61,27 @@ function handleSearch() {
   }
 }
 
-// 监听搜索输入
 watch(searchInput, (newVal) => {
   if (newVal.trim()) {
     debouncedSearch(newVal)
   } else {
     isSearching.value = false
-    // 清空搜索时，恢复当前分类的指南列表
     const categoryId = guideStore.getCategoryIdByName(selectedCategory.value)
-    console.log('[Guides] 恢复分类指南:', selectedCategory.value, 'categoryId:', categoryId)
     guideStore.fetchGuides(categoryId)
   }
 })
 
-// 查看指南详情
 function viewGuide(id: string) {
   router.push(`/guides/${id}`)
 }
 
-// 根据猫咪阶段推荐相关指南（AI 顾问联动）
 const recommendedGuides = computed(() => {
   if (!currentCat.value) return []
 
   const catAge = currentCat.value.ageMonths || 0
-  // 使用 allGuides 而不是 displayGuides，确保有足够的数据进行推荐
   const allGuides = guideStore.allGuides || []
-  console.log('[Guides] 推荐计算 - 年龄:', catAge, '月, 所有指南数:', allGuides.length)
 
-  // 根据年龄阶段推荐
   if (catAge < 3) {
-    // 新生期/幼猫：推荐保暖、哺乳、基础护理相关
     return allGuides.filter(g =>
       g.category?.slug?.includes('kitten') ||
       g.category?.slug?.includes('newborn') ||
@@ -107,7 +91,6 @@ const recommendedGuides = computed(() => {
       g.title?.includes('幼猫')
     ).slice(0, 3)
   } else if (catAge < 6) {
-    // 幼猫期：推荐疫苗、辅食、训练相关
     return allGuides.filter(g =>
       g.category?.slug?.includes('vaccine') ||
       g.category?.slug?.includes('feeding') ||
@@ -116,7 +99,6 @@ const recommendedGuides = computed(() => {
       g.title?.includes('训练')
     ).slice(0, 3)
   } else if (catAge < 12) {
-    // 青少年期：推荐绝育、换牙期、驱虫相关
     return allGuides.filter(g =>
       g.title?.includes('绝育') ||
       g.title?.includes('换牙') ||
@@ -124,7 +106,6 @@ const recommendedGuides = computed(() => {
       g.title?.includes('发情')
     ).slice(0, 3)
   } else {
-    // 成年期：推荐喂养、健康、行为相关
     return allGuides.filter(g =>
       g.category?.slug?.includes('health') ||
       g.category?.slug?.includes('behavior') ||
@@ -134,165 +115,155 @@ const recommendedGuides = computed(() => {
   }
 })
 
-// 初始化数据
 onMounted(async () => {
-  console.log('[Guides] ===== 开始初始化 =====')
-  console.log('[Guides] 步骤1: 获取所有指南')
   await guideStore.initAllGuides()
-  console.log('[Guides] initAllGuides 完成, allGuides:', guideStore.allGuides.length)
-
-  console.log('[Guides] 步骤2: 获取分类')
   await guideStore.fetchCategories()
-  console.log('[Guides] fetchCategories 完成, categories:', guideStore.categories.length)
-
-  console.log('[Guides] 步骤3: 获取指南列表')
   await guideStore.fetchGuides()
-  console.log('[Guides] fetchGuides 完成, guides:', guideStore.guides.length)
-  console.log('[Guides] ===== 初始化完成 =====')
 })
 </script>
 
 <template>
-  <div class="guides-page-refined">
-    <!-- 页面标题区 -->
-    <header class="page-hero">
-      <div class="hero-content">
-        <h1 class="page-title">养猫指南</h1>
-        <p class="page-subtitle">胖虎整理的猫咪养护知识库，帮你成为更合格的铲屎官</p>
-      </div>
-    </header>
+  <div class="guides-page">
+    <!-- 装饰背景层 -->
+    <div class="page-deco" aria-hidden="true">
+      <div class="deco-blob deco-blob--warm"></div>
+      <div class="deco-blob deco-blob--cream"></div>
+    </div>
 
-    <!-- 搜索区域 - 胖虎镶嵌设计 -->
-    <section class="search-embedded-wrapper">
-      <!-- 搜索框卡片 -->
-      <div class="search-card">
-        <!-- 胖虎嵌入在搜索框左侧 -->
-        <div class="mascot-sticker">
-          <MascotCharacter expression="focused" size="small" :animated="true" class="sticker-img" />
-        </div>
+    <!-- 搜索 Hero 区 — 页面绝对主角 -->
+    <header class="search-hero">
+      <div class="hero-inner">
+        <h1 class="hero-title">搜索养猫知识</h1>
+        <p class="hero-hint">帮你找到最适合猫咪的养护方式</p>
 
-        <div class="search-input-wrapper">
+        <div class="search-bar">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           <input
             v-model="searchInput"
             type="text"
-            placeholder="输入关键词，胖虎帮你查百科..."
+            placeholder="搜索养猫知识..."
             class="search-input"
+            @keyup.enter="handleSearch"
           />
+          <button v-if="searchInput" @click="searchInput = ''" class="clear-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <button class="ai-btn" @click="router.push('/ai-chat')">
+            <span class="ai-btn-text">问胖虎</span>
+            <span class="ai-btn-dot"></span>
+          </button>
         </div>
-        <button class="search-btn-solid">搜 索</button>
+      </div>
+    </header>
+
+    <!-- 推荐模块（弱化） -->
+    <section v-if="recommendedGuides.length > 0 && !searchInput" class="recommend-section">
+      <div class="recommend-card">
+        <div class="recommend-header">
+          <div class="recommend-header-left">
+            <MascotCharacter expression="happy" size="small" :animated="false" />
+            <div>
+              <h3 class="recommend-title">为 {{ currentCat?.name }} 专属推荐</h3>
+              <p class="recommend-desc">
+                基于 <span class="age-badge">{{ currentCat?.ageFormatted }}</span> 的成长阶段精选
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="recommend-list">
+          <div
+            v-for="guide in recommendedGuides"
+            :key="guide.id"
+            class="recommend-item"
+            @click="viewGuide(guide.id)"
+          >
+            <span class="recommend-item-title">{{ guide.title }}</span>
+            <svg class="recommend-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- 阶段推荐（AI 顾问联动） -->
-    <section v-if="recommendedGuides.length > 0 && !searchInput" class="stage-recommendation">
-      <div class="recommendation-header">
-        <MascotCharacter expression="happy" size="small" :animated="false" />
-        <div class="recommendation-text">
-          <span class="recommendation-label">为 {{ currentCat?.name }} 推荐</span>
-          <span class="recommendation-sub">基于 {{ currentCat?.ageFormatted }} 的成长阶段</span>
-        </div>
-      </div>
-      <div class="recommendation-list">
-        <div
-          v-for="guide in recommendedGuides"
-          :key="guide.id"
-          class="recommendation-card"
-          @click="viewGuide(guide.id)"
+    <!-- 分类浏览 -->
+    <section v-if="guideStore.categories.length > 0" class="category-section">
+      <h2 class="section-heading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+        </svg>
+        分类浏览
+      </h2>
+      <nav class="category-scroll">
+        <button
+          v-for="cat in guideStore.categories"
+          :key="cat.id"
+          :class="['category-chip', { active: selectedCategory === cat.name }]"
+          @click="selectCategory(cat.name)"
         >
-          <span class="rec-tag">推荐</span>
-          <span class="rec-title">{{ guide.title }}</span>
-        </div>
-      </div>
+          <div class="chip-icon">
+            <CategoryIcons :type="getCategoryIconType(cat.slug)" :size="16" />
+          </div>
+          <span class="chip-label">{{ cat.name }}</span>
+          <span v-if="guideStore.categoryCounts[cat.name] > 0" class="chip-count">
+            {{ guideStore.categoryCounts[cat.name] }}
+          </span>
+        </button>
+      </nav>
     </section>
 
-    <!-- 分类胶囊 - SVG 图标 + 马卡龙色系 -->
-    <nav v-if="guideStore.categories.length > 0" class="category-pills">
-      <button
-        v-for="cat in guideStore.categories"
-        :key="cat.id"
-        :class="['category-item', { active: selectedCategory === cat.name }]"
-        @click="selectCategory(cat.name)"
-      >
-        <div class="cat-icon-container">
-          <CategoryIcons :type="getCategoryIconType(cat.slug)" :size="18" />
-        </div>
-        <span class="cat-label">{{ cat.name }}</span>
-        <span v-if="guideStore.categoryCounts[cat.name] > 0" class="cat-count">
-          {{ guideStore.categoryCounts[cat.name] }}
-        </span>
-      </button>
-    </nav>
-
-    <!-- 加载状态 -->
-    <div v-if="guideStore.loading" class="loading-state">
-      <div class="loading-mascot">
+    <!-- 加载 / 错误 / 空状态 -->
+    <div v-if="guideStore.loading" class="state-block">
+      <div class="state-mascot">
         <MascotCharacter expression="yawning" size="large" :animated="true" />
       </div>
-      <p class="loading-text">胖虎正在查找资料...</p>
+      <p class="state-text">胖虎正在查找资料...</p>
     </div>
 
-    <!-- 错误状态 -->
-    <div v-else-if="guideStore.error" class="error-state">
+    <div v-else-if="guideStore.error" class="state-block">
       <MascotCharacter expression="confused" size="medium" :animated="false" />
-      <p class="error-text">{{ guideStore.error }}</p>
+      <p class="state-text">{{ guideStore.error }}</p>
       <button @click="selectCategory(selectedCategory)" class="retry-btn">重试</button>
     </div>
 
-    <!-- 空状态 -->
-    <div v-else-if="guideStore.displayGuides.length === 0" class="empty-state-debug">
+    <div v-else-if="guideStore.displayGuides.length === 0" class="state-block">
       <MascotCharacter expression="confused" size="medium" :animated="false" />
-      <p class="empty-title">暂无相关指南</p>
-      <p class="empty-description">{{ searchInput ? '换个关键词试试看' : '该分类下还没有内容' }}</p>
-      <div class="debug-info">
-        <p class="debug-item">所有指南数: {{ guideStore.allGuides?.length || 0 }}</p>
-        <p class="debug-item">当前分类: {{ selectedCategory }}</p>
-        <p class="debug-item">搜索词: {{ searchInput || '(空)' }}</p>
-      </div>
+      <p class="state-text">{{ searchInput ? '换个关键词试试看' : '该分类下还没有内容' }}</p>
     </div>
 
-    <!-- 指南列表 - 奶油风卡片 -->
-    <main v-else class="guides-grid">
+    <!-- 内容卡片 Grid -->
+    <main v-else class="content-grid">
       <article
         v-for="guide in guideStore.displayGuides"
         :key="guide.id"
-        class="guide-premium-card"
+        class="content-card"
         @click="viewGuide(guide.id)"
       >
-        <!-- 卡片头部 -->
-        <header class="card-header">
-          <span class="category-tag-inline">
-            <CategoryIcons
-              :type="getCategoryIconType(guide.category?.slug || '')"
-              :size="14"
-            />
-            {{ guide.category?.name }}
-          </span>
+        <header class="card-tag">
+          <CategoryIcons :type="getCategoryIconType(guide.category?.slug || '')" :size="13" />
+          <span>{{ guide.category?.name }}</span>
         </header>
-
-        <!-- 标题 -->
-        <h3 class="guide-title">{{ guide.title }}</h3>
-
-        <!-- 摘要 -->
-        <p class="guide-excerpt">{{ guide.excerpt || '暂无简介' }}</p>
-
-        <!-- 卡片底部 -->
-        <footer class="card-footer">
-          <div class="meta-data">
-            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <h3 class="card-title">{{ guide.title }}</h3>
+        <p class="card-excerpt">{{ guide.excerpt || '暂无简介' }}</p>
+        <footer class="card-meta">
+          <span class="meta-views">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
-            <span>{{ guide.viewCount || 0 }}</span>
-          </div>
-          <a class="read-more-btn">
-            阅读全文
-            <svg class="paw-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C9.5 2 8 4.5 8 6c0 1.5 1 3 2 3.5C9.5 10 9 11 9 12c0 2 1.5 3 3 3s3-1 3-3c0-1-.5-2-1-2.5 1-.5 2-2 2-3.5 0-1.5-1.5-4-4-4zm-5 8c-1.5 0-3 1.5-3 3 0 1 1 2 2 2.5-.5.5-1 1.5-1 2.5 0 1.5 1.5 3 3 3s3-1.5 3-3c0-1-.5-2-1-2.5 1-.5 2-1.5 2-2.5 0-1.5-1.5-3-3-3zm10 0c-1.5 0-3 1.5-3 3 0 1 1 2 2 2.5-.5.5-1 1.5-1 2.5 0 1.5 1.5 3 3 3s3-1.5 3-3c0-1-.5-2-1-2.5 1-.5 2-1.5 2-2.5 0-1.5-1.5-3-3-3z"/>
+            {{ guide.viewCount || 0 }}
+          </span>
+          <span class="card-read-link">
+            阅读
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-          </a>
+          </span>
         </footer>
       </article>
     </main>
@@ -300,18 +271,77 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* ================= 页面容器 ================= */
-.guides-page-refined {
+/* ===================== Page + Atmosphere ===================== */
+.guides-page {
+  position: relative;
   min-height: 100vh;
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   padding: 20px;
-  animation: fadeIn 0.4s ease-out;
+  max-width: 960px;
+  margin: 0 auto;
+  overflow: hidden;
 }
 
-@keyframes fadeIn {
+/* Decorative blobs — warm depth, never flat */
+.page-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.deco-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.deco-blob--warm {
+  width: 500px;
+  height: 500px;
+  top: -120px;
+  right: -160px;
+  background: radial-gradient(circle, rgba(255, 138, 76, 0.12) 0%, transparent 70%);
+  animation: blobDrift 20s ease-in-out infinite alternate;
+}
+
+.deco-blob--cream {
+  width: 400px;
+  height: 400px;
+  bottom: 10%;
+  left: -100px;
+  background: radial-gradient(circle, rgba(255, 184, 140, 0.1) 0%, transparent 70%);
+  animation: blobDrift 25s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes blobDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, -20px) scale(1.08); }
+}
+
+/* All content above blobs */
+.search-hero,
+.recommend-section,
+.category-section,
+.state-block,
+.content-grid {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================== Search Hero — S级 ===================== */
+.search-hero {
+  padding: 48px 0 36px;
+  text-align: center;
+  animation: heroReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes heroReveal {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -319,176 +349,256 @@ onMounted(async () => {
   }
 }
 
-/* ================= 页面 Hero ================= */
-.page-hero {
-  text-align: center;
-  padding-top: 8px;
-  margin-bottom: 8px;
-}
-
-.hero-content {
-  max-width: 500px;
+.hero-inner {
+  max-width: 600px;
   margin: 0 auto;
 }
 
-.page-title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #374151;
-  margin: 0 0 8px 0;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+.hero-title {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--color-text-primary) 40%, var(--color-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.page-subtitle {
-  font-size: 13px;
-  color: #9CA3AF;
-  margin: 0;
-  line-height: 1.6;
+.hero-hint {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 28px;
+  line-height: 1.5;
 }
 
-/* ================= 搜索区域 - 胖虎镶嵌设计 ================= */
-/* 外层容器：胖虎镶嵌进搜索框 */
-.search-embedded-wrapper {
+/* Search bar — focal element */
+.search-bar {
   position: relative;
-  max-width: 700px;
-  margin: 40px auto 24px;
-  z-index: 10;
-}
-
-/* 搜索框卡片 */
-.search-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
-  padding: 10px 20px 10px 58px; /* 左侧留出位置给胖虎 */
-  border-radius: 24px;
-  border: 1.5px solid #FDF3E9;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  padding: 6px 6px 6px 20px;
   box-shadow:
-    0 12px 32px rgba(244, 162, 97, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
-  position: relative;
+    0 2px 12px rgba(0, 0, 0, 0.03),
+    0 12px 36px rgba(255, 138, 76, 0.08);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* 胖虎贴纸 - 嵌入在搜索框左侧内部 */
-.mascot-sticker {
-  position: absolute;
-  left: 7px;
-  top: 0;
-  bottom: 0;
+.search-bar:focus-within {
+  border-color: var(--color-primary);
+  box-shadow:
+    0 0 0 4px var(--color-primary-soft),
+    0 4px 16px rgba(255, 138, 76, 0.12);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  margin-right: 10px;
+  transition: color 0.25s ease;
+}
+
+.search-bar:focus-within .search-icon {
+  color: var(--color-primary);
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: var(--color-text-primary);
+  background: transparent;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.clear-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5;
-  filter: drop-shadow(0 4px 8px rgba(244, 162, 97, 0.25));
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--color-bg-block-hover);
+  border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: var(--color-text-regular);
+  flex-shrink: 0;
+  margin-right: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
-.mascot-sticker:hover {
-  transform: scale(1.1) rotate(-3deg);
+.clear-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
-.sticker-img {
-  width: 44px;
-  height: 44px;
+.clear-btn:hover {
+  background: var(--color-text-secondary);
+  color: #fff;
+  transform: scale(1.1);
 }
 
-.search-card:focus-within {
-  border-color: #FED7AA;
-  box-shadow:
-    0 14px 36px rgba(244, 162, 97, 0.18),
-    0 6px 16px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transform: translateY(-2px);
-}
-
-/* 输入区域 */
-.search-input-wrapper {
-  flex: 1;
+/* AI button inside search bar */
+.ai-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.search-card .search-icon {
-  width: 22px;
-  height: 22px;
-  color: #F4A261;
+  gap: 6px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
 
-.search-card .search-input {
-  border: none;
-  outline: none;
-  width: 100%;
-  font-size: 15px;
-  color: #374151;
-  background: transparent;
+.ai-btn:hover {
+  transform: scale(1.04);
+  box-shadow: var(--shadow-primary-btn);
 }
 
-.search-card .search-input::placeholder {
-  color: #9CA3AF;
+.ai-btn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: breathe 2s ease-in-out infinite;
 }
 
-/* 搜索按钮 */
-.search-btn-solid {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
-  color: #fff;
-  border: none;
-  padding: 12px 28px;
-  border-radius: 100px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(244, 162, 97, 0.25);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.search-btn-solid:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(244, 162, 97, 0.35);
+/* ===================== Recommend — C级 ===================== */
+.recommend-section {
+  margin-bottom: 32px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
-/* ================= 阶段推荐 ================= */
-.stage-recommendation {
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
-  border-radius: 16px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  border: 1px solid #FED7AA;
+.recommend-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  border: 1px solid var(--color-border-light);
+  transition: box-shadow 0.3s ease;
 }
 
-.recommendation-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.recommend-card:hover {
+  box-shadow: 0 4px 20px rgba(255, 138, 76, 0.06);
+}
+
+.recommend-header {
   margin-bottom: 10px;
 }
 
-.recommendation-text {
+.recommend-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recommend-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.recommend-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 2px 0 0;
+}
+
+.age-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+
+.recommend-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.recommendation-label {
+.recommend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.recommend-item:hover {
+  background: rgba(255, 138, 76, 0.06);
+}
+
+.recommend-item-title {
   font-size: 13px;
-  font-weight: 600;
-  color: #F4A261;
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
-.recommendation-sub {
-  font-size: 11px;
-  color: #9CA3AF;
+.recommend-item-arrow {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.recommendation-list {
+.recommend-item:hover .recommend-item-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* ===================== Category Section — B级 ===================== */
+.category-section {
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 14px;
+}
+
+.section-heading svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
+}
+
+.category-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -496,278 +606,214 @@ onMounted(async () => {
   scrollbar-width: none;
 }
 
-.recommendation-list::-webkit-scrollbar {
+.category-scroll::-webkit-scrollbar {
   display: none;
 }
 
-.recommendation-card {
+.category-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: #FFFFFF;
-  border: 1px solid #F5F0E8;
-  border-radius: 100px;
+  gap: 5px;
+  padding: 7px 14px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-full);
   cursor: pointer;
-  transition: all 0.3s ease;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
-.recommendation-card:hover {
-  background: #FFF7ED;
-  border-color: #F4A261;
-  transform: translateY(-2px);
+.category-chip:hover:not(.active) {
+  border-color: var(--color-primary-medium);
+  background: var(--color-primary-light);
 }
 
-.rec-tag {
-  padding: 2px 6px;
-  background: #F4A261;
-  color: #FFFFFF;
-  font-size: 10px;
-  font-weight: 700;
-  border-radius: 100px;
-}
-
-.rec-title {
-  font-size: 12px;
-  color: #374151;
-  font-weight: 500;
-}
-
-/* ================= 分类胶囊 ================= */
-.category-pills {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  overflow-x: auto;
-  padding: 4px 0;
-  scrollbar-width: none;
-  position: relative;
-  z-index: 1;
-}
-
-.category-pills::-webkit-scrollbar {
-  display: none;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: #FFFFFF;
-  border: 1.5px solid #E5E7EB;
-  border-radius: 100px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  white-space: nowrap;
-}
-
-.category-item:hover:not(.active) {
-  border-color: #FED7AA;
-  background: #FFFBF7;
-}
-
-.cat-icon-container {
+.chip-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
-.cat-label {
+.chip-label {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
-.cat-count {
-  padding: 2px 6px;
-  background: #F3F4F6;
-  color: #6B7280;
+.chip-count {
+  padding: 1px 6px;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-regular);
   font-size: 10px;
   font-weight: 700;
-  border-radius: 100px;
+  border-radius: var(--radius-full);
 }
 
-/* 激活态 - 微渐变 + 动效 */
-.category-item.active {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+.category-chip.active {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border-color: transparent;
-  color: #FFFFFF;
-  transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 138, 76, 0.3);
 }
 
-.category-item.active .cat-label {
-  color: #FFFFFF;
+.category-chip.active .chip-label,
+.category-chip.active .chip-count {
+  color: #fff;
 }
 
-.category-item.active .cat-count {
-  background: rgba(255, 255, 255, 0.2);
-  color: #FFFFFF;
+.category-chip.active .chip-count {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* ================= 加载/错误状态 ================= */
-.empty-state-debug {
+/* ===================== States ===================== */
+.state-block {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 64px 20px;
   text-align: center;
 }
 
-.empty-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
-  margin: 16px 0 8px 0;
-}
-
-.empty-description {
-  font-size: 14px;
-  color: #9CA3AF;
-  margin: 0 0 20px 0;
-}
-
-.debug-info {
-  padding: 12px 20px;
-  background: #F3F4F6;
-  border-radius: 12px;
-  font-size: 12px;
-  color: #6B7280;
-}
-
-.debug-item {
-  margin: 4px 0;
-  font-family: monospace;
-}
-.loading-state,
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.loading-mascot {
-  width: 100px;
-  height: 100px;
+.state-mascot {
+  width: 96px;
+  height: 96px;
   margin-bottom: 16px;
 }
 
-.loading-text,
-.error-text {
+.state-text {
   font-size: 14px;
-  color: #9CA3AF;
-  margin: 0 0 16px 0;
+  color: var(--color-text-regular);
+  margin: 0 0 16px;
 }
 
 .retry-btn {
   padding: 10px 24px;
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: #fff;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--radius-full);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .retry-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+  box-shadow: var(--shadow-primary-btn);
 }
 
-/* ================= 指南卡片网格 ================= */
-.guides-grid {
+/* ===================== Content Grid — A级 ===================== */
+.content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
 }
 
-/* ================= 高级卡片设计 ================= */
-.guide-premium-card {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF8 100%);
-  border-radius: 20px;
-  padding: 20px;
-  border: 1px solid #FFFFFF;
-  box-shadow:
-    0 2px 12px rgba(244, 162, 97, 0.06),
-    0 1px 4px rgba(0, 0, 0, 0.02);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  border: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.guide-premium-card::before {
+.content-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 138, 76, 0.03) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.content-card::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #F4A261 0%, #E76F51 100%);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
-.guide-premium-card:hover {
+.content-card:hover {
   transform: translateY(-4px);
+  border-color: var(--color-primary-medium);
   box-shadow:
-    0 12px 32px rgba(244, 162, 97, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.04);
+    0 12px 32px rgba(255, 138, 76, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
-.guide-premium-card:hover::before {
+.content-card:hover::before {
   opacity: 1;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.content-card:hover::after {
+  opacity: 1;
 }
 
-.category-tag-inline {
+.card-tag {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 12px;
-  background: linear-gradient(135deg, #FAF8F5 0%, #FFF7ED 100%);
-  border: 1px solid #F5F0E8;
-  border-radius: 100px;
+  width: fit-content;
+  padding: 3px 10px;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 600;
-  color: #F4A261;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--color-primary-dark);
 }
 
-.guide-title {
-  font-size: 18px;
+.card-title {
+  position: relative;
+  font-size: 17px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.2s ease;
 }
 
-.guide-excerpt {
-  font-size: 14px;
-  color: #6B7280;
+.content-card:hover .card-title {
+  color: var(--color-primary-dark);
+}
+
+.card-excerpt {
+  position: relative;
+  font-size: 13px;
+  color: var(--color-text-regular);
   line-height: 1.6;
   margin: 0;
   display: -webkit-box;
@@ -777,156 +823,140 @@ onMounted(async () => {
   flex: 1;
 }
 
-.card-footer {
+.card-meta {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 8px;
-  border-top: 1px solid #F5F0E8;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-light);
 }
 
-.meta-data {
+.meta-views {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #9CA3AF;
   font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
-.icon-eye {
+.meta-views svg {
   width: 14px;
   height: 14px;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
-.read-more-btn {
+.card-read-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: #F4A261;
+  gap: 3px;
   font-size: 13px;
   font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
+  color: var(--color-primary);
+  transition: gap 0.2s ease;
 }
 
-.read-more-btn:hover {
-  color: #E76F51;
+.card-read-link svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.content-card:hover .card-read-link {
   gap: 6px;
 }
 
-.paw-icon {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.3s ease;
+.content-card:hover .card-read-link svg {
+  transform: translateX(2px);
 }
 
-.read-more-btn:hover .paw-icon {
-  transform: scale(1.2) rotate(-10deg);
-}
-
-/* ================= 移动端适配 ================= */
+/* ===================== Responsive ===================== */
 @media (max-width: 767px) {
-  .guides-page-refined {
+  .guides-page {
     padding: 12px;
   }
 
-  .page-hero {
-    padding-top: 12px;
-    margin-bottom: 12px;
+  .deco-blob--warm {
+    width: 300px;
+    height: 300px;
+    top: -80px;
+    right: -80px;
   }
 
-  .page-title {
+  .deco-blob--cream {
+    width: 250px;
+    height: 250px;
+    bottom: 5%;
+    left: -60px;
+  }
+
+  .search-hero {
+    padding: 28px 0 24px;
+  }
+
+  .hero-title {
     font-size: 22px;
   }
 
-  .page-subtitle {
-    font-size: 12px;
-    max-width: 280px;
+  .hero-hint {
+    font-size: 13px;
+    margin-bottom: 20px;
   }
 
-  /* 胖虎镶嵌搜索框 - 移动端 */
-  .search-embedded-wrapper {
-    margin: 24px auto 16px;
+  .search-bar {
+    padding: 5px 5px 5px 14px;
   }
 
-  .mascot-sticker {
-    left: 6px;
+  .search-input {
+    font-size: 14px;
   }
 
-  .sticker-img {
-    width: 38px;
-    height: 38px;
-  }
-
-  .search-card {
-    padding: 8px 12px 8px 48px;
-    border-radius: 18px;
-  }
-
-  .search-card .search-icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .search-card .search-input {
+  .ai-btn {
+    padding: 9px 14px;
     font-size: 13px;
   }
 
-  .search-btn-solid {
-    padding: 10px 16px;
-    font-size: 13px;
+  .ai-btn-text {
+    display: none;
   }
 
-  .guides-grid {
+  .ai-btn::before {
+    content: 'AI';
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .recommend-card {
+    padding: 12px 14px;
+  }
+
+  .content-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 14px;
   }
 
-  .category-pills {
-    gap: 6px;
-    margin-bottom: 16px;
-  }
-
-  .category-item {
-    padding: 7px 12px;
-  }
-
-  .cat-label {
-    font-size: 12px;
-  }
-
-  .stage-recommendation {
-    padding: 10px 12px;
-    margin-bottom: 16px;
-  }
-
-  .recommendation-header {
-    gap: 8px;
-  }
-
-  .recommendation-card {
-    padding: 7px 12px;
-  }
-
-  .rec-title {
-    font-size: 11px;
-  }
-
-  .guide-premium-card {
+  .content-card {
     padding: 16px;
   }
 
-  .guide-title {
-    font-size: 16px;
+  .card-title {
+    font-size: 15px;
   }
 
-  .guide-excerpt {
+  .card-excerpt {
     font-size: 13px;
   }
+}
 
-  .bg-decoration-dot {
-    display: none;
+@media (min-width: 768px) and (max-width: 1023px) {
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

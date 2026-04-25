@@ -19,7 +19,7 @@ export type MascotExpression =
   | 'yawning'    // 打哈欠 - Loading
   | 'happy'     // 被摸舒服 - 成就弹窗
 
-export type MascotSize = 'small' | 'medium' | 'large' | 'hero'
+export type MascotSize = 'tiny' | 'small' | 'medium' | 'large' | 'hero'
 
 export type MascotLayout = 'inline' | 'float'
 
@@ -70,6 +70,7 @@ const currentImage = computed(() => {
 
 // 尺寸映射（px）- 按设计文档规范
 const sizeMap: Record<MascotSize, number> = {
+  tiny: 24,
   small: 48,
   medium: 80,
   large: 160,

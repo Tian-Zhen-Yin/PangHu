@@ -1,57 +1,85 @@
 <template>
   <div class="ai-health-advice">
-    <!-- 对话气泡风格头部 -->
-    <div class="advice-header-bubble">
-      <div class="mascot-avatar">
-        <MascotCharacter expression="focused" size="medium" :animated="true" />
-      </div>
-      <div class="header-content">
-        <h3>AI 健康分析</h3>
-        <p class="header-subtitle">胖虎医生的专业建议</p>
+    <!-- 简化头部 -->
+    <div class="advice-header">
+      <div class="header-left">
+        <div class="icon-badge">
+          <svg class="robot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"/>
+            <path d="M8 8v4"/>
+            <path d="M18 8h-2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            <path d="M18 16h-2a2 2 0 0 0-2-2v-6a2 2 0 0 0 2-2h2"/>
+            <path d="M12 22c-1.1 0-2-.9-2-2V6"/>
+            <path d="M6 18c-1.1 0-2-.9-2-2V8"/>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h3>健康洞察</h3>
+          <p class="header-subtitle">基于近30天数据分析</p>
+        </div>
       </div>
       <button v-if="!loading" class="refresh-btn" @click="fetchAdvice" title="刷新">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 4v6h-6M1 20v-6h6"/>
-          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2v6h-6"/>
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+          <path d="M21 12a9 9 0 0 1-9 9"/>
+          <path d="M21 3v9h-9"/>
         </svg>
       </button>
     </div>
 
     <div v-if="loading" class="loading">
-      <MascotCharacter expression="yawning" size="medium" :animated="true" />
-      <p>胖虎正在分析中...</p>
+      <div class="loading-spinner"></div>
+      <p>分析中...</p>
     </div>
 
     <div v-else-if="error" class="error">
-      <MascotCharacter expression="confused" size="medium" :animated="false" />
+      <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
       <p>{{ error }}</p>
     </div>
 
-    <div v-else-if="advice" class="advice-content">
-      <!-- 体重建议 -->
-      <div v-if="advice.weightAdvice" class="advice-bubble">
-        <div class="bubble-indicator"></div>
-        <div class="status-pill" :class="advice.weightAdvice.status">
-          <MascotCharacter
-            :expression="advice.weightAdvice.status === 'normal' ? 'happy' : 'confused'"
-            size="small"
-            :animated="advice.weightAdvice.status === 'normal'"
-          />
-          <span>{{ getWeightText(advice.weightAdvice.status) }}</span>
+    <div v-else-if="advice" class="advice-content-wrapper">
+      <div class="advice-content">
+      <!-- 体重状态卡片 -->
+      <div v-if="advice.weightAdvice" class="status-card" :class="advice.weightAdvice.status">
+        <div class="status-icon-large">
+          <svg v-if="advice.weightAdvice.status === 'normal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <svg v-else-if="advice.weightAdvice.status === 'thin'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v18"/>
+            <path d="M8 8l4-4 4 4"/>
+            <path d="M8 16l4 4 4-4"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+          </svg>
         </div>
-        <p class="bubble-text">{{ advice.weightAdvice.suggestion }}</p>
+        <div class="status-info">
+          <p class="status-title">{{ getWeightText(advice.weightAdvice.status) }}</p>
+          <p class="status-desc">{{ advice.weightAdvice.suggestion }}</p>
+        </div>
       </div>
 
-      <!-- 疫苗建议 -->
-      <div v-if="advice.vaccineAdvice" class="advice-bubble">
-        <div class="bubble-indicator"></div>
-        <div class="bubble-title">
-          <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+      <!-- 疫苗提醒 -->
+      <div v-if="advice.vaccineAdvice" class="info-card">
+        <div class="card-header-small">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 2 4 4"/>
+            <path d="m17 7 3-3"/>
+            <path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/>
+            <path d="m9 11 4 4"/>
+            <path d="m5 19-3 3"/>
           </svg>
-          疫苗提醒
+          <span class="header-title">疫苗提醒</span>
         </div>
-        <p class="bubble-text">{{ advice.vaccineAdvice.nextAction }}</p>
+        <p class="card-text">{{ advice.vaccineAdvice.nextAction }}</p>
         <div v-if="advice.vaccineAdvice.upcoming.length > 0" class="upcoming-list">
           <div
             v-for="vaccine in advice.vaccineAdvice.upcoming"
@@ -66,31 +94,39 @@
         </div>
       </div>
 
-      <!-- 年龄阶段建议 -->
-      <div v-if="advice.ageAdvice" class="advice-bubble">
-        <div class="bubble-indicator"></div>
-        <div class="bubble-title">
-          <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-          </svg>
-          {{ advice.ageAdvice.stage }}养护要点
+      <!-- 养护要点 -->
+      <div v-if="advice.ageAdvice" class="info-card">
+        <p class="section-label">{{ advice.ageAdvice.stage }}养护要点</p>
+        <div class="tips-grid">
+          <div
+            v-for="tip in advice.ageAdvice.tips"
+            :key="tip"
+            class="tip-item"
+          >
+            <span class="tip-dot"></span>
+            <span class="tip-text">{{ tip }}</span>
+          </div>
         </div>
-        <ul class="tips-list">
-          <li v-for="tip in advice.ageAdvice.tips" :key="tip">
-            {{ tip }}
-          </li>
-        </ul>
       </div>
 
       <!-- 综合建议 -->
-      <div v-if="advice.generalAdvice" class="advice-bubble highlight">
-        <div class="bubble-indicator"></div>
-        <p class="bubble-text">{{ advice.generalAdvice }}</p>
+      <div v-if="advice.generalAdvice" class="highlight-card">
+        <svg class="quote-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 .37-.948l2.855-.725a1.5 1.5 0 0 0 1.06-1.06l-.72-2.855a.5.5 0 0 1 .948-.37l1.583 6.135A2 2 0 0 0 11.063 7.063l6.135 1.581a.5.5 0 0 1 .37.948l-2.855.725a1.5 1.5 0 0 0-1.06 1.06l.72 2.855a.5.5 0 0 1-.948.37l-1.583-6.135A2 2 0 0 0 12.937 15.5Z"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+        <p class="highlight-text">{{ advice.generalAdvice }}</p>
+      </div>
       </div>
     </div>
 
     <div v-else class="empty-state">
-      <MascotCharacter expression="waiting" size="medium" :animated="false" />
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/>
+        <path d="M18 17V9"/>
+        <path d="M13 17V5"/>
+        <path d="M8 17v-3"/>
+      </svg>
       <p>暂无分析数据</p>
     </div>
   </div>
@@ -100,8 +136,6 @@
 import { ref, onMounted } from 'vue'
 import type { ProactiveAdvice } from '../../types/proactive'
 import { getProactiveAdvice } from '../../api/proactive'
-import MascotCharacter from '../mascot/MascotCharacter.vue'
-import LoadingSpinner from '../common/LoadingSpinner.vue'
 
 interface Props {
   catId: string
@@ -143,60 +177,69 @@ onMounted(() => {
 
 <style scoped>
 .ai-health-advice {
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
-  border-radius: 24px;
+  background: #FFFFFF;
+  border-radius: 20px;
   padding: 24px;
-  box-shadow:
-    0 4px 20px rgba(244, 162, 97, 0.08),
-    0 1px 4px rgba(0, 0, 0, 0.03);
-  border: 1px solid #FDF3E9;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
 }
 
-/* 对话气泡头部 */
-.advice-header-bubble {
+/* 简化头部 - 增加呼吸感 */
+.advice-header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px dashed #E5E7EB;
+  border-bottom: 1px solid var(--color-bg-block-hover);
 }
 
-.mascot-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%);
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-badge {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.2);
 }
 
-.header-content {
-  flex: 1;
+.robot-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
 }
 
-.header-content h3 {
+.header-text h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .header-subtitle {
   margin: 2px 0 0 0;
-  font-size: 12px;
-  color: #9CA3AF;
+  font-size: 11px;
+  color: var(--color-text-regular);
 }
 
 .refresh-btn {
-  background: #F3F4F6;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: #6B7280;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border-light);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--color-text-regular);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -205,13 +248,271 @@ onMounted(() => {
 }
 
 .refresh-btn:hover {
-  background: #E5E7EB;
-  color: #F4A261;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
 }
 
 .refresh-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 状态卡片 - 增强对比度 */
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--color-bg-block-hover);
+  border: 1px solid var(--color-border-light);
+}
+
+.status-card.normal {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border-color: #86EFAC;
+}
+
+.status-card.thin {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border-color: #FCD34D;
+}
+
+.status-card.overweight {
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  border-color: #FCA5A5;
+}
+
+.status-icon-large {
+  width: 36px;
+  height: 36px;
+  background: #FFFFFF;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.status-icon-large svg {
   width: 18px;
   height: 18px;
+}
+
+.status-card.normal .status-icon-large svg {
+  color: var(--color-success);
+}
+
+.status-card.thin .status-icon-large svg {
+  color: var(--color-warning);
+}
+
+.status-card.overweight .status-icon-large svg {
+  color: var(--color-danger);
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-title {
+  margin: 0 0 3px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.status-card.normal .status-title {
+  color: var(--color-success);
+}
+
+.status-card.thin .status-title {
+  color: #B45309;
+}
+
+.status-card.overweight .status-title {
+  color: #B91C1C;
+}
+
+.status-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-regular);
+  line-height: 1.5;
+}
+
+/* 信息卡片 - 增强对比度 */
+.info-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--color-bg-page) 100%);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border-light);
+}
+
+.card-header-small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.header-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--color-primary);
+}
+
+.header-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.card-text {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: var(--color-text-regular);
+  line-height: 1.6;
+}
+
+.section-label {
+  margin: 0 0 12px 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-regular);
+  letter-spacing: 0.3px;
+}
+
+/* 提示网格 - 2x2布局 */
+.tips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--color-bg-page) 100%);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: default;
+  border: 1px solid var(--color-border-light);
+}
+
+.tip-item:hover {
+  background: var(--color-bg-block-hover);
+  border-color: var(--color-text-secondary);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.tip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-medium);
+  flex-shrink: 0;
+}
+
+.tip-text {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+/* 移动端保持单列 */
+@media (max-width: 640px) {
+  .tips-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 高亮卡片 - 增强对比度 */
+.highlight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  border-radius: 12px;
+  border: 1px solid #FDBA74;
+}
+
+.quote-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  color: var(--color-primary);
+}
+
+.highlight-text {
+  margin: 0;
+  font-size: 12px;
+  color: #7C2D12;
+  line-height: 1.6;
+}
+
+/* 即将到来的列表 */
+.upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upcoming-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.upcoming-item.urgent {
+  background: #FEF3C7;
+  border-color: #FCD34D;
+  color: #B45309;
+}
+
+.upcoming-item.overdue {
+  background: #FEE2E2;
+  border-color: #FCA5A5;
+  color: #B91C1C;
+  font-weight: 600;
+}
+
+.vaccine-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* 内容区域包装器 - 自动填充剩余空间 */
+.advice-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.advice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* 让高亮卡片在底部 */
+.highlight-card {
+  margin-top: auto;
 }
 
 /* 加载/错误/空状态 */
@@ -223,172 +524,56 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 150px;
-  gap: 12px;
-  color: #9CA3AF;
+  gap: 10px;
+  color: var(--color-text-placeholder);
+  flex: 1;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-border-light);
+  border-top-color: var(--color-primary-medium);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-icon,
+.empty-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-text-regular);
 }
 
 .loading p,
 .error p,
 .empty-state p {
   margin: 0;
-  font-size: 14px;
-}
-
-/* 对话气泡内容 */
-.advice-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.advice-bubble {
-  position: relative;
-  padding: 16px 16px 16px 20px;
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid #F3F4F6;
-  margin-left: 10px;
-}
-
-.advice-bubble::before {
-  content: '';
-  position: absolute;
-  left: -6px;
-  top: 20px;
-  width: 0;
-  height: 0;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  border-right: 6px solid #F3F4F6;
-}
-
-.advice-bubble.highlight {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFFBF7 100%);
-  border-color: #FED7AA;
-}
-
-.advice-bubble.highlight::before {
-  border-right-color: #FED7AA;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 100px;
   font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.status-pill.normal {
-  background: #DCFCE7;
-  color: #16A34A;
-}
-
-.status-pill.thin {
-  background: #FEF3C7;
-  color: #D97706;
-}
-
-.status-pill.overweight {
-  background: #FEE2E2;
-  color: #DC2626;
-}
-
-.bubble-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 8px;
-}
-
-.title-icon {
-  width: 16px;
-  height: 16px;
-  color: #F4A261;
-}
-
-.bubble-text {
-  margin: 0;
-  font-size: 14px;
-  color: #4B5563;
-  line-height: 1.6;
-}
-
-.upcoming-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.upcoming-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #F9FAFB;
-  border-radius: 8px;
-  font-size: 13px;
-}
-
-.upcoming-item.urgent {
-  background: #FEF2F2;
-  color: #DC2626;
-}
-
-.upcoming-item.overdue {
-  background: #FEF2F2;
-  color: #B91C1C;
-  font-weight: 600;
-}
-
-.vaccine-name {
-  font-weight: 500;
-  color: #374151;
-}
-
-.tips-list {
-  margin: 10px 0 0 0;
-  padding-left: 20px;
-}
-
-.tips-list li {
-  font-size: 13px;
-  color: #4B5563;
-  line-height: 1.7;
-  margin-bottom: 6px;
 }
 
 /* 移动端适配 */
 @media (max-width: 640px) {
   .ai-health-advice {
     padding: 16px;
-    border-radius: 20px;
+    border-radius: 16px;
   }
 
-  .mascot-avatar {
-    width: 44px;
-    height: 44px;
+  .icon-badge {
+    width: 36px;
+    height: 36px;
   }
 
-  .header-content h3 {
+  .robot-icon {
     font-size: 16px;
   }
 
-  .advice-bubble {
-    padding: 12px 12px 12px 16px;
-    margin-left: 6px;
-  }
-
-  .advice-bubble::before {
-    left: -4px;
-    top: 16px;
+  .header-text h3 {
+    font-size: 15px;
   }
 }
 </style>

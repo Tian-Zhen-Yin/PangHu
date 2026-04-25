@@ -28,6 +28,7 @@ import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import type { CatComparisonData } from '../../types/weight'
+import { formatWeightValue } from '../../utils/format'
 
 const MAX_DATA_POINTS = 30
 
@@ -50,13 +51,13 @@ const catsWithoutHistory = computed(() => {
   return props.cats.filter(cat => !cat.history || cat.history.length === 0)
 })
 
-// 猫咪颜色方案
+// 猫咪颜色方案 - 马卡龙色系
 const CAT_COLORS = [
-  '#f5a623', // 橙色（主色）
-  '#52c41a', // 绿色
-  '#1890ff', // 蓝色
-  '#a78bfa', // 紫色
-  '#fa541c', // 深橙
+  '#FF8A4C', // 橙色（主色 - 珊瑚橘）
+  '#10B981', // 薄荷绿
+  '#38BDF8', // 天空蓝
+  '#A78BFA', // 薰衣草紫
+  '#F59E0B', // 琥珀黄
 ]
 
 function initChart() {
@@ -140,7 +141,7 @@ function updateChart() {
             tooltip += `<div style="margin-bottom: 4px;">
               <span style="display: inline-block; width: 10px; height: 10px; background: ${param.color}; border-radius: 50%; margin-right: 6px;"></span>
               <span style="font-weight: 500;">${param.seriesName}</span>
-              <span style="margin-left: 8px; color: ${param.color};">${param.value}kg</span>
+              <span style="margin-left: 8px; color: ${param.color};">${formatWeightValue(param.value)}kg</span>
             </div>`
           }
         })
@@ -155,7 +156,7 @@ function updateChart() {
       left: 'center',
       textStyle: {
         fontSize: 12,
-        color: '#666'
+        color: 'var(--color-text-regular)'
       }
     },
     grid: {
@@ -171,11 +172,11 @@ function updateChart() {
       boundaryGap: false,
       axisLine: {
         lineStyle: {
-          color: '#ddd'
+          color: 'var(--color-border)'
         }
       },
       axisLabel: {
-        color: '#666',
+        color: 'var(--color-text-regular)',
         fontSize: 11,
         rotate: sortedDates.length > 10 ? 45 : 0
       }
@@ -184,22 +185,22 @@ function updateChart() {
       type: 'value',
       name: '体重 (kg)',
       nameTextStyle: {
-        color: '#666',
+        color: 'var(--color-text-regular)',
         fontSize: 12
       },
       axisLine: {
         lineStyle: {
-          color: '#ddd'
+          color: 'var(--color-border)'
         }
       },
       axisLabel: {
-        color: '#666',
+        color: 'var(--color-text-regular)',
         fontSize: 11,
         formatter: '{value} kg'
       },
       splitLine: {
         lineStyle: {
-          color: '#f0f0f0',
+          color: 'var(--color-border-light)',
           type: 'dashed'
         }
       }
@@ -242,7 +243,7 @@ onUnmounted(() => {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card-normal);
 }
 
 .chart-header {
@@ -255,12 +256,12 @@ onUnmounted(() => {
 .chart-header h3 {
   margin: 0;
   font-size: 16px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .chart-info {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-secondary);
 }
 
 .loading,
@@ -271,7 +272,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 250px;
-  color: #999;
+  color: var(--color-text-secondary);
 }
 
 .empty-state {

@@ -120,12 +120,12 @@
 .about-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
 }
 
 .about-subtitle {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 1.125rem;
   margin: 0;
 }
@@ -141,12 +141,12 @@
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
 }
 
 .section-text {
-  color: #64748b;
+  color: var(--color-text-regular);
   line-height: 1.7;
   margin: 0;
 }
@@ -170,12 +170,12 @@
 
 .feature-name {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .feature-description {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -189,10 +189,10 @@
 
 .tech-title {
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-regular);
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #f97316;
+  border-bottom: 2px solid var(--color-primary);
 }
 
 .tech-list {
@@ -202,7 +202,7 @@
 }
 
 .tech-list li {
-  color: #64748b;
+  color: var(--color-text-regular);
   padding: 0.5rem 0;
   padding-left: 1.5rem;
   position: relative;
@@ -212,7 +212,7 @@
   content: '▹';
   position: absolute;
   left: 0;
-  color: #f97316;
+  color: var(--color-primary);
 }
 
 /* 联系方式 */
@@ -227,15 +227,15 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #f8fafc;
-  color: #475569;
+  background: var(--color-bg-page);
+  color: var(--color-text-regular);
   text-decoration: none;
   border-radius: 0.5rem;
   transition: all 0.2s ease;
 }
 
 .contact-link:hover {
-  background: #f97316;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -247,6 +247,6 @@
 .about-footer {
   text-align: center;
   padding: 2rem 0;
-  color: #64748b;
+  color: var(--color-text-regular);
 }
 </style>

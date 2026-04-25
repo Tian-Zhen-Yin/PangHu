@@ -87,10 +87,10 @@ async function handleDeletePlan() {
 
 // 获取进度条颜色
 function getProgressColor(completion: number): string {
-  if (completion === 0) return '#cbd5e1'
-  if (completion < 30) return '#f97316'
-  if (completion < 70) return '#eab308'
-  return '#22c55e'
+  if (completion === 0) return 'var(--color-border-light)'
+  if (completion < 30) return 'var(--color-primary)'
+  if (completion < 70) return 'var(--color-warning)'
+  return 'var(--color-success)'
 }
 
 // 打开编辑用户名弹窗
@@ -396,7 +396,7 @@ onMounted(async () => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   padding: 2rem 1rem;
 }
 
@@ -415,16 +415,16 @@ onMounted(async () => {
 .page-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
 .logout-btn {
   padding: 0.625rem 1.25rem;
   background: white;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -432,8 +432,8 @@ onMounted(async () => {
 }
 
 .logout-btn:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* 标签页导航 */
@@ -453,7 +453,7 @@ onMounted(async () => {
   background: transparent;
   border: none;
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
@@ -465,11 +465,11 @@ onMounted(async () => {
 }
 
 .tab:hover {
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
 }
 
@@ -510,7 +510,7 @@ onMounted(async () => {
 .user-avatar {
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -526,7 +526,7 @@ onMounted(async () => {
 .user-name {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -539,19 +539,19 @@ onMounted(async () => {
 
 .edit-btn {
   padding: 0.375rem 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border-light);
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .edit-btn:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #475569;
+  background: var(--color-bg-block-hover);
+  border-color: var(--color-border-light);
+  color: var(--color-text-regular);
 }
 
 .user-details {
@@ -566,13 +566,13 @@ onMounted(async () => {
 }
 
 .detail-label {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
   min-width: 80px;
 }
 
 .detail-value {
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 0.875rem;
 }
 
@@ -588,7 +588,7 @@ onMounted(async () => {
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 1rem 0;
 }
 
@@ -603,7 +603,7 @@ onMounted(async () => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #f8fafc;
+  background: var(--color-bg-page);
   border-radius: 0.75rem;
 }
 
@@ -619,13 +619,13 @@ onMounted(async () => {
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   line-height: 1;
 }
 
 .stat-label {
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-regular);
 }
 
 /* 功能卡片 */
@@ -643,7 +643,7 @@ onMounted(async () => {
 }
 
 .feature-card {
-  background: #f8fafc;
+  background: var(--color-bg-page);
   border: none;
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -655,7 +655,7 @@ onMounted(async () => {
 .feature-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: #fff7ed;
+  background: var(--color-bg-cream);
 }
 
 .feature-icon {
@@ -667,13 +667,13 @@ onMounted(async () => {
 .feature-name {
   display: block;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin-bottom: 0.25rem;
 }
 
 .feature-desc {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
 }
 
 /* 计划列表 */
@@ -694,7 +694,7 @@ onMounted(async () => {
 .summary-label {
   display: block;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   margin-bottom: 0.25rem;
 }
 
@@ -702,7 +702,7 @@ onMounted(async () => {
   display: block;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #f97316;
+  color: var(--color-primary);
 }
 
 .empty-state {
@@ -721,18 +721,18 @@ onMounted(async () => {
 .empty-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .empty-desc {
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0 0 1.5rem 0;
 }
 
 .btn-primary {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border: none;
   border-radius: 0.5rem;
   color: white;
@@ -754,8 +754,8 @@ onMounted(async () => {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -790,27 +790,27 @@ onMounted(async () => {
 .plan-name {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.25rem 0;
 }
 
 .plan-date {
   font-size: 0.8125rem;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
 }
 
 .plan-badge {
   padding: 0.25rem 0.75rem;
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
   border-radius: 9999px;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   white-space: nowrap;
 }
 
 .plan-badge.active {
-  background: #fff7ed;
-  color: #ea580c;
+  background: var(--color-bg-cream);
+  color: var(--color-primary-dark);
 }
 
 /* 进度条 */
@@ -827,18 +827,18 @@ onMounted(async () => {
 
 .progress-label {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-regular);
 }
 
 .progress-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
 .progress-bar-bg {
   height: 8px;
-  background: #f1f5f9;
+  background: var(--color-bg-block-hover);
   border-radius: 9999px;
   overflow: hidden;
 }
@@ -857,35 +857,35 @@ onMounted(async () => {
 
 .btn-action {
   padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-light);
   border-radius: 0.5rem;
   background: white;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-action:hover {
-  background: #f8fafc;
+  background: var(--color-bg-page);
 }
 
 .btn-activate:hover {
-  background: #fff7ed;
-  border-color: #f97316;
-  color: #ea580c;
+  background: var(--color-bg-cream);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
 }
 
 .btn-view:hover {
   background: #f0fdf4;
-  border-color: #22c55e;
-  color: #16a34a;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .btn-delete:hover {
   background: #fef2f2;
-  border-color: #ef4444;
-  color: #dc2626;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* 弹窗 */
@@ -922,12 +922,12 @@ onMounted(async () => {
 .modal-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .modal-content {
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0 0 1.5rem 0;
 }
 
@@ -940,20 +940,20 @@ onMounted(async () => {
 .btn-secondary {
   padding: 0.625rem 1.25rem;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-light);
   border-radius: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-weight: 500;
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
+  background: var(--color-bg-page);
 }
 
 .btn-danger {
   padding: 0.625rem 1.25rem;
-  background: #ef4444;
+  background: var(--color-danger);
   border: none;
   border-radius: 0.5rem;
   color: white;
@@ -962,7 +962,7 @@ onMounted(async () => {
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--color-danger);
 }
 
 /* 编辑表单 */
@@ -979,12 +979,12 @@ onMounted(async () => {
 .form-group label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-regular);
 }
 
 .form-input {
   padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: all 0.2s ease;
@@ -992,22 +992,22 @@ onMounted(async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #f97316;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .form-input.error {
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .input-hint {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
 }
 
 .error-hint {
   font-size: 0.75rem;
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 @media (max-width: 600px) {

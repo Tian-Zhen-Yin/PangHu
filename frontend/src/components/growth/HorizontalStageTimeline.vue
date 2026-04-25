@@ -51,7 +51,7 @@ const handleStageSelect = (stage: GrowthStage) => {
   display: flex;
   align-items: flex-start;
   width: 100%;
-  padding: 12px 0 24px 0;
+  padding: var(--space-sm) 0 var(--space-lg) 0;
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
 }
@@ -82,7 +82,7 @@ const handleStageSelect = (stage: GrowthStage) => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-md);
 }
 
 /* 贯穿的横线，通过绝对定位连接前后 */
@@ -92,10 +92,10 @@ const handleStageSelect = (stage: GrowthStage) => {
   right: 50%; /* 从当前节点中心向左延伸 */
   width: 100%; /* 延伸整个父元素的宽度 */
   height: 3px;
-  background-color: #E5E7EB;
+  background-color: var(--color-border);
   transform: translateY(-50%);
   z-index: 1;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   transition: background-color 0.3s ease;
 }
 
@@ -113,9 +113,9 @@ const handleStageSelect = (stage: GrowthStage) => {
   font-weight: 700;
 
   /* 默认态：浅灰底色，深灰文字 */
-  background-color: #F3F4F6;
-  color: #9CA3AF;
-  border: 4px solid #FAF8F5; /* 用和页面背景一样的边框，切断线条产生悬浮感 */
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+  border: 4px solid var(--color-bg-page); /* 用和页面背景一样的边框，切断线条产生悬浮感 */
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -128,42 +128,42 @@ const handleStageSelect = (stage: GrowthStage) => {
 }
 
 .stage-name {
-  margin: 0 0 4px 0;
+  margin: 0 0 var(--space-xs) 0;
   font-size: 14px;
   font-weight: 600;
-  color: #6B7280;
+  color: var(--color-text-regular);
   transition: color 0.3s ease;
 }
 
 .stage-duration {
   font-size: 11px;
-  color: #9CA3AF;
+  color: var(--color-text-secondary);
 }
 
 /* ================= 激活态核心视觉 (Active State) ================= */
 
 /* 1. 激活节点反白 + 品牌主色填充 + 悬浮发光阴影 */
 .timeline-step.is-active .node-circle {
-  background-color: #F4A261;
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.4);
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
+  box-shadow: 0 4px 12px rgba(255, 138, 76, 0.4);
   transform: scale(1.15); /* 明显放大 */
-  border-color: #FFFFFF; /* 激活时边框变纯白，更加突出 */
+  border-color: var(--color-bg-card); /* 激活时边框变纯白，更加突出 */
 }
 
 /* 2. 激活态文字颜色加深 */
 .timeline-step.is-active .stage-name {
-  color: #374151;
+  color: var(--color-text-primary);
   font-size: 15px;
 }
 
 .timeline-step.is-active .stage-duration {
-  color: #F4A261;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 /* 3. 激活节点左侧的连线变为主色 (产生进度条填充的效果) */
 .timeline-step.is-active .connecting-line {
-  background-color: #FDF3E9;
+  background-color: var(--color-primary-light);
 }
 </style>

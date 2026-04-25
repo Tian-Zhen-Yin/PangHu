@@ -95,13 +95,14 @@ defineExpose({
 <style scoped>
 .chat-input {
   background-color: #fff;
-  border-radius: 12px;
-  border: 2px solid #e4e7ed;
+  border-radius: 20px;
+  border: none;
   transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(90, 74, 66, 0.08);
 }
 
 .chat-input.focused {
-  border-color: #667eea;
+  box-shadow: 0 4px 20px rgba(255, 138, 76, 0.15);
 }
 
 .chat-input.disabled {
@@ -112,8 +113,8 @@ defineExpose({
 .input-wrapper {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 12px 14px 12px 20px;
 }
 
 .input-textarea {
@@ -122,16 +123,16 @@ defineExpose({
   outline: none;
   resize: none;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: #303133;
   background: transparent;
   font-family: inherit;
-  min-height: 24px;
+  min-height: 28px;
   max-height: 200px;
 }
 
 .input-textarea::placeholder {
-  color: #c0c4cc;
+  color: var(--color-text-placeholder);
 }
 
 .input-textarea:disabled {
@@ -139,11 +140,11 @@ defineExpose({
 }
 
 .send-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -151,15 +152,18 @@ defineExpose({
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.3);
 }
 
 .send-button:hover:not(.disabled) {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.4);
 }
 
 .send-button.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .send-button .icon {

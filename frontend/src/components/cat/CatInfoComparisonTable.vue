@@ -50,7 +50,7 @@
           <tr>
             <td class="attribute-column">当前体重</td>
             <td v-for="cat in cats" :key="cat.cat.id" class="value-column">
-              <span v-if="cat.analysis">{{ cat.analysis.current.toFixed(1) }}kg</span>
+              <span v-if="cat.analysis">{{ formatWeightValue(cat.analysis.current) }}kg</span>
               <span v-else class="no-data">-</span>
             </td>
           </tr>
@@ -73,6 +73,7 @@
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import type { CatComparisonData } from '../../types/weight'
 import type { Cat } from '../../types/cat'
+import { formatWeightValue, getAvatarUrl } from '../../utils/format'
 
 interface Props {
   cats: CatComparisonData[]
@@ -84,19 +85,6 @@ withDefaults(defineProps<Props>(), {
   loading: false,
   error: ''
 })
-
-function getAvatarUrl(cat: Cat): string {
-  // 优先使用 base64 头像数据
-  if (cat.avatarData) {
-    return cat.avatarData
-  }
-  // 其次使用文件路径
-  if (!cat.avatar) return ''
-  if (cat.avatar.startsWith('http')) return cat.avatar
-  // 移除 /api 前缀，添加斜杠
-  const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace('/api', '')
-  return `${baseURL}/${cat.avatar}`
-}
 
 function getGenderText(gender: string): string {
   switch (gender) {
@@ -121,13 +109,13 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-card-normal);
 }
 
 .table-header h3 {
   margin: 0 0 16px 0;
   font-size: 16px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .loading,
@@ -136,7 +124,7 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
   align-items: center;
   justify-content: center;
   min-height: 150px;
-  color: #999;
+  color: var(--color-text-secondary);
 }
 
 .table-container {
@@ -150,23 +138,23 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
 }
 
 .comparison-table thead {
-  background: #fafafa;
+  background: var(--color-bg-block);
 }
 
 .comparison-table th,
 .comparison-table td {
   padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .attribute-column {
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-regular);
   min-width: 80px;
   position: sticky;
   left: 0;
-  background: #fafafa;
+  background: var(--color-bg-block);
   z-index: 10;
 }
 
@@ -190,7 +178,7 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f0f0;
+  background: var(--color-bg-muted);
 }
 
 .cat-header .cat-avatar img {
@@ -201,22 +189,22 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
 
 .cat-header .avatar-placeholder {
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-regular);
 }
 
 .cat-header .cat-name {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   font-size: 12px;
 }
 
 .value-column {
   text-align: center;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .no-data {
-  color: #ccc;
+  color: var(--color-text-light);
 }
 
 .status-badge {
@@ -228,18 +216,18 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
 }
 
 .status-badge.thin {
-  background: #fff7e6;
-  color: #fa8c16;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .status-badge.normal {
-  background: #f6ffed;
-  color: #52c41a;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .status-badge.overweight {
-  background: #fff2e8;
-  color: #fa541c;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 @media (max-width: 640px) {

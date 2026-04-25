@@ -1,0 +1,148 @@
+<h2>视觉层次与信息架构分析</h2>
+<p class="subtitle">逐页分析信息密度、视觉动线、数据突出度</p>
+
+<div class="section">
+  <h3>页面评分总览</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 12px;">
+
+    <div style="padding: 16px; background: rgba(16,185,129,0.08); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>Dashboard 首页</strong>
+        <span style="background: #10B981; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">A</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">信息密度合理，故事线清晰：身份→健康→待办→其他猫→足迹</p>
+    </div>
+
+    <div style="padding: 16px; background: rgba(245,158,11,0.08); border-radius: 12px; border: 1px solid rgba(245,158,11,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>Timeline 成长记录</strong>
+        <span style="background: #F59E0B; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">C+</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">功能过载：4000+ 行，同时承担浏览/创建/任务/疫苗 4 种职责</p>
+    </div>
+
+    <div style="padding: 16px; background: rgba(16,185,129,0.08); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>MyCats 列表 + 详情</strong>
+        <span style="background: #10B981; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">A-</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">卡片网格清晰，详情页 Profile→Chart→Action 流程直觉</p>
+    </div>
+
+    <div style="padding: 16px; background: rgba(16,185,129,0.08); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>AIChat 喵星小顾问</strong>
+        <span style="background: #10B981; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">A</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">空态引导充分，建议问题有效转化用户，对话界面干净</p>
+    </div>
+
+    <div style="padding: 16px; background: rgba(16,185,129,0.08); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>Guides 指南列表</strong>
+        <span style="background: #10B981; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">A-</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">搜索+AI推荐+分类+卡片，层次分明。"问胖虎"按钮是亮点</p>
+    </div>
+
+    <div style="padding: 16px; background: rgba(16,185,129,0.08); border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <strong>Auth 登录/注册</strong>
+        <span style="background: #10B981; color: white; padding: 2px 10px; border-radius: 100px; font-size: 12px; font-weight: 600;">A+</span>
+      </div>
+      <p style="font-size: 13px; opacity: 0.7; margin: 8px 0 0;">双栏品牌展示+表单，100% token 合规，动效精致</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>关键问题：Timeline 功能过载</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+    <div style="padding: 16px; background: rgba(239,68,68,0.06); border-radius: 12px; border: 1px solid rgba(239,68,68,0.15);">
+      <h4 style="color: #EF4444; margin-top: 0;">当前问题</h4>
+      <ul style="font-size: 14px; line-height: 1.8; padding-left: 20px;">
+        <li>单文件 <strong>4000+ 行</strong>，承载 4 种职责</li>
+        <li>194 个硬编码颜色，视觉风格与其他页面脱节</li>
+        <li>Tab 系统仍无法解决信息过载</li>
+        <li>用户无法快速区分"查看记录"和"添加记录"</li>
+      </ul>
+    </div>
+    <div style="padding: 16px; background: rgba(16,185,129,0.06); border-radius: 12px; border: 1px solid rgba(16,185,129,0.15);">
+      <h4 style="color: #10B981; margin-top: 0;">建议拆分</h4>
+      <ul style="font-size: 14px; line-height: 1.8; padding-left: 20px;">
+        <li><strong>Timeline 浏览</strong> — 纯记录流，筛选 + 时间轴</li>
+        <li><strong>Record 创建</strong> — 独立表单页，5 种类型分类创建</li>
+        <li><strong>Task 任务中心</strong> — 疫苗/驱虫待办清单</li>
+        <li><strong>Growth 成长</strong> — 阶段里程碑 + 阶段报告</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem;">
+  <h3>设计一致性：最严重的 3 个问题</h3>
+
+  <div style="padding: 16px; background: rgba(245,158,11,0.06); border-radius: 12px; border: 1px solid rgba(245,158,11,0.15); margin-bottom: 12px;">
+    <h4 style="margin-top: 0; color: #F59E0B;">1. 三套灰色调共存</h4>
+    <div style="display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 180px;">
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">设计系统（暖灰）</div>
+        <div style="display: flex; gap: 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #2D2926;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #666666;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #999999;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #F9F8F6;"></div>
+        </div>
+        <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">Dashboard, Login, Home</div>
+      </div>
+      <div style="flex: 1; min-width: 180px;">
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">Tailwind 灰（冷灰）</div>
+        <div style="display: flex; gap: 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #374151;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #6B7280;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #9CA3AF;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #F3F4F6;"></div>
+        </div>
+        <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">Timeline, Guides, MyCats, AIChat</div>
+      </div>
+      <div style="flex: 1; min-width: 180px;">
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px;">Slate 蓝灰</div>
+        <div style="display: flex; gap: 4px;">
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #1e293b;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #64748b;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #e2e8f0;"></div>
+          <div style="width: 32px; height: 32px; border-radius: 6px; background: #f8fafc;"></div>
+        </div>
+        <div style="font-size: 11px; margin-top: 4px; opacity: 0.6;">Profile, Compare</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 16px; background: rgba(245,158,11,0.06); border-radius: 12px; border: 1px solid rgba(245,158,11,0.15); margin-bottom: 12px;">
+    <h4 style="margin-top: 0; color: #F59E0B;">2. 品牌渐变色不一致</h4>
+    <div style="display: flex; gap: 16px; margin-top: 12px; align-items: center;">
+      <div style="text-align: center;">
+        <div style="width: 120px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #FFA065 0%, #FF7A3E 100%);"></div>
+        <div style="font-size: 11px; margin-top: 4px;">Token 定义<br><code style="font-size: 10px;">#FFA065 → #FF7A3E</code></div>
+      </div>
+      <div style="font-size: 20px;">≠</div>
+      <div style="text-align: center;">
+        <div style="width: 120px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);"></div>
+        <div style="font-size: 11px; margin-top: 4px;">大量页面硬编码<br><code style="font-size: 10px;">#F4A261 → #E76F51</code></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 16px; background: rgba(245,158,11,0.06); border-radius: 12px; border: 1px solid rgba(245,158,11,0.15);">
+    <h4 style="margin-top: 0; color: #F59E0B;">3. 1245 个硬编码颜色值</h4>
+    <p style="font-size: 14px;">分布在 52 个 Vue 文件中。最严重的文件：</p>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+      <span style="background: #EF4444; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">Timeline: 194</span>
+      <span style="background: #F59E0B; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">WeightTrend: 92</span>
+      <span style="background: #F59E0B; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">TemplateDetail: 82</span>
+      <span style="background: #F59E0B; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">Guides: 80</span>
+      <span style="background: #F59E0B; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">Profile: 72</span>
+    </div>
+  </div>
+</div>

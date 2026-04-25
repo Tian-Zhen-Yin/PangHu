@@ -44,13 +44,13 @@ const changePercent = computed(() => {
 const statusColor = computed(() => {
   switch (props.status) {
     case 'normal':
-      return '#22C55E'
+      return 'var(--color-success)'
     case 'warning':
       return '#F59E0B'
     case 'danger':
-      return '#EF4444'
+      return 'var(--color-danger)'
     default:
-      return '#6B7280'
+      return 'var(--color-text-regular)'
   }
 })
 
@@ -163,7 +163,7 @@ const trendIcon = computed(() => {
   flex-direction: column;
   gap: 8px;
   padding: 12px 16px;
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   border-radius: 12px;
   border: 1px solid #F5F0E8;
 }
@@ -178,8 +178,8 @@ const trendIcon = computed(() => {
 
 /* 状态边框 */
 .trend-chart.warning {
-  border-color: #FED7AA;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  border-color: var(--color-primary-medium);
+  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-bg-cream) 100%);
 }
 
 .trend-chart.danger {
@@ -252,7 +252,7 @@ const trendIcon = computed(() => {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
 }
 
 .trend-chart.small .trend-value {

@@ -102,12 +102,12 @@ onMounted(() => {
 .page-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .page-subtitle {
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0;
 }
 
@@ -115,14 +115,14 @@ onMounted(() => {
 .loading-state {
   text-align: center;
   padding: 3rem;
-  color: #64748b;
+  color: var(--color-text-regular);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 4px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -136,13 +136,13 @@ onMounted(() => {
 .error-state {
   text-align: center;
   padding: 3rem;
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .retry-btn {
   margin-top: 1rem;
   padding: 0.5rem 1.5rem;
-  background: #f97316;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -182,8 +182,8 @@ onMounted(() => {
 }
 
 .template-category {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-regular);
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.875rem;
@@ -192,12 +192,12 @@ onMounted(() => {
 .template-name {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .template-description {
-  color: #64748b;
+  color: var(--color-text-regular);
   line-height: 1.6;
   margin: 0 0 1.5rem 0;
 }
@@ -209,12 +209,12 @@ onMounted(() => {
 }
 
 .template-items {
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
   font-size: 0.875rem;
 }
 
 .use-btn {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   padding: 0.625rem 1.25rem;
@@ -269,7 +269,7 @@ onMounted(() => {
 }
 
 .create-btn:not(:disabled):hover {
-  border-color: #f97316;
-  background: #fff7ed;
+  border-color: var(--color-primary);
+  background: var(--color-bg-cream);
 }
 </style>

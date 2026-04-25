@@ -222,14 +222,14 @@ function handleDismiss(type: string) {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   min-height: 100vh;
 }
 
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0 0 32px 0;
   text-align: center;
 }
@@ -250,7 +250,7 @@ function handleDismiss(type: string) {
 .section-title {
   font-size: 14px;
   font-weight: 600;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0;
@@ -270,7 +270,7 @@ function handleDismiss(type: string) {
 /* 尺寸示例 */
 .size-examples {
   padding: 24px;
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 20px;
   border: 1px solid #F5F0E8;
 }

@@ -153,9 +153,12 @@ export async function uploadCatAvatarBase64Handler(req: Request, res: Response) 
       return res.status(400).json(errorResponse('请提供头像数据'))
     }
 
-    // 验证 base64 格式
+    // 验证 base64 格式和大小（约 5MB）
     if (!avatarData.startsWith('data:image/')) {
       return res.status(400).json(errorResponse('头像数据格式错误'))
+    }
+    if (avatarData.length > 7 * 1024 * 1024) {
+      return res.status(400).json(errorResponse('头像数据过大，请控制在 5MB 以内'))
     }
 
     const { updateCatAvatarData } = await import('../services/cat.service')

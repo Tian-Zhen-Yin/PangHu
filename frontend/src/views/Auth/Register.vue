@@ -176,12 +176,12 @@ function goToLogin() {
 .auth-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .auth-subtitle {
-  color: #64748b;
+  color: var(--color-text-regular);
   margin: 0;
 }
 
@@ -200,12 +200,12 @@ function goToLogin() {
 .form-group label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-regular);
 }
 
 .form-input {
   padding: 0.875rem 1rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border-light);
   border-radius: 0.75rem;
   font-size: 1rem;
   transition: all 0.2s ease;
@@ -213,17 +213,17 @@ function goToLogin() {
 
 .form-input:focus {
   outline: none;
-  border-color: #f97316;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .form-input.error {
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .error-message {
   background: #fef2f2;
-  color: #dc2626;
+  color: var(--color-danger);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -232,7 +232,7 @@ function goToLogin() {
 
 .auth-btn {
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 0.75rem;
@@ -256,12 +256,12 @@ function goToLogin() {
 .auth-footer {
   margin-top: 2rem;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.875rem;
 }
 
 .auth-footer a {
-  color: #f97316;
+  color: var(--color-primary);
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;

@@ -17,9 +17,34 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/timeline',
-    name: 'Timeline',
-    component: () => import('../views/Timeline/index.vue'),
-    meta: { title: '养成时间线 - 哈吉咪养成计划' }
+    component: () => import('../views/Timeline/TimelineLayout.vue'),
+    children: [
+      { path: '', redirect: '/timeline/overview' },
+      {
+        path: 'overview',
+        name: 'TimelineOverview',
+        component: () => import('../views/Timeline/OverviewTab.vue'),
+        meta: { title: '养成时间线 - 哈吉咪养成计划' }
+      },
+      {
+        path: 'tasks',
+        name: 'TimelineTasks',
+        component: () => import('../views/Timeline/TasksTab.vue'),
+        meta: { title: '任务清单 - 哈吉咪养成计划' }
+      },
+      {
+        path: 'vaccines',
+        name: 'TimelineVaccines',
+        component: () => import('../views/Timeline/VaccinesTab.vue'),
+        meta: { title: '疫苗接种 - 哈吉咪养成计划' }
+      },
+      {
+        path: 'growth',
+        name: 'TimelineGrowth',
+        component: () => import('../views/Timeline/GrowthRecords.vue'),
+        meta: { title: '成长记录 - 哈吉咪养成计划' }
+      }
+    ]
   },
   {
     path: '/guides',
@@ -121,7 +146,13 @@ const routes: RouteRecordRaw[] = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
+    return { top: 0 }
+  }
 })
 
 let authInitialized = false

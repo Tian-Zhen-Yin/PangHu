@@ -1,0 +1,198 @@
+<h2>Hero Card 精化设计 — 方案 A</h2>
+<p class="subtitle">统一通栏布局的详细设计，包含桌面端和移动端对比</p>
+
+<div class="split">
+  <!-- Desktop version -->
+  <div class="mockup">
+    <div class="mockup-header">桌面端 (Desktop)</div>
+    <div class="mockup-body">
+      <div style="background: #FAF8F5; border-radius: 16px; padding: 16px; font-family: -apple-system, 'PingFang SC', sans-serif;">
+        <!-- Hero Card -->
+        <div style="background: #FFFFFF; border-radius: 20px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(246,178,107,0.08); position: relative; overflow: hidden;">
+          <!-- Decorative glow -->
+          <div style="position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:linear-gradient(135deg, rgba(246,178,107,0.15), rgba(232,145,58,0.05)); border-radius:50%; filter:blur(30px); pointer-events:none;"></div>
+
+          <!-- Layer 1: Profile bar -->
+          <div style="display:flex; align-items:center; gap:16px; padding-bottom:18px; border-bottom:1px solid #F3F4F6; position:relative;">
+            <!-- Avatar -->
+            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #F6B26B, #E8913A); display:flex; align-items:center; justify-content:center; color:white; font-size:26px; font-weight:700; box-shadow: 0 4px 16px rgba(246,178,107,0.3); border:3px solid rgba(255,255,255,0.9); flex-shrink:0;">橘</div>
+            <!-- Info -->
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px; font-weight:700; color:#1F2937;">胖虎</span>
+                <span style="font-size:10px; background:#FFF7ED; color:#E8913A; padding:2px 10px; border-radius:100px; font-weight:600; letter-spacing:0.5px;">当前</span>
+              </div>
+              <div style="font-size:13px; color:#9CA3AF; margin-top:4px;">2岁3个月 · 4.5kg</div>
+            </div>
+            <!-- Health status -->
+            <div style="display:flex; align-items:center; gap:6px; background:#ECFDF5; padding:6px 14px; border-radius:10px; cursor:pointer; transition: background 0.2s;">
+              <div style="width:7px; height:7px; background:#10B981; border-radius:50%;"></div>
+              <span style="font-size:12px; font-weight:600; color:#059669;">体型正常</span>
+              <span style="width:1px; height:12px; background:#A7F3D0; margin:0 2px;"></span>
+              <span style="font-size:11px; color:#047857; max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">状态很棒，继续保持！</span>
+            </div>
+          </div>
+
+          <!-- Layer 2: Actions row -->
+          <div style="display:flex; gap:10px; padding:16px 0 18px;">
+            <button style="flex:1; max-width:200px; padding:11px 20px; background:linear-gradient(135deg, #F6B26B, #E8913A); color:white; border:none; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow: 0 2px 8px rgba(246,178,107,0.3);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              记一笔
+            </button>
+            <button style="flex:1; max-width:200px; padding:11px 20px; background:#F9FAFB; color:#6B7280; border:1.5px solid #E5E7EB; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              AI 咨询
+            </button>
+          </div>
+
+          <!-- Layer 3: Data grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <!-- Weight gauge card -->
+            <div style="background:#F9FAFB; border-radius:14px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:12px; color:#6B7280; font-weight:500;">当前体重</span>
+                <span style="font-size:10px; color:#9CA3AF; background:white; padding:2px 8px; border-radius:100px; border:1px solid #E5E7EB;">标准: 3.0-5.0kg</span>
+              </div>
+              <!-- Gauge visual -->
+              <div style="text-align:center;">
+                <svg viewBox="0 0 200 100" style="width:100%; max-width:200px; height:auto;">
+                  <!-- Background arc -->
+                  <path d="M 20 90 A 80 80 0 0 1 180 90" fill="none" stroke="#E5E7EB" stroke-width="12" stroke-linecap="round"/>
+                  <!-- Green standard zone -->
+                  <path d="M 52 90 A 55 55 0 0 1 148 90" fill="none" stroke="#D1FAE5" stroke-width="12" stroke-linecap="round"/>
+                  <!-- Value arc -->
+                  <path d="M 20 90 A 80 80 0 0 1 140 36" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round"/>
+                  <!-- Needle dot -->
+                  <circle cx="130" cy="42" r="8" fill="#F6B26B" stroke="white" stroke-width="3" filter="url(#shadow)"/>
+                  <defs>
+                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#10B981"/>
+                      <stop offset="50%" stop-color="#34D399"/>
+                      <stop offset="100%" stop-color="#F6B26B"/>
+                    </linearGradient>
+                    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#F6B26B" flood-opacity="0.4"/>
+                    </filter>
+                  </defs>
+                </svg>
+                <div style="font-size:28px; font-weight:700; color:#1F2937; margin-top:-8px; font-family:'DIN Alternate',-apple-system,sans-serif;">4.5 <span style="font-size:13px; color:#9CA3AF; font-weight:400;">kg</span></div>
+              </div>
+            </div>
+
+            <!-- Todos card -->
+            <div style="background:#F9FAFB; border-radius:14px; padding:16px;">
+              <span style="font-size:12px; color:#6B7280; font-weight:500;">近期待办</span>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                <label style="display:flex; align-items:flex-start; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer; background:white;">
+                  <input type="checkbox" style="margin-top:3px; width:15px; height:15px; accent-color:#F6B26B; flex-shrink:0;">
+                  <div>
+                    <div style="font-size:13px; color:#1F2937; font-weight:500;">疫苗提醒</div>
+                    <div style="font-size:11px; color:#9CA3AF;">下月需接种猫三联</div>
+                  </div>
+                </label>
+                <label style="display:flex; align-items:flex-start; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer; background:white;">
+                  <input type="checkbox" style="margin-top:3px; width:15px; height:15px; accent-color:#F6B26B; flex-shrink:0;">
+                  <div>
+                    <div style="font-size:13px; color:#1F2937; font-weight:500;">体重关注</div>
+                    <div style="font-size:11px; color:#F59E0B; font-weight:500;">建议适当控制饮食</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile version -->
+  <div class="mockup">
+    <div class="mockup-header">移动端 (Mobile)</div>
+    <div class="mockup-body">
+      <div style="background: #FAF8F5; border-radius: 16px; padding: 12px; font-family: -apple-system, 'PingFang SC', sans-serif;">
+        <!-- Phone frame -->
+        <div style="max-width:375px; margin:0 auto;">
+          <!-- Hero Card -->
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(246,178,107,0.08); position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:linear-gradient(135deg, rgba(246,178,107,0.12), rgba(232,145,58,0.04)); border-radius:50%; filter:blur(25px); pointer-events:none;"></div>
+
+            <!-- Profile bar -->
+            <div style="display:flex; align-items:center; gap:12px; padding-bottom:14px; border-bottom:1px solid #F3F4F6;">
+              <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, #F6B26B, #E8913A); display:flex; align-items:center; justify-content:center; color:white; font-size:22px; font-weight:700; box-shadow: 0 3px 12px rgba(246,178,107,0.25); border:2px solid rgba(255,255,255,0.9); flex-shrink:0;">橘</div>
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px; font-weight:700; color:#1F2937;">胖虎</span>
+                  <span style="font-size:10px; background:#FFF7ED; color:#E8913A; padding:1px 8px; border-radius:100px; font-weight:600;">当前</span>
+                </div>
+                <div style="font-size:12px; color:#9CA3AF; margin-top:3px;">2岁3个月 · 4.5kg</div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex; gap:8px; padding:12px 0;">
+              <button style="flex:1; padding:9px 16px; background:linear-gradient(135deg, #F6B26B, #E8913A); color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; box-shadow: 0 2px 8px rgba(246,178,107,0.3);">+ 记一笔</button>
+              <button style="flex:1; padding:9px 16px; background:#F9FAFB; color:#6B7280; border:1.5px solid #E5E7EB; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;">AI 咨询</button>
+            </div>
+
+            <!-- Status banner -->
+            <div style="background:#ECFDF5; border-radius:10px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+              <div style="width:6px; height:6px; background:#10B981; border-radius:50%; flex-shrink:0;"></div>
+              <span style="font-size:11px; font-weight:600; color:#059669;">体型正常</span>
+              <span style="width:1px; height:10px; background:#A7F3D0;"></span>
+              <span style="font-size:11px; color:#047857; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">状态很棒，继续保持！</span>
+            </div>
+
+            <!-- Data: stack vertically on mobile -->
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <!-- Weight -->
+              <div style="background:#F9FAFB; border-radius:12px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                  <span style="font-size:11px; color:#6B7280; font-weight:500;">当前体重</span>
+                  <span style="font-size:10px; color:#9CA3AF; background:white; padding:2px 8px; border-radius:100px; border:1px solid #E5E7EB;">标准: 3.0-5.0kg</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px;">
+                  <svg viewBox="0 0 200 100" style="width:120px; height:60px; flex-shrink:0;">
+                    <path d="M 20 90 A 80 80 0 0 1 180 90" fill="none" stroke="#E5E7EB" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M 52 90 A 55 55 0 0 1 148 90" fill="none" stroke="#D1FAE5" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M 20 90 A 80 80 0 0 1 140 36" fill="none" stroke="url(#gaugeGrad2)" stroke-width="12" stroke-linecap="round"/>
+                    <circle cx="130" cy="42" r="8" fill="#F6B26B" stroke="white" stroke-width="3"/>
+                    <defs><linearGradient id="gaugeGrad2" x1="0%" y1="0%" x2="100%"><stop offset="0%" stop-color="#10B981"/><stop offset="100%" stop-color="#F6B26B"/></linearGradient></defs>
+                  </svg>
+                  <div style="font-size:28px; font-weight:700; color:#1F2937; font-family:'DIN Alternate',-apple-system,sans-serif;">4.5 <span style="font-size:13px; color:#9CA3AF; font-weight:400;">kg</span></div>
+                </div>
+              </div>
+
+              <!-- Todos -->
+              <div style="background:#F9FAFB; border-radius:12px; padding:14px;">
+                <span style="font-size:11px; color:#6B7280; font-weight:500;">近期待办</span>
+                <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                  <div style="display:flex; align-items:center; gap:8px; background:white; padding:6px 8px; border-radius:8px;">
+                    <input type="checkbox" style="width:14px; height:14px; accent-color:#F6B26B;">
+                    <span style="font-size:12px; color:#1F2937; font-weight:500;">疫苗提醒</span>
+                    <span style="font-size:10px; color:#9CA3AF; margin-left:auto;">下月</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; background:white; padding:6px 8px; border-radius:8px;">
+                    <input type="checkbox" style="width:14px; height:14px; accent-color:#F6B26B;">
+                    <span style="font-size:12px; color:#1F2937; font-weight:500;">体重关注</span>
+                    <span style="font-size:10px; color:#F59E0B; margin-left:auto;">注意</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px; padding:16px; background:#FFFBEB; border-radius:12px; border-left:4px solid #F6B26B;">
+  <h3 style="margin:0 0 8px; font-size:14px; color:#92400E;">设计要点</h3>
+  <ul style="margin:0; padding-left:20px; font-size:13px; color:#78350F; line-height:1.8;">
+    <li><strong>三层结构：</strong>身份栏 → 操作区 → 数据面板，自上而下层次分明</li>
+    <li><strong>响应式策略：</strong>桌面端数据网格并排，移动端垂直堆叠</li>
+    <li><strong>健康状态整合：</strong>桌面端嵌入身份栏右侧，移动端独立 Banner</li>
+    <li><strong>视觉统一：</strong>去除左右分栏的 border-right 分割线，改用 padding + divider</li>
+    <li><strong>配色优化：</strong>所有颜色使用 CSS 变量，消除硬编码值</li>
+  </ul>
+</div>

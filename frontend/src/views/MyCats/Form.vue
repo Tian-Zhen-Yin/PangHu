@@ -145,6 +145,7 @@ import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
 import { toast } from '../../composables/useToast'
 import type { CatFormData } from '../../types/cat'
 import { ADOPT_STATUS_CONFIG } from '../../types/cat'
+import { getAvatarUrl } from '../../utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -180,11 +181,8 @@ const avatarPreviewUrl = computed(() => {
   if (!form.value.avatar) return ''
   // 如果是本地 blob URL，直接返回
   if (form.value.avatar.startsWith('blob:')) return form.value.avatar
-  // 如果是完整 URL，直接返回
-  if (form.value.avatar.startsWith('http')) return form.value.avatar
-  // 否则添加 API 基础 URL
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-  return `${baseURL}${form.value.avatar}`
+  // 使用共享工具函数构建相对路径 URL
+  return getAvatarUrl({ avatar: form.value.avatar })
 })
 
 // 处理头像上传

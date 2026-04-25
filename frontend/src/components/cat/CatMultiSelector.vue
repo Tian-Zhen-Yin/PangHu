@@ -56,6 +56,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMyCatStore } from '../../stores/myCat'
+import { getAvatarUrl } from '../../utils/format'
 import type { Cat } from '../../types/cat'
 
 interface Props {
@@ -86,19 +87,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function getAvatarUrl(cat: Cat): string {
-  // 优先使用 base64 头像数据
-  if (cat.avatarData) {
-    return cat.avatarData
-  }
-  // 其次使用文件路径
-  if (!cat.avatar) return ''
-  if (cat.avatar.startsWith('http')) return cat.avatar
-  // 移除 /api 前缀，添加斜杠
-  const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace('/api', '')
-  return `${baseURL}/${cat.avatar}`
-}
 
 function toggleCat(catId: string) {
   const index = selected.value.indexOf(catId)

@@ -71,19 +71,19 @@ const currentExpression = computed(() => props.expression || defaultExpression.v
 // 优先级颜色映射
 const priorityColors = {
   low: {
-    border: '#E5E7EB',
-    badge: '#F3F4F6',
-    text: '#6B7280'
+    border: 'var(--color-border-light)',
+    badge: 'var(--color-bg-block-hover)',
+    text: 'var(--color-text-regular)'
   },
   medium: {
-    border: '#FED7AA',
-    badge: '#FFF7ED',
-    text: '#F4A261'
+    border: 'var(--color-primary-medium)',
+    badge: 'var(--color-bg-cream)',
+    text: 'var(--color-primary)'
   },
   high: {
     border: '#FECACA',
     badge: '#FEF2F2',
-    text: '#EF4444'
+    text: 'var(--color-danger)'
   }
 }
 
@@ -103,16 +103,16 @@ const trendIcon = computed(() => {
 
 // 趋势颜色
 const trendColor = computed(() => {
-  if (!props.trend) return '#6B7280'
+  if (!props.trend) return 'var(--color-text-regular)'
   switch (props.trend.status) {
     case 'normal':
-      return '#22C55E'
+      return 'var(--color-success)'
     case 'warning':
       return '#F59E0B'
     case 'danger':
-      return '#EF4444'
+      return 'var(--color-danger)'
     default:
-      return '#6B7280'
+      return 'var(--color-text-regular)'
   }
 })
 
@@ -204,7 +204,7 @@ const badgeStyle = computed(() => ({
   display: flex;
   gap: 16px;
   padding: 20px;
-  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBF7 100%);
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border: 1.5px solid;
   border-radius: 20px;
   box-shadow:
@@ -231,16 +231,16 @@ const badgeStyle = computed(() => ({
   align-items: center;
   justify-content: center;
   border: none;
-  background: #F3F4F6;
+  background: var(--color-bg-block-hover);
   border-radius: 50%;
   cursor: pointer;
-  color: #9CA3AF;
+  color: var(--color-text-placeholder);
   transition: all 0.2s;
 }
 
 .dismiss-btn:hover {
-  background: #E5E7EB;
-  color: #6B7280;
+  background: var(--color-border-light);
+  color: var(--color-text-regular);
 }
 
 .dismiss-btn svg {
@@ -256,9 +256,9 @@ const badgeStyle = computed(() => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #FFFBF7 0%, #FFF7ED 100%);
+  background: linear-gradient(135deg, var(--color-bg-warm) 0%, var(--color-bg-cream) 100%);
   border-radius: 16px;
-  border: 1px solid #FED7AA;
+  border: 1px solid var(--color-primary-medium);
 }
 
 /* 内容区域 */
@@ -298,7 +298,7 @@ const badgeStyle = computed(() => ({
 .reminder-title {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-primary);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -311,7 +311,7 @@ const badgeStyle = computed(() => ({
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: #FAF8F5;
+  background: var(--color-bg-warm);
   border-radius: 100px;
   font-size: 13px;
   font-weight: 600;
@@ -330,7 +330,7 @@ const badgeStyle = computed(() => ({
 /* 消息内容 */
 .reminder-message {
   font-size: 14px;
-  color: #6B7280;
+  color: var(--color-text-regular);
   line-height: 1.6;
   margin: 0;
 }
@@ -356,8 +356,8 @@ const badgeStyle = computed(() => ({
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
-  border-color: #F4A261;
+  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  border-color: var(--color-primary-medium);
   color: #FFFFFF;
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.25);
 }
@@ -370,24 +370,24 @@ const badgeStyle = computed(() => ({
 .action-btn.secondary {
   background: #FFFFFF;
   border-color: #F5F0E8;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .action-btn.secondary:hover {
-  background: #FFF7ED;
-  border-color: #F4A261;
-  color: #F4A261;
+  background: var(--color-bg-cream);
+  border-color: var(--color-primary-medium);
+  color: var(--color-primary);
 }
 
 .action-btn.outline {
   background: transparent;
-  border-color: #E5E7EB;
-  color: #6B7280;
+  border-color: var(--color-border-light);
+  color: var(--color-text-regular);
 }
 
 .action-btn.outline:hover {
-  border-color: #9CA3AF;
-  color: #374151;
+  border-color: var(--color-text-placeholder);
+  color: var(--color-text-primary);
 }
 
 .btn-icon {

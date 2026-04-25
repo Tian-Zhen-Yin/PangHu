@@ -1,0 +1,134 @@
+<h2>改善方案对比</h2>
+<p class="subtitle">针对三大问题（Timeline 过载、颜色混乱、硬编码泛滥）的三种解决策略</p>
+
+<div class="section">
+  <h3>方案 A：渐进式手术（推荐）</h3>
+  <div style="padding: 16px; background: rgba(16,185,129,0.06); border-radius: 12px; border: 2px solid rgba(16,185,129,0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <strong style="font-size: 16px;">精准打击，按影响排序</strong>
+      <span style="background: #10B981; color: white; padding: 4px 14px; border-radius: 100px; font-size: 13px; font-weight: 600;">推荐</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <h4 style="margin-top: 0; color: #10B981;">执行步骤</h4>
+        <ol style="font-size: 14px; line-height: 1.9; padding-left: 20px;">
+          <li><strong>Timeline 拆分</strong> — 拆成 4 个子页面（浏览/创建/任务/成长）</li>
+          <li><strong>灰色统一</strong> — 全局替换 3 套灰色 → 设计系统暖灰</li>
+          <li><strong>品牌渐变统一</strong> — 全局替换 → token 定义的 #FFA065→#FF7A3E</li>
+          <li><strong>高频文件迁移</strong> — Top 5 硬编码文件逐步改为 token</li>
+        </ol>
+      </div>
+      <div>
+        <h4 style="margin-top: 0;">评估</h4>
+        <div style="font-size: 14px; line-height: 2;">
+          <div><strong>工期：</strong>3-4 个工作日</div>
+          <div><strong>回归风险：</strong>低 — 每步独立可验证</div>
+          <div><strong>覆盖率：</strong>解决 80% 视觉不一致</div>
+          <div><strong>测试策略：</strong>每步完成后截图对比</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 12px; padding: 10px 14px; background: rgba(16,185,129,0.08); border-radius: 8px; font-size: 13px;">
+      <strong>核心原则：</strong>不动已经拿到 A/A+ 的页面（Auth、Dashboard、AIChat），只修复 C+ 和 B 级别页面，再统一全局色值。
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem;">
+  <h3>方案 B：设计系统优先</h3>
+  <div style="padding: 16px; background: rgba(99,102,241,0.06); border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <h4 style="margin-top: 0; color: #6366F1;">执行步骤</h4>
+        <ol style="font-size: 14px; line-height: 1.9; padding-left: 20px;">
+          <li><strong>扩建 token 系统</strong> — 新增 semantic tokens（如 <code>--color-bg-timeline</code>）</li>
+          <li><strong>创建 eslint 规则</strong> — 禁止新代码使用硬编码色值</li>
+          <li><strong>批量替换脚本</strong> — 自动映射 1245 个硬编码 → token</li>
+          <li><strong>Timeline 拆分</strong> — 同方案 A</li>
+        </ol>
+      </div>
+      <div>
+        <h4 style="margin-top: 0;">评估</h4>
+        <div style="font-size: 14px; line-height: 2;">
+          <div><strong>工期：</strong>5-6 个工作日</div>
+          <div><strong>回归风险：</strong>中 — 脚本批量替换可能引入细微差异</div>
+          <div><strong>覆盖率：</strong>解决 95% 不一致，从根源预防</div>
+          <div><strong>测试策略：</strong>全页面截图回归 + 人工 review</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 12px; padding: 10px 14px; background: rgba(99,102,241,0.06); border-radius: 8px; font-size: 13px;">
+      <strong>优势：</strong>一劳永逸，未来新增页面/组件自动合规。<strong>代价：</strong>工期多 50%，需要更多测试。
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem;">
+  <h3>方案 C：仅修复 Timeline</h3>
+  <div style="padding: 16px; background: rgba(107,114,128,0.06); border-radius: 12px; border: 1px solid rgba(107,114,128,0.2);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <h4 style="margin-top: 0; color: #6B7280;">执行步骤</h4>
+        <ol style="font-size: 14px; line-height: 1.9; padding-left: 20px;">
+          <li><strong>Timeline 拆分</strong> — 同方案 A 第一步</li>
+          <li><strong>迁移 Timeline 内硬编码</strong> — 仅 194 个色值</li>
+          <li><strong>不触碰其他页面</strong></li>
+        </ol>
+      </div>
+      <div>
+        <h4 style="margin-top: 0;">评估</h4>
+        <div style="font-size: 14px; line-height: 2;">
+          <div><strong>工期：</strong>1-2 个工作日</div>
+          <div><strong>回归风险：</strong>极低 — 只动一个模块</div>
+          <div><strong>覆盖率：</strong>解决最差页面，其余保持现状</div>
+          <div><strong>测试策略：</strong>Timeline 模块截图对比</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 12px; padding: 10px 14px; background: rgba(107,114,128,0.06); border-radius: 8px; font-size: 13px;">
+      <strong>适合：</strong>时间紧迫时先救最严重的，后续再跟进全局统一。
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem; padding: 16px; background: rgba(255,138,76,0.06); border-radius: 12px;">
+  <h3 style="margin-top: 0;">三方案速览</h3>
+  <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+    <thead>
+      <tr style="border-bottom: 2px solid rgba(255,138,76,0.2);">
+        <th style="text-align: left; padding: 8px;"></th>
+        <th style="text-align: center; padding: 8px;">方案 A 渐进式</th>
+        <th style="text-align: center; padding: 8px;">方案 B 系统优先</th>
+        <th style="text-align: center; padding: 8px;">方案 C 最小化</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+        <td style="padding: 8px;"><strong>工期</strong></td>
+        <td style="text-align: center; padding: 8px;">3-4 天</td>
+        <td style="text-align: center; padding: 8px;">5-6 天</td>
+        <td style="text-align: center; padding: 8px;">1-2 天</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+        <td style="padding: 8px;"><strong>覆盖率</strong></td>
+        <td style="text-align: center; padding: 8px;">80%</td>
+        <td style="text-align: center; padding: 8px;">95%</td>
+        <td style="text-align: center; padding: 8px;">30%</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+        <td style="padding: 8px;"><strong>风险</strong></td>
+        <td style="text-align: center; padding: 8px;">低</td>
+        <td style="text-align: center; padding: 8px;">中</td>
+        <td style="text-align: center; padding: 8px;">极低</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;"><strong>预防未来</strong></td>
+        <td style="text-align: center; padding: 8px;">部分</td>
+        <td style="text-align: center; padding: 8px;">完全</td>
+        <td style="text-align: center; padding: 8px;">否</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

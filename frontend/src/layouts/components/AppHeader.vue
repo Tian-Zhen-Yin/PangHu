@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useMyCatStore } from '../../stores/myCat'
+import { storeToRefs } from 'pinia'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
+import { getAvatarUrl } from '../../utils/format'
 
 const authStore = useAuthStore()
+const catStore = useMyCatStore()
+const { currentCat } = storeToRefs(catStore)
 </script>
 
 <template>
@@ -25,7 +30,11 @@ const authStore = useAuthStore()
           登录
         </RouterLink>
         <RouterLink v-else to="/my-cats" class="user-link">
-          我的猫咪
+          <div v-if="currentCat" class="current-cat-avatar">
+            <img v-if="currentCat.avatar || currentCat.avatarData" :src="getAvatarUrl(currentCat)" :alt="currentCat.name" />
+            <span v-else class="avatar-placeholder">{{ currentCat.name?.charAt(0) || '?' }}</span>
+          </div>
+          <span v-else class="user-text">我的猫咪</span>
         </RouterLink>
       </div>
     </div>
@@ -35,10 +44,12 @@ const authStore = useAuthStore()
 <style scoped>
 .app-header {
   height: 56px;
-  background: var(--color-card);
+  background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-divider);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 100;
 }
 
@@ -85,6 +96,51 @@ const authStore = useAuthStore()
   color: var(--color-text-main);
   text-decoration: none;
   font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+}
+
+.user-link:hover .current-cat-avatar {
+  animation-play-state: paused;
+}
+
+.user-text {
+  font-weight: 500;
+}
+
+.current-cat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-muted);
+  border: 2px solid var(--color-primary);
+  animation: breathe 2s ease-in-out infinite;
+  transition: border-color 0.2s ease;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 138, 76, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 138, 76, 0);
+  }
+}
+
+.current-cat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.current-cat-avatar .avatar-placeholder {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-regular);
 }
 
 /* 桌面端适配 */

@@ -26,8 +26,8 @@ withDefaults(defineProps<{
 
 .spinner-ring {
   border-radius: 50%;
-  border: 3px solid #e2e8f0;
-  border-top-color: #f97316;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-primary);
   animation: spin 1s linear infinite;
 }
 
@@ -55,7 +55,7 @@ withDefaults(defineProps<{
 }
 
 .spinner-text {
-  color: #64748b;
+  color: var(--color-text-regular);
   font-size: 0.9375rem;
   margin: 0;
 }

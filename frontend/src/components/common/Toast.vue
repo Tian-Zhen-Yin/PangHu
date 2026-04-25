@@ -96,7 +96,7 @@ function getIcon(type: string): string {
 .toast-message {
   flex: 1;
   font-size: 0.9375rem;
-  color: #1e293b;
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
@@ -108,7 +108,7 @@ function getIcon(type: string): string {
   justify-content: center;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: var(--color-text-placeholder);
   font-size: 1.25rem;
   cursor: pointer;
   border-radius: 0.25rem;
@@ -119,29 +119,29 @@ function getIcon(type: string): string {
 }
 
 .toast-close:hover {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-bg-block-hover);
+  color: var(--color-text-regular);
 }
 
 /* 类型样式 */
 .toast-item.success .toast-icon {
   background: #dcfce7;
-  color: #16a34a;
+  color: var(--color-success);
 }
 
 .toast-item.error .toast-icon {
   background: #fee2e2;
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .toast-item.warning .toast-icon {
   background: #fef3c7;
-  color: #d97706;
+  color: var(--color-warning);
 }
 
 .toast-item.info .toast-icon {
   background: #dbeafe;
-  color: #2563eb;
+  color: var(--color-info);
 }
 
 /* 动画 */
