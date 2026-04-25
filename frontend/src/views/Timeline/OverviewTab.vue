@@ -5,8 +5,6 @@ import type { Task } from '../../types/cat'
 
 const {
   selectedStage,
-  taskStates,
-  taskProgress,
 } = useTimelineState()
 
 const emit = defineEmits<{

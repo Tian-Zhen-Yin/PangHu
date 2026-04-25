@@ -15,7 +15,6 @@ const {
   myCatStore,
   currentCat,
   selectedStage,
-  stages,
   filteredStages,
   pageSubtitle,
   taskProgress,

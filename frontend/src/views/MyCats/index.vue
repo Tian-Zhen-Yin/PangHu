@@ -117,11 +117,6 @@ const { cats, currentCat, loading } = storeToRefs(catStore)
 
 const failedAvatars = ref<Set<string>>(new Set())
 
-// 长按删除相关
-const pressTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const deleteConfirmShow = ref(false)
-const pendingDeleteCat = ref<Cat | null>(null)
-
 onMounted(() => catStore.fetchCats())
 
 function handleSelectCat(cat: Cat) {

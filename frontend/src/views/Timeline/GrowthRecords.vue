@@ -28,7 +28,7 @@ const recordForm = ref({
   ageMonths: 0,
   weight: 0,
   notes: '',
-  recordDate: new Date().toISOString().split('T')[0],
+  recordDate: new Date().toISOString().slice(0, 10),
   vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
   dewormDrug: '', dewormType: '体内', dewormNextDate: '',
   checkClinic: '', checkVet: '', checkFindings: ''
@@ -44,10 +44,7 @@ const startDate = ref('')
 const endDate = ref('')
 const selectedDatePreset = ref('all')
 const showDateFilterMenu = ref(false)
-const today = computed(() => {
-  const date = new Date()
-  return date.toISOString().split('T')[0]
-})
+const today = computed(() => new Date().toISOString().slice(0, 10))
 
 const DATE_PRESETS = [
   { key: 'all', label: '全部日期' },
@@ -151,7 +148,7 @@ function openAddRecordModal() {
   recordForm.value = {
     petName: currentCat.value?.name || '猫咪',
     ageWeeks: 0, ageMonths: 0, weight: 0, notes: '',
-    recordDate: new Date().toISOString().split('T')[0],
+    recordDate: new Date().toISOString().slice(0, 10),
     vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
     dewormDrug: '', dewormType: '体内', dewormNextDate: '',
     checkClinic: '', checkVet: '', checkFindings: ''

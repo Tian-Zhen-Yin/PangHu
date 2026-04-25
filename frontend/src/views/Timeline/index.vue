@@ -8,7 +8,6 @@ import { storeToRefs } from 'pinia'
 import { toast } from '../../composables/useToast'
 import ImageLoader from '../../components/common/ImageLoader.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
-import EmptyState from '../../components/common/EmptyState.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import HorizontalStageTimeline from '../../components/growth/HorizontalStageTimeline.vue'
 import type { Stage, Task, Vaccine } from '../../types/cat'
@@ -70,7 +69,7 @@ const recordForm = ref({
   ageMonths: 0,
   weight: 0,
   notes: '',
-  recordDate: new Date().toISOString().split('T')[0],
+  recordDate: new Date().toISOString().slice(0, 10),
   vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
   dewormDrug: '', dewormType: '体内', dewormNextDate: '',
   checkClinic: '', checkVet: '', checkFindings: ''
@@ -92,10 +91,7 @@ const startDate = ref('')
 const endDate = ref('')
 const selectedDatePreset = ref('all')
 const showDateFilterMenu = ref(false)
-const today = computed(() => {
-  const date = new Date()
-  return date.toISOString().split('T')[0]
-})
+const today = computed(() => new Date().toISOString().slice(0, 10))
 
 // 日期预设选项
 const DATE_PRESETS = [
@@ -207,12 +203,12 @@ function openTaskModal(task: Task) {
 
   if (currentState?.completed) {
     // 已完成，打开编辑详情
-    taskCompletionDate.value = (currentState.date ?? new Date().toISOString().split('T')[0]) as string
+    taskCompletionDate.value = (currentState.date ?? new Date().toISOString().slice(0, 10)) as string
     taskNotes.value = (currentState.notes ?? '') as string
     showTaskModal.value = true
   } else {
     // 未完成，直接标记为完成并打开弹窗
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().slice(0, 10)
     taskCompletionDate.value = today || ''
     taskNotes.value = ''
     showTaskModal.value = true
@@ -243,22 +239,6 @@ function saveTaskState() {
   closeTaskModal()
 }
 
-// 取消完成任务
-function uncompleteTask(taskId: string) {
-  taskStates.value[taskId] = {
-    completed: false,
-    date: undefined,
-    notes: undefined
-  }
-  localStorage.setItem('catTaskStates', JSON.stringify(taskStates.value))
-}
-
-// 格式化日期显示
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
-}
-
 // 暴力清洗任务标题 - 彻底切除开头所有的英文字母和附带的空格
 function cleanTaskTitle(title: string): string {
   if (!title) return ''
@@ -276,7 +256,7 @@ function openAddRecordModal() {
   recordForm.value = {
     petName: currentCat.value?.name || '猫咪',
     ageWeeks: 0, ageMonths: 0, weight: 0, notes: '',
-    recordDate: new Date().toISOString().split('T')[0],
+    recordDate: new Date().toISOString().slice(0, 10),
     vaccineName: '', vaccineNextDate: '', vaccineClinic: '',
     dewormDrug: '', dewormType: '体内', dewormNextDate: '',
     checkClinic: '', checkVet: '', checkFindings: ''
