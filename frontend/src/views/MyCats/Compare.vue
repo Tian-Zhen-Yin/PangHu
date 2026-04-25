@@ -203,14 +203,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import CatMultiSelector from '../../components/cat/CatMultiSelector.vue'
 import WeightTrendComparison from '../../components/cat/WeightTrendComparison.vue'
 import HealthComparisonCards from '../../components/cat/HealthComparisonCards.vue'
 import CatInfoComparisonTable from '../../components/cat/CatInfoComparisonTable.vue'
 import { getBatchWeightAnalysis, getBatchWeightHistory } from '../../api/weightStandard'
 import type { CatComparisonData } from '../../types/weight'
-import type { Cat } from '../../types/cat'
 import { useMyCatStore } from '../../stores/myCat'
 
 const catStore = useMyCatStore()

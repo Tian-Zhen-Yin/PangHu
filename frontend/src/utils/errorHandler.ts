@@ -173,10 +173,10 @@ export const errorBoundaryMixin = {
       errorMessage: ''
     }
   },
-  errorCaptured(err: Error, instance: any, info: string) {
+  errorCaptured(err: Error, _instance: any, info: string) {
     console.error('Error captured:', err, info)
-    this.hasError = true
-    this.errorMessage = err.message
+    ;(this as any).hasError = true
+    ;(this as any).errorMessage = err.message
     toast.error('页面加载出错')
     return false // 阻止错误继续传播
   }

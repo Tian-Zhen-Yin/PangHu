@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownView from 'vue-markdown-render'
 import 'highlight.js/styles/github.css'
@@ -61,8 +61,8 @@ function extractTableOfContents() {
   let match
 
   while ((match = headingRegex.exec(guide.value.content)) !== null) {
-    const level = match[1].length
-    const title = match[2].trim()
+    const level = match[1]!.length
+    const title = match[2]!.trim()
     const id = title.toLowerCase().replace(/\s+/g, '-')
 
     toc.push({ id, title, level })

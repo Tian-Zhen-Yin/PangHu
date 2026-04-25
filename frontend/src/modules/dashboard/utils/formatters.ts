@@ -14,7 +14,7 @@ export function getWeightValue(record: { weight?: number; title: string }): stri
   if (record.title.includes(':')) {
     const parts = record.title.split(':')
     if (parts.length > 1) {
-      const value = parts[1].trim().replace('kg', '').trim()
+      const value = parts[1]!.trim().replace('kg', '').trim()
       return formatWeight(value)
     }
   }

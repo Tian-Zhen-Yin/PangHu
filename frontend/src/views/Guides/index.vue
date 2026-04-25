@@ -210,7 +210,7 @@ onMounted(async () => {
             <CategoryIcons :type="getCategoryIconType(cat.slug)" :size="16" />
           </div>
           <span class="chip-label">{{ cat.name }}</span>
-          <span v-if="guideStore.categoryCounts[cat.name] > 0" class="chip-count">
+          <span v-if="(guideStore.categoryCounts[cat.name] ?? 0) > 0" class="chip-count">
             {{ guideStore.categoryCounts[cat.name] }}
           </span>
         </button>

@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getVaccinesByCat, createVaccine, updateVaccine, deleteVaccine } from '../../api/vaccine'
 import { getMyCatById } from '../../api/myCat'
@@ -140,8 +140,8 @@ function handleEdit(vaccine: VaccineRecord) {
   form.value = {
     vaccineName: vaccine.vaccineName,
     vaccineType: vaccine.vaccineType,
-    vaccinatedAt: vaccine.vaccinatedAt.split('T')[0],
-    nextDueDate: vaccine.nextDueDate ? vaccine.nextDueDate.split('T')[0] : '',
+    vaccinatedAt: vaccine.vaccinatedAt.slice(0, 10),
+    nextDueDate: vaccine.nextDueDate ? vaccine.nextDueDate.slice(0, 10) : '',
     clinic: vaccine.clinic || '',
     veterinarian: vaccine.veterinarian || '',
     notes: vaccine.notes || ''

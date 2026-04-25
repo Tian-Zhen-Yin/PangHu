@@ -283,15 +283,15 @@ onMounted(async () => {
       form.value = {
         name: cat.name,
         gender: cat.gender,
-        birthDate: cat.birthDate.split('T')[0],
+        birthDate: cat.birthDate ? cat.birthDate.slice(0, 10) : '',
         birthDateEstimated: cat.birthDateEstimated || false,
         breed: cat.breed || '',
         avatar: cat.avatar || '',
-        adoptDate: cat.adoptDate ? cat.adoptDate.split('T')[0] : '',
+        adoptDate: cat.adoptDate ? cat.adoptDate.slice(0, 10) : '',
         adoptStatus: cat.adoptStatus || 'raisedFromBaby',
         weight: cat.weight || undefined,
         isNeutered: cat.isNeutered,
-        neuteredDate: cat.neuteredDate ? cat.neuteredDate.split('T')[0] : '',
+        neuteredDate: cat.neuteredDate ? cat.neuteredDate.slice(0, 10) : '',
         color: cat.color || '',
         features: cat.features || '',
         allergies: cat.allergies || '',
@@ -327,11 +327,11 @@ async function handleSubmit() {
     if (avatarFile.value && catId) {
       try {
         uploadingAvatar.value = true
-        const response = await uploadCatAvatar(catId, avatarFile.value)
+        await uploadCatAvatar(catId, avatarFile.value)
         toast.success('猫咪档案和头像保存成功')
       } catch (err: any) {
         console.error('头像上传失败:', err)
-        toast.warn('猫咪档案已保存，但头像上传失败')
+        toast.warning('猫咪档案已保存，但头像上传失败')
       }
     } else {
       toast.success(isEdit.value ? '猫咪档案更新成功' : '猫咪档案创建成功')

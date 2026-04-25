@@ -497,19 +497,6 @@ const RECORD_TYPE_CONFIG: Record<string, { label: string; icon: string; color: s
   free:        { label: '自由', icon: 'free', color: 'var(--color-text-placeholder)' },
 }
 
-// 按月分组记录
-const recordsByMonth = computed(() => {
-  const groups: { month: string; records: typeof petStore.sortedRecords }[] = []
-  const map = new Map<string, typeof petStore.sortedRecords>()
-  for (const r of petStore.sortedRecords) {
-    const month = r.recordDate.slice(0, 7) // YYYY-MM
-    if (!map.has(month)) map.set(month, [])
-    map.get(month)!.push(r)
-  }
-  map.forEach((records, month) => groups.push({ month, records }))
-  return groups.sort((a, b) => b.month.localeCompare(a.month))
-})
-
 // 根据猫咪来源调整页面标题和导航
 const pageSubtitle = computed(() => {
   if (!currentCat.value) return '从新生到成年的完整成长路径'

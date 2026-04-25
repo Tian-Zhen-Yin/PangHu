@@ -99,10 +99,10 @@ async function loadCatData(cat: Cat) {
         const rawPhotos = Array.isArray(r.photos) ? r.photos : []
         const photos = rawPhotos.map((photo: string) => getImageUrl(photo))
 
-        let weightChange: { value: number; direction: 'up' | 'down' | 'stable' } | null = null
-        if (r.weight && index > 0 && recordsToMap[index - 1].weight) {
+        let weightChange: { value: number; direction: 'up' | 'down' | 'stable' } | undefined = undefined
+        if (r.weight && index > 0 && recordsToMap[index - 1]?.weight) {
           const currentWeight = parseFloat(Number(r.weight).toFixed(2))
-          const prevWeight = parseFloat(Number(recordsToMap[index - 1].weight).toFixed(2))
+          const prevWeight = parseFloat(Number(recordsToMap[index - 1]?.weight).toFixed(2))
           const diff = currentWeight - prevWeight
           if (Math.abs(diff) >= 0.01) {
             weightChange = {
