@@ -20,7 +20,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http:
 app.use(cors({
   origin(origin, callback) {
     // 允许不带 origin 的请求（如 curl、服务端调用）
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true)
     } else {
       callback(new Error('CORS not allowed'))
