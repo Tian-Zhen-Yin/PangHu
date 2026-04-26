@@ -6,7 +6,10 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "backend/**"
+          "backend/prisma/**",
+          "backend/public/**",
+          "backend/src/**",
+          "backend/node_modules/express/**"
         ]
       }
     },
