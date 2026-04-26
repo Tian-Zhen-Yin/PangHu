@@ -1,13 +1,12 @@
 {
-  "version": 2,
   "builds": [
     {
-      "src": "backend/src/server.ts",
+      "src": "api/server.js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "backend/prisma/**",
-          "backend/src/**"
+          "backend/node_modules/.prisma/**",
+          "backend/node_modules/@prisma/client/**"
         ]
       }
     },
@@ -22,7 +21,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/src/server.ts"
+      "dest": "api/server.js"
     },
     {
       "src": "/(.*)",

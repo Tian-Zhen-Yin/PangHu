@@ -82,3 +82,6 @@ public/uploads/
 
 # Generated files
 generated/
+
+# Vercel build output
+api/server.js
