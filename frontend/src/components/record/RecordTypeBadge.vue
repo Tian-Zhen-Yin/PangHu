@@ -1,7 +1,6 @@
 <template>
   <span class="record-type-badge" :class="typeClass">
-    <component :is="iconSvg" class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" />
-    <span class="badge-label">{{ config.label }}</span>
+    <span class="badge-label">{{ config!.label }}</span>
   </span>
 </template>
 
