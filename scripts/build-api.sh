@@ -13,6 +13,8 @@ npx esbuild src/server.ts \
   --target=node20 \
   --format=cjs \
   --outfile=../api/server.js \
-  --external:@prisma/client
+  --external:@prisma/client \
+  --external:@prisma/adapter-pg \
+  --external:pg
 
 echo "✅ Bundle created at api/server.js"

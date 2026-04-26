@@ -26113,6 +26113,14 @@ var init_database = __esm({
     "use strict";
     import_client = require("@prisma/client");
     prismaClientSingleton = () => {
+      const isVercel = !!process.env.VERCEL;
+      if (isVercel) {
+        const { PrismaPg } = require("@prisma/adapter-pg");
+        const { Pool } = require("pg");
+        const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+        const adapter2 = new PrismaPg(pool);
+        return new import_client.PrismaClient({ adapter: adapter2, log: ["error"] });
+      }
       return new import_client.PrismaClient({
         log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
       });
