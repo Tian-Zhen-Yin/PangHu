@@ -52,7 +52,7 @@ const lastPoint = computed(() => {
   const max = Math.max(...props.data)
   const min = Math.min(...props.data)
   const range = (max - min) || 1
-  const lastVal = props.data[props.data.length - 1]
+  const lastVal = props.data[props.data.length - 1] ?? 0
   const x = 100
   const y = 27 - ((lastVal - min) / range) * 24
   return { x, y }
