@@ -67,6 +67,15 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }))
 // API路由
 app.use('/api', apiRoutes)
 
+// 诊断端点 — 检查模块加载状态
+app.get('/api/debug', (_req, res) => {
+  const checks: Record<string, string> = {}
+  try { require('@prisma/client'); checks['@prisma/client'] = 'ok' } catch (e: any) { checks['@prisma/client'] = e.message }
+  try { require('@prisma/adapter-pg'); checks['@prisma/adapter-pg'] = 'ok' } catch (e: any) { checks['@prisma/adapter-pg'] = e.message }
+  try { require('pg'); checks['pg'] = 'ok' } catch (e: any) { checks['pg'] = e.message }
+  res.json({ env: { VERCEL: !!process.env.VERCEL, DATABASE_URL: !!process.env.DATABASE_URL, JWT_SECRET: !!process.env.JWT_SECRET }, checks })
+})
+
 // 静态文件服务
 app.use(express.static('public'))
 // 宠物照片上传目录

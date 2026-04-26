@@ -26115,14 +26115,19 @@ var init_database = __esm({
     prismaClientSingleton = () => {
       const isVercel = !!process.env.VERCEL;
       if (isVercel) {
-        const { PrismaPg } = require("@prisma/adapter-pg");
-        const { Pool } = require("pg");
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false }
-        });
-        const adapter2 = new PrismaPg(pool);
-        return new import_client.PrismaClient({ adapter: adapter2, log: ["error"] });
+        try {
+          const { PrismaPg } = require("@prisma/adapter-pg");
+          const { Pool } = require("pg");
+          const pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+          });
+          const adapter2 = new PrismaPg(pool);
+          return new import_client.PrismaClient({ adapter: adapter2, log: ["error"] });
+        } catch (err) {
+          console.error("[DB] Vercel adapter init failed:", err);
+          throw err;
+        }
       }
       return new import_client.PrismaClient({
         log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
@@ -65624,6 +65629,28 @@ app.use("/api/chat", chatLimiter);
 app.use(import_express15.default.json({ limit: "1mb" }));
 app.use(import_express15.default.urlencoded({ extended: true, limit: "1mb" }));
 app.use("/api", routes_default);
+app.get("/api/debug", (_req, res) => {
+  const checks = {};
+  try {
+    require("@prisma/client");
+    checks["@prisma/client"] = "ok";
+  } catch (e) {
+    checks["@prisma/client"] = e.message;
+  }
+  try {
+    require("@prisma/adapter-pg");
+    checks["@prisma/adapter-pg"] = "ok";
+  } catch (e) {
+    checks["@prisma/adapter-pg"] = e.message;
+  }
+  try {
+    require("pg");
+    checks["pg"] = "ok";
+  } catch (e) {
+    checks["pg"] = e.message;
+  }
+  res.json({ env: { VERCEL: !!process.env.VERCEL, DATABASE_URL: !!process.env.DATABASE_URL, JWT_SECRET: !!process.env.JWT_SECRET }, checks });
+});
 app.use(import_express15.default.static("public"));
 app.use("/uploads", import_express15.default.static("uploads"));
 app.use(notFoundHandler);
