@@ -5,7 +5,10 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "api/server.js"
+          "api/server.js",
+          "node_modules/@prisma/adapter-pg/**",
+          "node_modules/pg/**",
+          "node_modules/.prisma/client/**"
         ]
       }
     },
