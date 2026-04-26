@@ -1,15 +1,6 @@
 {
   "builds": [
     {
-      "src": "api/[[...path]].js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "api/server.js"
-        ]
-      }
-    },
-    {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -19,8 +10,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "api/[[...path]].js"
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
