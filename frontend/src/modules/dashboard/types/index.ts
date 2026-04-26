@@ -1,4 +1,4 @@
-import type { Cat } from '@/types/cat'
+import type { Cat } from '../../../types/cat'
 
 export interface DashboardReminder {
   id: string

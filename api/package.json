@@ -10,6 +10,6 @@
     "prisma": "^6.19.2"
   },
   "scripts": {
-    "postinstall": "cd .. && node scripts/vercel-postinstall.js || true"
+    "postinstall": "npx prisma generate --schema=../backend/prisma/schema.prisma --no-engine --no-hints || true"
   }
 }

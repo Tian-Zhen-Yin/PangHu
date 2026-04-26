@@ -1,4 +1,4 @@
-import type { Cat } from '@/types/cat'
+import type { Cat } from '../../../types/cat'
 
 export function formatWeight(value?: number | string): string {
   if (value === undefined || value === null) return ''
