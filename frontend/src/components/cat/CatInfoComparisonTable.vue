@@ -72,7 +72,6 @@
 <script setup lang="ts">
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import type { CatComparisonData } from '../../types/weight'
-import type { Cat } from '../../types/cat'
 import { formatWeightValue, getAvatarUrl } from '../../utils/format'
 
 interface Props {

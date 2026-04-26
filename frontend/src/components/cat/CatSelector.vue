@@ -89,15 +89,15 @@ function handleSelect(cat: any) {
 // v-click-outside directive
 const vClickOutside = {
   mounted(el: HTMLElement, binding: any) {
-    el._clickOutside = (event: Event) => {
+    (el as any)._clickOutside = (event: Event) => {
       if (!el.contains(event.target as Node)) {
         binding.value()
       }
     }
-    document.addEventListener('click', el._clickOutside)
+    document.addEventListener('click', (el as any)._clickOutside)
   },
   unmounted(el: HTMLElement) {
-    document.removeEventListener('click', el._clickOutside)
+    document.removeEventListener('click', (el as any)._clickOutside)
   }
 }
 </script>

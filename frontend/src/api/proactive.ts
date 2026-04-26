@@ -15,12 +15,6 @@ export async function getProactiveAdvice(
   types?: ('weight' | 'vaccine' | 'age' | 'general')[]
 ): Promise<ProactiveAdvice> {
   const params = types ? `?types=${types.join(',')}` : ''
-  const response = await api.get<ProactiveAdviceResponse>(`/proactive/${catId}${params}`)
-  // response 已经是解包后的 { success: true, data: {...} }
-  // 需要检查 success 并返回 data
-  if (response && typeof response === 'object' && 'success' in response && response.success && 'data' in response) {
-    return response.data
-  }
-  // 如果直接返回的就是 ProactiveAdvice，直接返回
-  return response as any
+  const response = await api.get<ProactiveAdvice>(`/proactive/${catId}${params}`)
+  return response
 }

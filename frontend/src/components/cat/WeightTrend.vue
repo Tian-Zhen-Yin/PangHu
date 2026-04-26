@@ -210,7 +210,7 @@ const endDate = ref('')
 const selectedPreset = ref('all')
 const today = computed(() => {
   const date = new Date()
-  return date.toISOString().split('T')[0]
+  return date.toISOString().slice(0, 10)
 })
 
 // 日期预设选项

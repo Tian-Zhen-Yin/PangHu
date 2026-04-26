@@ -57,7 +57,6 @@ import { ref, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMyCatStore } from '../../stores/myCat'
 import { getAvatarUrl } from '../../utils/format'
-import type { Cat } from '../../types/cat'
 
 interface Props {
   modelValue: string[]

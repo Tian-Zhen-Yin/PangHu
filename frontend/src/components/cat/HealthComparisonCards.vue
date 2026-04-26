@@ -275,16 +275,6 @@ function getStatusText(status: 'thin' | 'normal' | 'overweight'): string {
   }
 }
 
-function getScoreColor(percentage: number, status: string): string {
-  // 优先根据状态决定颜色
-  if (status === 'normal') return '#10B981' // 正常状态用绿色
-  if (status === 'thin') return '#F59E0B'   // 偏瘦用橙色警告
-  if (status === 'overweight') return 'var(--color-danger)' // 超重用红色警告
-  // 回退到百分比逻辑
-  if (percentage >= 90) return '#10B981'
-  if (percentage >= 70) return '#F59E0B'
-  return 'var(--color-danger)'
-}
 
 // 仪表盘相关函数
 function getGaugeColor(analysis: any): string {
