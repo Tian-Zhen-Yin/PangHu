@@ -5,9 +5,7 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "api/server.js",
-          "node_modules/.prisma/**",
-          "node_modules/@prisma/client/**"
+          "api/server.js"
         ]
       }
     },
