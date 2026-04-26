@@ -3,7 +3,7 @@
  */
 
 import api from './index'
-import type { ProactiveAdvice, ProactiveAdviceResponse } from '../types/proactive'
+import type { ProactiveAdvice } from '../types/proactive'
 
 /**
  * 获取猫咪主动健康建议
@@ -15,6 +15,6 @@ export async function getProactiveAdvice(
   types?: ('weight' | 'vaccine' | 'age' | 'general')[]
 ): Promise<ProactiveAdvice> {
   const params = types ? `?types=${types.join(',')}` : ''
-  const response = await api.get<ProactiveAdvice>(`/proactive/${catId}${params}`)
-  return response
+  const { data } = await api.get<ProactiveAdvice>(`/proactive/${catId}${params}`)
+  return data
 }

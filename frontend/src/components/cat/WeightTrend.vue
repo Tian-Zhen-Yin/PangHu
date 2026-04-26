@@ -365,13 +365,12 @@ function updateAnalysis() {
   if (lastWeight?.status) {
     analysis.value = {
       status: lastWeight.status,
-      currentWeight: lastWeight.weight,
-      standard: {
-        min: lastWeight.minWeight,
-        max: lastWeight.maxWeight
-      },
-      change: 0,
-      trend: 'stable'
+      message: '',
+      current: lastWeight.weight,
+      min: lastWeight.minWeight ?? 0,
+      max: lastWeight.maxWeight ?? 0,
+      percentage: 50,
+      deviation: 0
     }
   }
 }
@@ -550,7 +549,7 @@ function updateChart() {
         type: 'line',
         smooth: true,
         symbol: 'circle',
-        symbolSize: (value: number, params: any) => {
+        symbolSize: (_value: number, params: any) => {
           // 只给最后一个点显示大圆点
           return params.dataIndex === weights.length - 1 ? 12 : 0
         },

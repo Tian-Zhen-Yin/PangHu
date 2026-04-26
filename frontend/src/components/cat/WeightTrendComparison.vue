@@ -101,7 +101,7 @@ function updateChart() {
 
   // 构建系列数据
   const series = catsWithHistory.map((cat, index) => {
-    const color = CAT_COLORS[index % CAT_COLORS.length]
+    const color = CAT_COLORS[index % CAT_COLORS.length]!
 
     // 创建日期到体重的映射
     const weightMap = new Map<string, number>()
@@ -114,7 +114,7 @@ function updateChart() {
 
     return {
       name: cat.cat.name,
-      type: 'line',
+      type: 'line' as const,
       smooth: true,
       symbol: 'circle',
       symbolSize: 6,

@@ -39,8 +39,8 @@ export async function getSupportedBreeds(): Promise<BreedsResponse> {
  * @param catIds 猫咪ID数组
  */
 export async function getBatchWeightAnalysis(catIds: string[]): Promise<Record<string, WeightAnalysis>> {
-  const response = await api.post<Record<string, WeightAnalysis>>('/weight-standards/batch', { catIds })
-  return response
+  const { data } = await api.post<Record<string, WeightAnalysis>>('/weight-standards/batch', { catIds })
+  return data
 }
 
 /**
@@ -51,6 +51,6 @@ export async function getBatchWeightHistory(catIds: string[]): Promise<Record<st
   if (catIds.length < 2 || catIds.length > 5) {
     throw new Error('请选择2-5只猫咪进行对比')
   }
-  const response = await api.post<Record<string, WeightHistoryWithStandard[]>>('/weight-standards/batch-history', { catIds })
-  return response
+  const { data } = await api.post<Record<string, WeightHistoryWithStandard[]>>('/weight-standards/batch-history', { catIds })
+  return data
 }
