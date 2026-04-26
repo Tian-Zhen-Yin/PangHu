@@ -8,6 +8,6 @@
     "prisma": "^6.19.2"
   },
   "scripts": {
-    "postinstall": "prisma generate --schema=backend/prisma/schema.prisma --no-hints || true"
+    "postinstall": "node scripts/vercel-postinstall.js || true"
   }
 }
