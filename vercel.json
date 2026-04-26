@@ -1,10 +1,11 @@
 {
   "builds": [
     {
-      "src": "api/server.js",
+      "src": "api/[[...path]].js",
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
+          "api/server.js",
           "node_modules/.prisma/**",
           "node_modules/@prisma/client/**"
         ]
@@ -21,15 +22,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/server.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "api/server.js"
-    },
-    {
-      "src": "/cats/(.*)",
-      "dest": "api/server.js"
+      "dest": "api/[[...path]].js"
     },
     {
       "src": "/(.*)",
