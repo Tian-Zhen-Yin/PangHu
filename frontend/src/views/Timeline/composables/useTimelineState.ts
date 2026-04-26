@@ -1,9 +1,9 @@
 import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useCatStore } from '../../../stores/cat'
-import { useMyCatStore } from '../../../stores/myCat'
-import { useAuthStore } from '../../../stores/auth'
-import type { Stage } from '../../../types/cat'
+import { useCatStore } from '../../../stores/cat.js'
+import { useMyCatStore } from '../../../stores/myCat.js'
+import { useAuthStore } from '../../../stores/auth.js'
+import type { Stage } from '../../../types/cat.js'
 
 /**
  * Tracks per-task completion status, optional date, and notes.

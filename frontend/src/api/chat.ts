@@ -1,11 +1,11 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
 import type {
   Conversation,
   SendMessageParams,
   SendMessageResponse,
   CreateConversationParams
-} from '../types/chat'
+} from '../types/chat.js'
 
 /**
  * 获取用户的所有对话

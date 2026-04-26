@@ -1,6 +1,6 @@
-import api from './index'
-import type { ApiResponse, PaginatedResponse } from '../types/common'
-import type { Guide, GuideCategory } from '../types/guide'
+import api from './index.js'
+import type { ApiResponse, PaginatedResponse } from '../types/common.js'
+import type { Guide, GuideCategory } from '../types/guide.js'
 
 /**
  * 获取指南列表

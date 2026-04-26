@@ -1,6 +1,6 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
-import type { Stage, Milestone, Vaccine } from '../types/cat'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
+import type { Stage, Milestone, Vaccine } from '../types/cat.js'
 
 /**
  * 获取所有成长阶段

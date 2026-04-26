@@ -1,5 +1,5 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
 
 export interface User {
   id: string
