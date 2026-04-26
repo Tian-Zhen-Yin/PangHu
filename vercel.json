@@ -24,10 +24,16 @@
       "dest": "api/server.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
+      "src": "/uploads/(.*)",
+      "dest": "api/server.js"
     },
     {
+      "src": "/cats/(.*)",
+      "dest": "api/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1",
       "handle": "filesystem"
     },
     {
