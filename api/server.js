@@ -26107,35 +26107,30 @@ var require_ip_address = __commonJS({
 });
 
 // src/config/database.ts
-var import_client, prismaClientSingleton, prisma, database_default;
+function createPrismaClient() {
+  if (isVercel) {
+    const pool = new import_pg.default.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    const adapter2 = new import_adapter_pg.PrismaPg(pool);
+    return new import_client.PrismaClient({ adapter: adapter2, log: ["error"] });
+  }
+  return new import_client.PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
+  });
+}
+var import_client, import_adapter_pg, import_pg, isVercel, prisma, database_default;
 var init_database = __esm({
   "src/config/database.ts"() {
     "use strict";
     import_client = require("@prisma/client");
-    prismaClientSingleton = () => {
-      const isVercel = !!process.env.VERCEL;
-      if (isVercel) {
-        try {
-          const { PrismaPg } = require("@prisma/adapter-pg");
-          const { Pool } = require("pg");
-          const pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-          });
-          const adapter2 = new PrismaPg(pool);
-          return new import_client.PrismaClient({ adapter: adapter2, log: ["error"] });
-        } catch (err) {
-          console.error("[DB] Vercel adapter init failed:", err);
-          throw err;
-        }
-      }
-      return new import_client.PrismaClient({
-        log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"]
-      });
-    };
-    prisma = globalThis.prisma ?? prismaClientSingleton();
-    database_default = prisma;
+    import_adapter_pg = require("@prisma/adapter-pg");
+    import_pg = __toESM(require("pg"));
+    isVercel = !!process.env.VERCEL;
+    prisma = globalThis.prisma ?? createPrismaClient();
     if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
+    database_default = prisma;
   }
 });
 
