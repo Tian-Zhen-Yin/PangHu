@@ -1,6 +1,6 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
-import type { Template } from '../types/common'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
+import type { Template } from '../types/common.js'
 
 /**
  * 获取所有模板

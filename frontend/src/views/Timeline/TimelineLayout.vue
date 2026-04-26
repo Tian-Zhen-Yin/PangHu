@@ -4,8 +4,8 @@ import { useRoute } from 'vue-router'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
 import HorizontalStageTimeline from '../../components/growth/HorizontalStageTimeline.vue'
-import { useTimelineState } from './composables/useTimelineState'
-import { usePetStore } from '../../stores/pet'
+import { useTimelineState } from './composables/useTimelineState.js'
+import { usePetStore } from '../../stores/pet.js'
 
 const route = useRoute()
 const petStore = usePetStore()

@@ -2,13 +2,13 @@
  * 通知 API
  */
 
-import api from './index'
+import api from './index.js'
 import type {
   NotificationListResponse,
   UserNotificationPreference,
   NotificationsResponse,
   PreferencesResponse,
-} from '../types/notification'
+} from '../types/notification.js'
 
 /**
  * 获取通知列表

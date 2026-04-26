@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { usePetStore } from '../../stores/pet'
-import { useAuthStore } from '../../stores/auth'
-import { useMyCatStore } from '../../stores/myCat'
+import { usePetStore } from '../../stores/pet.js'
+import { useAuthStore } from '../../stores/auth.js'
+import { useMyCatStore } from '../../stores/myCat.js'
 import { storeToRefs } from 'pinia'
-import { toast } from '../../composables/useToast'
+import { toast } from '../../composables/useToast.js'
 import ImageLoader from '../../components/common/ImageLoader.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
-import { sectionIcons } from './composables/sectionIcons'
-import { getImageUrl } from '../../utils/format'
-import type { CreatePetRecordParams } from '../../api/pet'
+import { sectionIcons } from './composables/sectionIcons.js'
+import { getImageUrl } from '../../utils/format.js'
+import type { CreatePetRecordParams } from '../../api/pet.js'
 
 const petStore = usePetStore()
 const authStore = useAuthStore()

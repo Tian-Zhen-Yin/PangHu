@@ -12,8 +12,8 @@ import {
   getNotificationPreferences,
   updateNotificationPreferences,
   toggleNotificationType,
-} from '../api/notification'
-import type { Notification, UserNotificationPreference } from '../types/notification'
+} from '../api/notification.js'
+import type { Notification, UserNotificationPreference } from '../types/notification.js'
 
 export const useNotificationStore = defineStore('notification', () => {
   // 状态

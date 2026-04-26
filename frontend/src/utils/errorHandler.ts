@@ -2,7 +2,7 @@
  * 全局错误处理工具
  */
 
-import { toast } from '../composables/useToast'
+import { toast } from '../composables/useToast.js'
 
 export interface AppError {
   message: string

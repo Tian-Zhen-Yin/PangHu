@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useTimelineState } from './composables/useTimelineState'
-import { sectionIcons } from './composables/sectionIcons'
-import type { Task } from '../../types/cat'
+import { useTimelineState } from './composables/useTimelineState.js'
+import { sectionIcons } from './composables/sectionIcons.js'
+import type { Task } from '../../types/cat.js'
 
 const {
   selectedStage,

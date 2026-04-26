@@ -106,11 +106,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useMyCatStore } from '../../stores/myCat'
+import { useMyCatStore } from '../../stores/myCat.js'
 import EmptyState from '../../components/common/EmptyState.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
-import { formatWeight, getAvatarUrl } from '../../utils/format'
-import type { Cat } from '../../types/cat'
+import { formatWeight, getAvatarUrl } from '../../utils/format.js'
+import type { Cat } from '../../types/cat.js'
 
 const catStore = useMyCatStore()
 const { cats, currentCat, loading } = storeToRefs(catStore)

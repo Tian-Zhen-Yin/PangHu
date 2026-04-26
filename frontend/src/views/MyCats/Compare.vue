@@ -208,9 +208,9 @@ import CatMultiSelector from '../../components/cat/CatMultiSelector.vue'
 import WeightTrendComparison from '../../components/cat/WeightTrendComparison.vue'
 import HealthComparisonCards from '../../components/cat/HealthComparisonCards.vue'
 import CatInfoComparisonTable from '../../components/cat/CatInfoComparisonTable.vue'
-import { getBatchWeightAnalysis, getBatchWeightHistory } from '../../api/weightStandard'
-import type { CatComparisonData } from '../../types/weight'
-import { useMyCatStore } from '../../stores/myCat'
+import { getBatchWeightAnalysis, getBatchWeightHistory } from '../../api/weightStandard.js'
+import type { CatComparisonData } from '../../types/weight.js'
+import { useMyCatStore } from '../../stores/myCat.js'
 
 const catStore = useMyCatStore()
 

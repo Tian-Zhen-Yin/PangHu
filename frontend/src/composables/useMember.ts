@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '../stores/auth.js'
 
 export function useMember() {
   const authStore = useAuthStore()

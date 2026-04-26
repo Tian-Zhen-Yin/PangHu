@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Conversation, Message, SendMessageParams } from '../types/chat'
+import type { Conversation, Message, SendMessageParams } from '../types/chat.js'
 import {
   getConversations,
   getConversationById,
@@ -8,8 +8,8 @@ import {
   deleteConversation as deleteConversationApi,
   updateConversationTitle as updateConversationTitleApi,
   sendMessageStream
-} from '../api/chat'
-import { useAuthStore } from './auth'
+} from '../api/chat.js'
+import { useAuthStore } from './auth.js'
 
 export const useChatStore = defineStore('chat', () => {
   // 状态

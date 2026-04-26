@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Cat, CatFormData } from '../types/cat'
-import { getMyCats, createMyCat, updateMyCat, deleteMyCat, setWeightGoal as setWeightGoalApi } from '../api/myCat'
+import type { Cat, CatFormData } from '../types/cat.js'
+import { getMyCats, createMyCat, updateMyCat, deleteMyCat, setWeightGoal as setWeightGoalApi } from '../api/myCat.js'
 
 export const useMyCatStore = defineStore('myCat', () => {
   const cats = ref<Cat[]>([])

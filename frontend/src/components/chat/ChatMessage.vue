@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { marked } from 'marked'
 import MascotCharacter from '../mascot/MascotCharacter.vue'
-import type { Message, Citation } from '../../types/chat'
+import type { Message, Citation } from '../../types/chat.js'
 
 interface Props {
   message: Message

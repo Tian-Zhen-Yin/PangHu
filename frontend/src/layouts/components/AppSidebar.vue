@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, useRoute } from 'vue-router'
 import { computed } from 'vue'
-import { useAuthStore } from '../../stores/auth'
+import { useAuthStore } from '../../stores/auth.js'
 import iconHome from '../../assets/icon/首页.png'
 import iconTimeline from '../../assets/icon/成长记录.png'
 import iconGuide from '../../assets/icon/养猫指南.png'

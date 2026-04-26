@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useGuideStore } from '../../stores/guide'
-import { useMyCatStore } from '../../stores/myCat'
+import { useGuideStore } from '../../stores/guide.js'
+import { useMyCatStore } from '../../stores/myCat.js'
 import { storeToRefs } from 'pinia'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CategoryIcons, { type CategoryIconType } from '../../components/guide/CategoryIcons.vue'

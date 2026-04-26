@@ -50,8 +50,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useNotificationStore } from '../../stores/notification'
-import type { Notification } from '../../types/notification'
+import { useNotificationStore } from '../../stores/notification.js'
+import type { Notification } from '../../types/notification.js'
 import LoadingSpinner from './LoadingSpinner.vue'
 
 const notificationStore = useNotificationStore()

@@ -1,5 +1,5 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
 
 // 用户计划类型
 export interface UserPlan {

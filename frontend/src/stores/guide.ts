@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Guide, GuideCategory } from '../types/guide'
-import { getGuides, getCategories, searchGuides } from '../api/guide'
+import type { Guide, GuideCategory } from '../types/guide.js'
+import { getGuides, getCategories, searchGuides } from '../api/guide.js'
 
 export const useGuideStore = defineStore('guide', () => {
   // 状态

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import type { DashboardCatCard } from '../types'
-import type { Cat } from '../../../types/cat'
-import { useMyCatStore } from '../../../stores/myCat'
-import { formatWeightValue, getAvatarUrl } from '../../../utils/format'
+import type { DashboardCatCard } from '../types/index.js'
+import type { Cat } from '../../../types/cat.js'
+import { useMyCatStore } from '../../../stores/myCat.js'
+import { formatWeightValue, getAvatarUrl } from '../../../utils/format.js'
 import MascotCharacter from '../../../components/mascot/MascotCharacter.vue'
 
 const props = defineProps<{

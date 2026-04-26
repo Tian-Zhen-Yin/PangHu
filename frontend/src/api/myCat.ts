@@ -1,6 +1,6 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
-import type { Cat, CatFormData, WeightHistoryRecord } from '../types/cat'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
+import type { Cat, CatFormData, WeightHistoryRecord } from '../types/cat.js'
 
 export function getMyCats(): Promise<ApiResponse<Cat[]>> {
   return api.get('/my-cats')

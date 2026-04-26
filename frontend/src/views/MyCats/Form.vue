@@ -140,12 +140,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMyCatStore } from '../../stores/myCat'
-import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
-import { toast } from '../../composables/useToast'
-import type { CatFormData } from '../../types/cat'
-import { ADOPT_STATUS_CONFIG } from '../../types/cat'
-import { getAvatarUrl } from '../../utils/format'
+import { useMyCatStore } from '../../stores/myCat.js'
+import { getMyCatById, uploadCatAvatar } from '../../api/myCat.js'
+import { toast } from '../../composables/useToast.js'
+import type { CatFormData } from '../../types/cat.js'
+import { ADOPT_STATUS_CONFIG } from '../../types/cat.js'
+import { getAvatarUrl } from '../../utils/format.js'
 
 const route = useRoute()
 const router = useRouter()

@@ -27,8 +27,8 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
-import type { CatComparisonData } from '../../types/weight'
-import { formatWeightValue } from '../../utils/format'
+import type { CatComparisonData } from '../../types/weight.js'
+import { formatWeightValue } from '../../utils/format.js'
 
 const MAX_DATA_POINTS = 30
 

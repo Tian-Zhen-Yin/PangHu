@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, RegisterData, LoginData } from '../api/auth'
-import { register as registerApi, login as loginApi, logout, getCurrentUser, updateUsername as updateUsernameApi } from '../api/auth'
+import type { User, RegisterData, LoginData } from '../api/auth.js'
+import { register as registerApi, login as loginApi, logout, getCurrentUser, updateUsername as updateUsernameApi } from '../api/auth.js'
 
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'

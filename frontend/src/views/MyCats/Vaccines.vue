@@ -88,9 +88,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getVaccinesByCat, createVaccine, updateVaccine, deleteVaccine } from '../../api/vaccine'
-import { getMyCatById } from '../../api/myCat'
-import type { VaccineRecord } from '../../types/cat'
+import { getVaccinesByCat, createVaccine, updateVaccine, deleteVaccine } from '../../api/vaccine.js'
+import { getMyCatById } from '../../api/myCat.js'
+import type { VaccineRecord } from '../../types/cat.js'
 
 const route = useRoute()
 const catId = route.params.id as string

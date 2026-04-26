@@ -239,8 +239,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { CatComparisonData } from '../../types/weight'
-import { formatWeightValue, getAvatarUrl } from '../../utils/format'
+import type { CatComparisonData } from '../../types/weight.js'
+import { formatWeightValue, getAvatarUrl } from '../../utils/format.js'
 
 interface Props {
   cats: CatComparisonData[]

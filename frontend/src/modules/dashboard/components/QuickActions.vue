@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import type { DashboardQuickAction } from '../types'
+import type { DashboardQuickAction } from '../types/index.js'
 
 const actions: DashboardQuickAction[] = [
   { id: 'record', label: '记录', icon: '📷', path: '/timeline/new', color: 'var(--color-primary)' },

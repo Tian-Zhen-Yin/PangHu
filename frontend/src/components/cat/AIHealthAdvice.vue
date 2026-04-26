@@ -134,8 +134,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import type { ProactiveAdvice } from '../../types/proactive'
-import { getProactiveAdvice } from '../../api/proactive'
+import type { ProactiveAdvice } from '../../types/proactive.js'
+import { getProactiveAdvice } from '../../api/proactive.js'
 
 interface Props {
   catId: string

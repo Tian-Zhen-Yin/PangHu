@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useGuideStore } from '../../stores/guide'
-import { useTemplateStore } from '../../stores/template'
+import { useGuideStore } from '../../stores/guide.js'
+import { useTemplateStore } from '../../stores/template.js'
 import SearchBar from '../../components/common/SearchBar.vue'
 
 const route = useRoute()

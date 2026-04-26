@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useTemplateStore } from '../../stores/template'
-import { usePlanStore } from '../../stores/plan'
-import { useAuthStore } from '../../stores/auth'
-import type { UserPlan } from '../../api/plan'
+import { useTemplateStore } from '../../stores/template.js'
+import { usePlanStore } from '../../stores/plan.js'
+import { useAuthStore } from '../../stores/auth.js'
+import type { UserPlan } from '../../api/plan.js'
 
 const route = useRoute()
 const router = useRouter()

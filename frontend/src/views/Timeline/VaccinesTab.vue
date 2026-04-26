@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTimelineState } from './composables/useTimelineState'
+import { useTimelineState } from './composables/useTimelineState.js'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
-import type { Vaccine } from '../../types/cat'
+import type { Vaccine } from '../../types/cat.js'
 
 const {
   selectedStage,

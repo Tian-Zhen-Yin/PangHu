@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Template } from '../types/common'
-import { getTemplates, getTemplateById } from '../api/template'
+import type { Template } from '../types/common.js'
+import { getTemplates, getTemplateById } from '../api/template.js'
 
 // 分类图标映射
 const categoryIcons: Record<string, string> = {

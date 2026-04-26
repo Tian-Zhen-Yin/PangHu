@@ -1,6 +1,6 @@
-import api from './index'
-import type { ApiResponse } from '../types/common'
-import type { VaccineRecord, VaccineFormData } from '../types/cat'
+import api from './index.js'
+import type { ApiResponse } from '../types/common.js'
+import type { VaccineRecord, VaccineFormData } from '../types/cat.js'
 
 export function getVaccinesByCat(catId: string): Promise<ApiResponse<VaccineRecord[]>> {
   return api.get(`/vaccines/cat/${catId}`)

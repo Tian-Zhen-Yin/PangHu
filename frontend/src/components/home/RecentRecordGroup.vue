@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import MascotCharacter, { type MascotExpression } from '../mascot/MascotCharacter.vue'
 import WeightSparkline from '../record/WeightSparkline.vue'
-import { formatWeightValue } from '../../utils/format'
+import { formatWeightValue } from '../../utils/format.js'
 
 interface RecordItem {
   id: string

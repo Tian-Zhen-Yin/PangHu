@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import WeightSparkline from '../../../components/record/WeightSparkline.vue'
-import type { DashboardRecentRecord } from '../types'
+import type { DashboardRecentRecord } from '../types/index.js'
 
 const props = defineProps<{
   records: DashboardRecentRecord[]

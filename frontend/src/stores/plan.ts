@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { UserPlan } from '../api/plan'
+import type { UserPlan } from '../api/plan.js'
 import {
   getUserPlans,
   createUserPlan,
   updatePlanProgress,
   deleteUserPlan as deleteUserPlanApi,
   setActivePlan as setActivePlanApi
-} from '../api/plan'
+} from '../api/plan.js'
 
 export const usePlanStore = defineStore('plan', () => {
   // 状态

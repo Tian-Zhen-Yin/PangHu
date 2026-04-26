@@ -2,14 +2,14 @@
  * 体重健康标准 API
  */
 
-import api from './index'
+import api from './index.js'
 import type {
   WeightAnalysis,
   WeightAnalysisResponse,
   WeightHistoryStandardResponse,
   BreedsResponse,
   WeightHistoryWithStandard,
-} from '../types/weight'
+} from '../types/weight.js'
 
 /**
  * 获取猫咪体重分析

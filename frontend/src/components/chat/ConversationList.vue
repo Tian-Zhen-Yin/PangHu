@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Conversation } from '../../types/chat'
+import type { Conversation } from '../../types/chat.js'
 
 interface Props {
   conversations: Conversation[]

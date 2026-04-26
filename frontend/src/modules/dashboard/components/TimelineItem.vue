@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { DashboardRecentRecord } from '../types'
-import { getRecordIcon, getRecordTypeLabel } from '../utils/recordHelpers'
-import { formatWeight, getWeightValue } from '../utils/formatters'
+import type { DashboardRecentRecord } from '../types/index.js'
+import { getRecordIcon, getRecordTypeLabel } from '../utils/recordHelpers.js'
+import { formatWeight, getWeightValue } from '../utils/formatters.js'
 
 defineProps<{
   record: DashboardRecentRecord

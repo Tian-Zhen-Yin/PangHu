@@ -2,7 +2,7 @@
  * 主动健康建议类型定义
  */
 
-import type { ApiResponse } from './common'
+import type { ApiResponse } from './common.js'
 
 /**
  * 体重建议

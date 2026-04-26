@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useBreakpoints } from '../composables/useBreakpoints'
+import { useBreakpoints } from '../composables/useBreakpoints.js'
 import DesktopLayout from './DesktopLayout.vue'
 import MobileLayout from './MobileLayout.vue'
 

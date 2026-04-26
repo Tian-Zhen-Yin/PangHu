@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppShell from './layouts/AppShell.vue'
 import Toast from './components/common/Toast.vue'
-import { toast } from './composables/useToast'
+import { toast } from './composables/useToast.js'
 </script>
 
 <template>

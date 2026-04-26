@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Stage } from '../types/cat'
-import { getStages } from '../api/cat'
+import type { Stage } from '../types/cat.js'
+import { getStages } from '../api/cat.js'
 
 export const useCatStore = defineStore('cat', () => {
   // 状态

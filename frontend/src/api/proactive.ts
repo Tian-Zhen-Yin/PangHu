@@ -2,8 +2,8 @@
  * 主动健康建议 API
  */
 
-import api from './index'
-import type { ProactiveAdvice } from '../types/proactive'
+import api from './index.js'
+import type { ProactiveAdvice } from '../types/proactive.js'
 
 /**
  * 获取猫咪主动健康建议

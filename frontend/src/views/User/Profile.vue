@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import { usePlanStore } from '../../stores/plan'
-import type { UserPlan } from '../../api/plan'
+import { useAuthStore } from '../../stores/auth.js'
+import { usePlanStore } from '../../stores/plan.js'
+import type { UserPlan } from '../../api/plan.js'
 
 const router = useRouter()
 const authStore = useAuthStore()

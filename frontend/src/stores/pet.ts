@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { PetRecord, CreatePetRecordParams } from '../api/pet'
+import type { PetRecord, CreatePetRecordParams } from '../api/pet.js'
 import {
   getPetRecords,
   createPetRecord as createPetRecordApi,
   updatePetRecord as updatePetRecordApi,
   deletePetRecord as deletePetRecordApi
-} from '../api/pet'
+} from '../api/pet.js'
 
 export const usePetStore = defineStore('pet', () => {
   // 状态

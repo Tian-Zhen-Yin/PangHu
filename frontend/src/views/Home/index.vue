@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import { useMyCatStore } from '../../stores/myCat'
-import { getProactiveAdvice } from '../../api/proactive'
-import type { ProactiveAdvice } from '../../types/proactive'
-import type { Cat } from '../../types/cat'
-import { getAvatarUrl } from '../../utils/format'
+import { useAuthStore } from '../../stores/auth.js'
+import { useMyCatStore } from '../../stores/myCat.js'
+import { getProactiveAdvice } from '../../api/proactive.js'
+import type { ProactiveAdvice } from '../../types/proactive.js'
+import type { Cat } from '../../types/cat.js'
+import { getAvatarUrl } from '../../utils/format.js'
 
 const authStore = useAuthStore()
 const catStore = useMyCatStore()

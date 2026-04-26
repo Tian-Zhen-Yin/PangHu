@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import { useMyCatStore } from '../../stores/myCat'
+import { useAuthStore } from '../../stores/auth.js'
+import { useMyCatStore } from '../../stores/myCat.js'
 import { storeToRefs } from 'pinia'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
-import { getAvatarUrl } from '../../utils/format'
+import { getAvatarUrl } from '../../utils/format.js'
 
 const authStore = useAuthStore()
 const catStore = useMyCatStore()

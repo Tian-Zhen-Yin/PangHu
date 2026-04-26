@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
-import { useCatStore } from '../../stores/cat'
-import { usePetStore } from '../../stores/pet'
-import { useAuthStore } from '../../stores/auth'
-import { useMyCatStore } from '../../stores/myCat'
+import { useCatStore } from '../../stores/cat.js'
+import { usePetStore } from '../../stores/pet.js'
+import { useAuthStore } from '../../stores/auth.js'
+import { useMyCatStore } from '../../stores/myCat.js'
 import { storeToRefs } from 'pinia'
-import { toast } from '../../composables/useToast'
+import { toast } from '../../composables/useToast.js'
 import ImageLoader from '../../components/common/ImageLoader.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import HorizontalStageTimeline from '../../components/growth/HorizontalStageTimeline.vue'
-import type { Stage, Task, Vaccine } from '../../types/cat'
-import { getImageUrl } from '../../utils/format'
-import type { CreatePetRecordParams } from '../../api/pet'
+import type { Stage, Task, Vaccine } from '../../types/cat.js'
+import { getImageUrl } from '../../utils/format.js'
+import type { CreatePetRecordParams } from '../../api/pet.js'
 
 // 区块标题图标 SVG
 const sectionIcons = {

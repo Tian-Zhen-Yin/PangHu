@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatWeightValue } from '../../utils/format'
+import { formatWeightValue } from '../../utils/format.js'
 
 interface Props {
   value: number // 体重变化值，正数表示增加，负数表示减少，0 表示不变

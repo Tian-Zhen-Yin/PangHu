@@ -149,10 +149,10 @@ import { useRoute } from 'vue-router'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import WeightTrend from '../../components/cat/WeightTrend.vue'
 import AIHealthAdvice from '../../components/cat/AIHealthAdvice.vue'
-import { getMyCatById, uploadCatAvatar } from '../../api/myCat'
-import { toast } from '../../composables/useToast'
-import { formatWeight, getAvatarUrl } from '../../utils/format'
-import type { Cat } from '../../types/cat'
+import { getMyCatById, uploadCatAvatar } from '../../api/myCat.js'
+import { toast } from '../../composables/useToast.js'
+import { formatWeight, getAvatarUrl } from '../../utils/format.js'
+import type { Cat } from '../../types/cat.js'
 
 const route = useRoute()
 
