@@ -7,8 +7,7 @@
       "config": {
         "includeFiles": [
           "backend/prisma/**",
-          "backend/src/**",
-          "backend/node_modules/**"
+          "backend/src/**"
         ]
       }
     },
