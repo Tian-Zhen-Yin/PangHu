@@ -7,7 +7,6 @@ import { getProactiveAdvice } from '../../api/proactive'
 import type { ProactiveAdvice } from '../../types/proactive'
 import type { Cat } from '../../types/cat'
 import { getAvatarUrl } from '../../utils/format'
-import heroImage from '../../assets/images/hero-home.png'
 
 const authStore = useAuthStore()
 const catStore = useMyCatStore()
@@ -83,7 +82,7 @@ const stages = [
   <div class="home-page">
     <!-- Hero Section with Image -->
     <section class="hero">
-      <img :src="heroImage" alt="哈吉咪养成计划" class="hero-image" />
+      <div class="hero-image" role="img" aria-label="哈吉咪养成计划"></div>
       <div class="hero-overlay">
         <div class="page-container">
           <div class="hero-content">
@@ -240,8 +239,8 @@ const stages = [
 .hero-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
+  background: linear-gradient(135deg, #FFF5EB 0%, #FFE8D6 50%, #FFD4B8 100%);
 }
 
 .hero-overlay {
