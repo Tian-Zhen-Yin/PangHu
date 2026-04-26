@@ -2,16 +2,21 @@
 import { RouterLink, useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import iconHome from '../../assets/icon/首页.png'
+import iconTimeline from '../../assets/icon/成长记录.png'
+import iconGuide from '../../assets/icon/养猫指南.png'
+import iconAdvisor from '../../assets/icon/喵星顾问.png'
+import iconMascot from '../../assets/mascot/sleepy.png'
 
 const authStore = useAuthStore()
 const route = useRoute()
 
 const navItems = computed(() => [
-  { name: '首页', path: '/', icon: '/src/assets/icon/首页.png', isImage: true },
-  { name: '成长记录', path: '/timeline', icon: '/src/assets/icon/成长记录.png', isImage: true },
-  { name: '养猫指南', path: '/guides', icon: '/src/assets/icon/养猫指南.png', isImage: true },
-  { name: '喵星小顾问', path: '/ai-chat', icon: '/src/assets/icon/喵星顾问.png', isImage: true, requiresAuth: true },
-  { name: '我的猫咪', path: '/my-cats', icon: '/src/assets/mascot/sleepy.png', isImage: true, requiresAuth: true }
+  { name: '首页', path: '/', icon: iconHome, isImage: true },
+  { name: '成长记录', path: '/timeline', icon: iconTimeline, isImage: true },
+  { name: '养猫指南', path: '/guides', icon: iconGuide, isImage: true },
+  { name: '喵星小顾问', path: '/ai-chat', icon: iconAdvisor, isImage: true, requiresAuth: true },
+  { name: '我的猫咪', path: '/my-cats', icon: iconMascot, isImage: true, requiresAuth: true }
 ].filter(item => !item.requiresAuth || authStore.isAuthenticated))
 
 function isActive(path: string): boolean {
