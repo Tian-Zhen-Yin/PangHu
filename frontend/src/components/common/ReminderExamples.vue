@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import ScenarioReminder, { type ActionButton, type TrendData } from './ScenarioReminder.vue'
+import ScenarioReminder, { type TrendData } from './ScenarioReminder.vue'
 import TrendChart, { type TrendPoint } from './TrendChart.vue'
 
 // ==================== 场景 A：接种提醒 ====================

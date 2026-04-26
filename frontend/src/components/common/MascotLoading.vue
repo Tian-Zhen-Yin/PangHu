@@ -14,7 +14,7 @@ withDefaults(defineProps<{
   <div class="mascot-loading" :class="[`size-${size}`]">
     <MascotCharacter
       expression="yawning"
-      :size="size === 'small' ? 'sm' : size === 'large' ? 'lg' : 'md'"
+      :size="size"
       :animated="true"
       :float-animation="true"
     />

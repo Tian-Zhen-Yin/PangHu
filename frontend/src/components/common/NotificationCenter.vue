@@ -18,7 +18,7 @@
 
     <div v-else-if="error" class="error">
       <p>{{ error }}</p>
-      <button class="retry-btn" @click="fetchNotifications">重试</button>
+      <button class="retry-btn" @click="() => fetchNotifications()">重试</button>
     </div>
 
     <div v-else-if="notifications.length === 0" class="empty-state">
