@@ -9,7 +9,8 @@
           "backend/prisma/**",
           "backend/public/**",
           "backend/src/**"
-        ]
+        ],
+        "buildCommand": "cd backend && npx prisma generate"
       }
     },
     {
