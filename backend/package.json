@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node src/seed/index.ts",
     "db:studio": "prisma studio",
-    "db:test-data": "ts-node src/seed/test-data.ts"
+    "db:test-data": "ts-node src/seed/test-data.ts",
+    "postinstall": "prisma generate"
   },
   "keywords": [
     "cat",
