@@ -1,9 +1,23 @@
-const http = require('http')
+// Vercel catch-all serverless function entry point
 
-// Lazy-load the Express app to avoid cold-start hangs
 let _app = null
 
 module.exports = async (req, res) => {
+  // Quick health check before loading the bundle
+  if (req.url === '/api/health') {
+    res.statusCode = 200
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({
+      status: 'ok',
+      env: {
+        VERCEL: !!process.env.VERCEL,
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        JWT_SECRET: !!process.env.JWT_SECRET,
+      }
+    }))
+    return
+  }
+
   try {
     if (!_app) {
       console.log('[entry] Loading _server.js bundle...')

@@ -12,12 +12,16 @@ const isVercel = !!process.env.VERCEL
 
 function createPrismaClient(): PrismaClient {
   if (isVercel) {
-    const pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    })
-    const adapter = new PrismaPg(pool)
-    return new PrismaClient({ adapter, log: ['error'] })
+    try {
+      const pool = new pg.Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+      })
+      const adapter = new PrismaPg(pool)
+      return new PrismaClient({ adapter, log: ['error'] })
+    } catch (err) {
+      console.error('[prisma] Adapter setup failed, falling back to default:', err)
+    }
   }
 
   return new PrismaClient({
