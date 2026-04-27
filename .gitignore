@@ -84,6 +84,7 @@ public/uploads/
 generated/
 
 # Vercel build output
-api/server.js
+api/_server.js
+api/index.js
 .vercel
 .env*.local

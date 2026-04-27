@@ -1,42 +1,11 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "node_modules/.prisma/client/**"
-        ]
-      }
-    },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "api/index.js"
-    },
-    {
-      "src": "/cats/(.*)",
-      "dest": "api/index.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/index.html"
-    }
+  "buildCommand": "npm run vercel-build && cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install && cd frontend && npm install",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/[[...path]]" },
+    { "source": "/uploads/(.*)", "destination": "/api/[[...path]]" },
+    { "source": "/cats/(.*)", "destination": "/api/[[...path]]" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

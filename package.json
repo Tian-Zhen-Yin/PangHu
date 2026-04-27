@@ -10,6 +10,7 @@
     "prisma": "^6.19.2"
   },
   "scripts": {
+    "vercel-build": "cd backend && npm run build",
     "postinstall": "node scripts/vercel-postinstall.js || true",
     "deploy": "NODE_TLS_REJECT_UNAUTHORIZED=0 vercel",
     "deploy:prod": "NODE_TLS_REJECT_UNAUTHORIZED=0 vercel --prod"
