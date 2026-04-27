@@ -2,15 +2,17 @@ import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 
-// 确保上传目录存在
-const uploadDir = path.join(process.cwd(), 'uploads', 'pets')
-const avatarDir = path.join(process.cwd(), 'uploads', 'avatars')
+const isVercel = !!process.env.VERCEL
+const baseUploadDir = isVercel ? path.join('/tmp', 'uploads') : path.join(process.cwd(), 'uploads')
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
-}
-if (!fs.existsSync(avatarDir)) {
-  fs.mkdirSync(avatarDir, { recursive: true })
+const uploadDir = path.join(baseUploadDir, 'pets')
+const avatarDir = path.join(baseUploadDir, 'avatars')
+
+try {
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+  if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true })
+} catch {
+  // Directory creation may fail on read-only filesystems — handled at upload time
 }
 
 // 允许的图片扩展名
