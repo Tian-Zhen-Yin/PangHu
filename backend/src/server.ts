@@ -10,6 +10,9 @@ import { startReminderScheduler } from './jobs/reminderChecker'
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Trust Vercel's reverse proxy so rate limiting identifies users correctly
+if (process.env.VERCEL) app.set('trust proxy', 1)
+
 // 安全头
 app.use(helmet())
 
