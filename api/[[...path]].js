@@ -5,9 +5,12 @@ module.exports = (req, res) => {
     const app = require('./_server.js').default
     return app(req, res)
   } catch (err) {
-    console.error('API handler error:', err)
     res.statusCode = 500
     res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify({ error: 'Internal Server Error' }))
+    res.end(JSON.stringify({
+      error: err.message,
+      stack: err.stack?.split('\n').slice(0, 10),
+      code: err.code,
+    }))
   }
 }
