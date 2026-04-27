@@ -85,3 +85,5 @@ generated/
 
 # Vercel build output
 api/server.js
+.vercel
+.env*.local
