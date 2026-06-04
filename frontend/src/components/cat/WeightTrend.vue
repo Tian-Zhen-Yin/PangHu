@@ -173,8 +173,20 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  MarkLineComponent,
+  MarkPointComponent,
+  DataZoomComponent,
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import type { EChartsOption } from 'echarts'
+
+echarts.use([LineChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent, MarkPointComponent, DataZoomComponent, CanvasRenderer])
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 import { getWeightAnalysis, getWeightHistoryStandards } from '../../api/weightStandard.js'
 import type { WeightAnalysis, WeightHistoryWithStandard } from '../../types/weight.js'

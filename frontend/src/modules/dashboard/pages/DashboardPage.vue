@@ -61,29 +61,32 @@ async function onCatSelect(cat: Cat) {
 
 async function loadCatData(cat: Cat) {
   try {
-    const advice = await getProactiveAdvice(cat.id, ['vaccine', 'weight', 'general'])
-    healthAnalysis.value = advice
+    // Run independent API calls in parallel instead of sequentially
+    const [adviceResult, weightResult] = await Promise.allSettled([
+      getProactiveAdvice(cat.id, ['vaccine', 'weight', 'general']),
+      getWeightAnalysis(cat.id),
+    ])
 
-    try {
-      weightAnalysis.value = (await getWeightAnalysis(cat.id)).data
-    } catch (e) {
-      console.error('获取体重分析失败:', e)
-    }
+    const advice = adviceResult.status === 'fulfilled' ? adviceResult.value : null
+    if (advice) healthAnalysis.value = advice
 
-    if (advice.vaccineAdvice) {
+    if (weightResult.status === 'fulfilled') weightAnalysis.value = weightResult.value.data
+    else if (weightResult.status === 'rejected') console.error('获取体重分析失败:', weightResult.reason)
+
+    if (advice?.vaccineAdvice) {
       reminders.value.push({
         id: 'vaccine', type: 'vaccine', title: '疫苗提醒',
         description: advice.vaccineAdvice.nextAction, icon: '💉', urgency: 'medium'
       })
     }
-    if (advice.weightAdvice && advice.weightAdvice.status !== 'normal') {
+    if (advice?.weightAdvice && advice.weightAdvice.status !== 'normal') {
       reminders.value.push({
         id: 'weight', type: 'weight', title: '体重提醒',
         description: advice.weightAdvice.suggestion,
         icon: advice.weightAdvice.status === 'thin' ? '📉' : '📈', urgency: 'medium'
       })
     }
-    if (advice.generalAdvice) {
+    if (advice?.generalAdvice) {
       reminders.value.push({
         id: 'general', type: 'general', title: '健康建议',
         description: advice.generalAdvice, icon: '💡', urgency: 'low'

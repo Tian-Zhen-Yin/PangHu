@@ -213,7 +213,7 @@ export async function updateUsername(req: Request, res: Response) {
 // 验证规则
 export const registerValidation = [
   body('email').isEmail().withMessage('请输入有效的邮箱地址'),
-  body('username').isLength({ min: 3, max: 20 }).withMessage('用户名长度必须在3-20个字符之间（支持中文、字母、数字）'),
+  body('username').isLength({ min: 2, max: 20 }).withMessage('用户名长度必须在2-20个字符之间（支持中文、字母、数字）'),
   body('password').isLength({ min: 6 }).withMessage('密码长度至少6个字符')
 ]
 
@@ -223,5 +223,5 @@ export const loginValidation = [
 ]
 
 export const updateUsernameValidation = [
-  body('username').isLength({ min: 3, max: 20 }).withMessage('用户名长度必须在3-20个字符之间（支持中文、字母、数字）')
+  body('username').isLength({ min: 2, max: 20 }).withMessage('用户名长度必须在2-20个字符之间（支持中文、字母、数字）')
 ]

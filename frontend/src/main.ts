@@ -1,8 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import router from './router/index'
 import App from './App.vue'
 import { setupGlobalErrorHandler } from './utils/errorHandler'
@@ -13,14 +11,8 @@ import './styles/tokens.css'
 const app = createApp(App)
 const pinia = createPinia()
 
-// 注册所有Element Plus图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-  app.component(key, component)
-}
-
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus)
 
 // 设置全局错误处理
 setupGlobalErrorHandler(app)
@@ -30,3 +22,10 @@ const authStore = useAuthStore()
 authStore.initAuth()
 
 app.mount('#app')
+
+// 注册 PWA Service Worker（仅在生产环境）
+if (import.meta.env.PROD) {
+  const { registerServiceWorker } = await import('./utils/pwa')
+  registerServiceWorker()
+  console.log('[PWA] Service Worker registration initiated')
+}

@@ -144,7 +144,7 @@ function goToLogin() {
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-  padding: 1rem;
+  padding: var(--space-md);
 }
 
 .auth-container {
@@ -269,5 +269,44 @@ function goToLogin() {
 
 .auth-footer a:hover {
   text-decoration: underline;
+}
+
+/* 移动端优化 */
+@media (max-width: 767px) {
+  .auth-page {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .auth-container {
+    margin: var(--space-md);
+    padding: 2rem 1.5rem;
+    border-radius: 1.5rem 1.5rem 0 0;
+    max-width: calc(100% - var(--space-md) * 2);
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+  }
+
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9375rem; /* 15px */
+  }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 375px) {
+  .auth-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .auth-title {
+    font-size: 1.25rem;
+  }
+
+  .form-input {
+    padding: 0.625rem 0.75rem;
+  }
 }
 </style>

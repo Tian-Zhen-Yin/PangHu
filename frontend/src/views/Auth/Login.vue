@@ -38,8 +38,18 @@ function goToRegister() {
 
 <template>
   <div class="auth-page">
-    <!-- 左侧：吉祥物品牌展示区 -->
-    <div class="brand-section">
+    <!-- 移动端顶部品牌栏 -->
+    <div class="mobile-brand">
+      <h1 class="mobile-brand-title">哈吉咪养成计划</h1>
+      <MascotCharacter
+        expression="default"
+        size="small"
+        :animated="false"
+      />
+    </div>
+
+    <!-- 左侧：吉祥物品牌展示区（仅桌面端显示） -->
+    <div class="brand-section desktop-only">
       <MascotCharacter
         expression="default"
         size="hero"
@@ -121,7 +131,29 @@ function goToRegister() {
   align-items: center;
   justify-content: center;
   background: var(--color-bg);
-  padding: var(--space-xl);
+  padding: var(--space-md);
+}
+
+/* 移动端顶部品牌栏 */
+.mobile-brand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-card);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.mobile-brand-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-text-main);
+  margin: 0;
 }
 
 .brand-section {
@@ -131,6 +163,11 @@ function goToRegister() {
   text-align: center;
   flex: 1;
   max-width: 480px;
+}
+
+/* 在移动端隐藏桌面端品牌区 */
+.desktop-only {
+  display: none;
 }
 
 .brand-content {
@@ -172,11 +209,12 @@ function goToRegister() {
 .auth-container {
   background: var(--color-card);
   border-radius: var(--radius-2xl);
-  padding: var(--space-4xl);
+  padding: var(--space-3xl);
   box-shadow: var(--shadow-md);
   width: 100%;
-  max-width: 440px;
+  max-width: 400px;
   animation: slideUp 0.4s ease-out;
+  margin-top: 60px; /* 为移动端顶部栏留出空间 */
 }
 
 @keyframes slideUp {
@@ -295,12 +333,57 @@ function goToRegister() {
   text-decoration: underline;
 }
 
+/* 移动端优化 */
+@media (max-width: 767px) {
+  .auth-page {
+    flex-direction: column;
+    padding: 0;
+    justify-content: flex-start;
+  }
+
+  .mobile-brand {
+    position: fixed;
+    top: 0;
+  }
+
+  .auth-container {
+    margin: 80px var(--space-md) var(--space-md);
+    padding: var(--space-2xl);
+    max-width: 100%;
+  }
+
+  .auth-title {
+    font-size: var(--text-xl);
+  }
+
+  .brand-features {
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+}
+
 /* 桌面端左右布局 */
 @media (min-width: 768px) {
   .auth-page {
     flex-direction: row;
     gap: var(--space-5xl);
     padding: var(--space-3xl);
+  }
+
+  /* 隐藏移动端品牌栏 */
+  .mobile-brand {
+    display: none;
+  }
+
+  /* 显示桌面端品牌区 */
+  .desktop-only {
+    display: flex;
+  }
+
+  .auth-container {
+    margin-top: 0;
+    max-width: 440px;
+    padding: var(--space-4xl);
   }
 
   .brand-section {

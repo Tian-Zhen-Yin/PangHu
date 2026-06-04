@@ -4,8 +4,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted } from 'vue'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { GaugeChart } from 'echarts/charts'
+import { CanvasRenderer } from 'echarts/renderers'
 import type { EChartsOption } from 'echarts'
+
+echarts.use([GaugeChart, CanvasRenderer])
 
 const props = defineProps<{
   value: number
