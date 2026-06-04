@@ -570,6 +570,7 @@ const stages = [
 @media (max-width: 640px) {
   .hero {
     min-height: 400px;
+    margin: 0 calc(-1 * var(--space-md)) var(--space-2xl);
   }
 
   .hero-title {
@@ -590,6 +591,60 @@ const stages = [
 
   .stages-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 小屏幕优化 (< 375px) */
+@media (max-width: 374px) {
+  .page-container {
+    padding: 0 var(--space-md);
+  }
+
+  .hero {
+    min-height: 350px;
+    border-radius: var(--radius-md);
+  }
+
+  .hero-title {
+    font-size: var(--text-xl);
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-sm);
+  }
+
+  .hero-btn {
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--text-sm);
+  }
+
+  .section-title {
+    font-size: var(--text-lg);
+  }
+
+  .stages-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .tips-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero {
+    min-height: 300px;
+  }
+
+  .hero-overlay {
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .main-content {
+    padding-top: calc(48px + var(--space-md));
   }
 }
 </style>

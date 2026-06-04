@@ -2,145 +2,159 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+// 路由分组优化 - 按功能模块分割代码
 const routes: RouteRecordRaw[] = [
+  // 首页和核心页面（优先级高）
   {
     path: '/',
     name: 'Dashboard',
-    component: () => import('../modules/dashboard/pages/DashboardPage.vue'),
-    meta: { title: '首页 - 哈吉咪养成计划' }
+    component: () => import(/* webpackChunkName: "dashboard" */ '../modules/dashboard/pages/DashboardPage.vue'),
+    meta: { title: '首页 - 哈吉咪养成计划', preload: true }
   },
   {
     path: '/home',
     name: 'Home',
-    component: () => import('../views/Home/index.vue'),
+    component: () => import(/* webpackChunkName: "home" */ '../views/Home/index.vue'),
     meta: { title: '关于我们 - 哈吉咪养成计划' }
   },
+
+  // 时间线模块
   {
     path: '/timeline',
-    component: () => import('../views/Timeline/TimelineLayout.vue'),
+    component: () => import(/* webpackChunkName: "timeline-layout" */ '../views/Timeline/TimelineLayout.vue'),
     children: [
       { path: '', redirect: '/timeline/overview' },
       {
         path: 'overview',
         name: 'TimelineOverview',
-        component: () => import('../views/Timeline/OverviewTab.vue'),
+        component: () => import(/* webpackChunkName: "timeline-overview" */ '../views/Timeline/OverviewTab.vue'),
         meta: { title: '养成时间线 - 哈吉咪养成计划' }
       },
       {
         path: 'tasks',
         name: 'TimelineTasks',
-        component: () => import('../views/Timeline/TasksTab.vue'),
+        component: () => import(/* webpackChunkName: "timeline-tasks" */ '../views/Timeline/TasksTab.vue'),
         meta: { title: '任务清单 - 哈吉咪养成计划' }
       },
       {
         path: 'vaccines',
         name: 'TimelineVaccines',
-        component: () => import('../views/Timeline/VaccinesTab.vue'),
+        component: () => import(/* webpackChunkName: "timeline-vaccines" */ '../views/Timeline/VaccinesTab.vue'),
         meta: { title: '疫苗接种 - 哈吉咪养成计划' }
       },
       {
         path: 'growth',
         name: 'TimelineGrowth',
-        component: () => import('../views/Timeline/GrowthRecords.vue'),
+        component: () => import(/* webpackChunkName: "timeline-growth" */ '../views/Timeline/GrowthRecords.vue'),
         meta: { title: '成长记录 - 哈吉咪养成计划' }
       }
     ]
   },
-  {
-    path: '/guides',
-    name: 'Guides',
-    component: () => import('../views/Guides/index.vue'),
-    meta: { title: '知识指南 - 哈吉咪养成计划' }
-  },
-  {
-    path: '/guides/:id',
-    name: 'GuideDetail',
-    component: () => import('../views/Guides/Detail.vue'),
-    meta: { title: '指南详情 - 哈吉咪养成计划' }
-  },
+
+  // AI 功能（可以延迟加载）
   {
     path: '/ai-chat',
     name: 'AIChat',
-    component: () => import('../views/AIChat/index.vue'),
+    component: () => import(/* webpackChunkName: "ai-chat" */ '../views/AIChat/index.vue'),
     meta: { title: 'AI医师 - 哈吉咪养成计划', requiresAuth: true }
   },
-  {
-    path: '/templates',
-    name: 'Templates',
-    component: () => import('../views/Templates/index.vue'),
-    meta: { title: '计划模板 - 哈吉咪养成计划' }
-  },
-  {
-    path: '/templates/:id',
-    name: 'TemplateDetail',
-    component: () => import('../views/Templates/Detail.vue'),
-    meta: { title: '模板详情 - 哈吉咪养成计划' }
-  },
-  {
-    path: '/search',
-    name: 'Search',
-    component: () => import('../views/Search/index.vue'),
-    meta: { title: '搜索 - 哈吉咪养成计划' }
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('../views/Auth/Login.vue'),
-    meta: { title: '登录 - 哈吉咪养成计划', guest: true }
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: () => import('../views/Auth/Register.vue'),
-    meta: { title: '注册 - 哈吉咪养成计划', guest: true }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('../views/User/Profile.vue'),
-    meta: { title: '个人中心 - 哈吉咪养成计划', requiresAuth: true }
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import('../views/About/index.vue'),
-    meta: { title: '关于 - 哈吉咪养成计划' }
-  },
+
+  // 我的猫咪模块
   {
     path: '/my-cats',
     name: 'MyCats',
-    component: () => import('../views/MyCats/index.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-list" */ '../views/MyCats/index.vue'),
     meta: { title: '我的猫咪 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
     path: '/my-cats/new',
     name: 'MyCatNew',
-    component: () => import('../views/MyCats/Form.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-form" */ '../views/MyCats/Form.vue'),
     meta: { title: '添加猫咪 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
     path: '/my-cats/compare',
     name: 'CatsComparison',
-    component: () => import('../views/MyCats/Compare.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-compare" */ '../views/MyCats/Compare.vue'),
     meta: { title: '多猫对比 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
     path: '/my-cats/:id/edit',
     name: 'MyCatEdit',
-    component: () => import('../views/MyCats/Form.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-form" */ '../views/MyCats/Form.vue'),
     meta: { title: '编辑猫咪 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
     path: '/my-cats/:id',
     name: 'MyCatDetail',
-    component: () => import('../views/MyCats/Detail.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-detail" */ '../views/MyCats/Detail.vue'),
     meta: { title: '猫咪详情 - 哈吉咪养成计划', requiresAuth: true }
   },
   {
     path: '/my-cats/:id/vaccines',
     name: 'MyCatVaccines',
-    component: () => import('../views/MyCats/Vaccines.vue'),
+    component: () => import(/* webpackChunkName: "my-cats-vaccines" */ '../views/MyCats/Vaccines.vue'),
     meta: { title: '疫苗记录 - 哈吉咪养成计划', requiresAuth: true }
+  },
+
+  // 指南和模板
+  {
+    path: '/guides',
+    name: 'Guides',
+    component: () => import(/* webpackChunkName: "guides" */ '../views/Guides/index.vue'),
+    meta: { title: '知识指南 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/guides/:id',
+    name: 'GuideDetail',
+    component: () => import(/* webpackChunkName: "guide-detail" */ '../views/Guides/Detail.vue'),
+    meta: { title: '指南详情 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/templates',
+    name: 'Templates',
+    component: () => import(/* webpackChunkName: "templates" */ '../views/Templates/index.vue'),
+    meta: { title: '计划模板 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/templates/:id',
+    name: 'TemplateDetail',
+    component: () => import(/* webpackChunkName: "template-detail" */ '../views/Templates/Detail.vue'),
+    meta: { title: '模板详情 - 哈吉咪养成计划' }
+  },
+
+  // 其他页面
+  {
+    path: '/search',
+    name: 'Search',
+    component: () => import(/* webpackChunkName: "search" */ '../views/Search/index.vue'),
+    meta: { title: '搜索 - 哈吉咪养成计划' }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import(/* webpackChunkName: "profile" */ '../views/User/Profile.vue'),
+    meta: { title: '个人中心 - 哈吉咪养成计划', requiresAuth: true }
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: () => import(/* webpackChunkName: "about" */ '../views/About/index.vue'),
+    meta: { title: '关于 - 哈吉咪养成计划' }
+  },
+
+  // 认证页面（单独分组，减少主包大小）
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import(/* webpackChunkName: "auth" */ '../views/Auth/Login.vue'),
+    meta: { title: '登录 - 哈吉咪养成计划', guest: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import(/* webpackChunkName: "auth" */ '../views/Auth/Register.vue'),
+    meta: { title: '注册 - 哈吉咪养成计划', guest: true }
   }
 ]
 
