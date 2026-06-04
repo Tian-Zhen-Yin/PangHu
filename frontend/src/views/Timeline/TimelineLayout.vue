@@ -25,12 +25,12 @@ onMounted(async () => {
   await catStore.fetchStages()
   await myCatStore.fetchCats()
 
+  // 等待猫咪数据加载完成后再加载任务状态和成长记录
   if (currentCat.value) {
     loadTaskStates(currentCat.value.id)
-  }
-
-  if (authStore.isAuthenticated) {
-    await petStore.fetchRecords(currentCat.value?.id)
+    if (authStore.isAuthenticated) {
+      await petStore.fetchRecords(currentCat.value.id)
+    }
   }
 
   if (filteredStages.value.length > 0 && !selectedStage.value) {
@@ -45,9 +45,11 @@ watch(filteredStages, (stages) => {
 })
 
 watch(currentCat, async (newCat) => {
-  if (newCat) loadTaskStates(newCat.id)
-  if (authStore.isAuthenticated) {
-    await petStore.fetchRecords(newCat?.id)
+  if (newCat) {
+    loadTaskStates(newCat.id)
+    if (authStore.isAuthenticated) {
+      await petStore.fetchRecords(newCat.id)
+    }
   }
 })
 
@@ -97,8 +99,8 @@ const activeTab = computed(() => {
         :stages="filteredStages"
       />
 
-      <!-- 阶段详情 -->
-      <main class="stage-detail" v-if="selectedStage">
+      <!-- 阶段详情 - 始终渲染 router-view 以显示子路由 -->
+      <main class="stage-detail">
         <!-- 标签页 - 悬浮胶囊分段控制器 -->
         <div class="premium-tabs-container">
 
@@ -122,7 +124,7 @@ const activeTab = computed(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
             </svg>
             <span class="tab-text">任务清单</span>
-            <span v-if="taskProgress.total > 0" class="tab-badge">{{ taskProgress.completed }}/{{ taskProgress.total }}</span>
+            <span v-if="selectedStage && taskProgress.total > 0" class="tab-badge">{{ taskProgress.completed }}/{{ taskProgress.total }}</span>
           </router-link>
 
           <router-link

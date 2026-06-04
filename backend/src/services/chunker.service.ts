@@ -232,8 +232,8 @@ export function extractGuideMetadata(markdown: string): {
     const ageStageMatch = frontmatter.match(/ageStage:\s*(.+)/)
 
     return {
-      category: categoryMatch?.[1]?.trim() || '通用',
-      ageStage: ageStageMatch?.[1]?.trim()
+      category: (categoryMatch?.[1] || '').trim() || '通用',
+      ageStage: ageStageMatch?.[1] ? ageStageMatch[1].trim() : undefined
     }
   }
 

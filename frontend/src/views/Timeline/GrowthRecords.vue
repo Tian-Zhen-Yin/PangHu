@@ -127,6 +127,7 @@ const filteredRecordsByMonth = computed(() => {
   }
 
   map.forEach((records, month) => groups.push({ month, records }))
+
   return groups.sort((a, b) => b.month.localeCompare(a.month))
 })
 
@@ -401,10 +402,25 @@ async function deletePetRecord(recordId: string) {
       </div>
     </div>
 
+    <!-- 调试状态条 - 已登录时显示 -->
+    <div v-if="authStore.isAuthenticated" style="background:#e8f4fd; padding:8px 16px; margin:0 0 12px; border-radius:6px; font-size:13px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+      <span>⏳ {{ petStore.loading ? '加载中' : '✅完成' }}</span>
+      <span>📊 记录数: {{ petStore.records.length }}</span>
+      <span>🔍 筛选后: {{ filteredRecords.length }}</span>
+      <span>🐱 猫咪: {{ currentCat?.name || '无' }}</span>
+      <button @click="petStore.fetchRecords(currentCat?.id)" style="padding:2px 8px; background:#4a90d9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">刷新</button>
+    </div>
+
     <!-- Login prompt -->
     <div v-if="!authStore.isAuthenticated" class="login-prompt">
       <p>请先登录以使用宠物成长记录功能</p>
       <button @click="$router.push('/login')" class="btn-login">去登录</button>
+    </div>
+
+    <!-- Loading state -->
+    <div v-else-if="petStore.loading" class="loading-records">
+      <MascotCharacter expression="waiting" size="medium" :animated="false" />
+      <p class="loading-text">正在加载成长记录...</p>
     </div>
 
     <!-- Records timeline -->
@@ -1412,6 +1428,21 @@ async function deletePetRecord(recordId: string) {
   padding: 4rem 2rem;
   background: var(--color-bg-page);
   border-radius: 1rem;
+}
+
+/* ========== Loading State ========== */
+.loading-records {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--color-bg-page);
+  border-radius: 1rem;
+}
+
+.loading-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 1rem 0 0 0;
 }
 
 .empty-text {

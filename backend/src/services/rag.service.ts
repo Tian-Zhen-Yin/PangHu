@@ -3,9 +3,10 @@
  * 负责知识库的构建、索引和检索
  */
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { chunkMarkdown, extractGuideMetadata, type Chunk } from './chunker.service'
 import { getEmbeddings, findMostSimilar, deserializeVector, serializeVector, cosineSimilarity } from './embedding.service'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -67,22 +68,33 @@ export async function ingestGuide(
     const texts = chunks.map(c => c.content)
     const embeddings = await getEmbeddings(texts, apiKey)
 
-    // 6. 存储到数据库
+    // 6. 存储到数据库（使用原始 SQL 插入向量）
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       const embedding = embeddings[i]
+      const vectorString = `[${embedding.join(',')}]`
 
-      await prisma.guideChunk.create({
-        data: {
-          guideId,
-          content: chunk.content,
-          chunkIndex: chunk.chunkIndex,
-          category: metadata.category,
-          ageStage: metadata.ageStage,
-          headings: JSON.stringify(chunk.headings),
-          embedding: serializeVector(embedding)
-        }
-      })
+      await prisma.$queryRaw`
+        INSERT INTO "GuideChunk" (
+          id,
+          "guideId",
+          content,
+          "chunkIndex",
+          category,
+          "ageStage",
+          headings,
+          embedding
+        ) VALUES (
+          ${crypto.randomUUID()},
+          ${guideId},
+          ${chunk.content},
+          ${chunk.chunkIndex},
+          ${metadata.category},
+          ${metadata.ageStage},
+          ${JSON.stringify(chunk.headings)},
+          ${vectorString}::vector
+        )
+      `
     }
 
     return { chunks: chunks.length }
@@ -141,63 +153,81 @@ export async function retrieveKnowledge(
     ageStage?: string
     minScore?: number
   }
-): Promise<{ chunks: RetrievedChunk[]; citations: Citation[] }> {
-  const {
-    topK = 3,
-    category,
-    ageStage,
-    minScore = 0.6
-  } = options || {}
+): Promise<{ chunks: RetrievedChunk[]; citations: Citation[]; error?: string }> {
+  const { topK = 3, category, ageStage, minScore = 0.6 } = options || {}
 
   try {
-    // 1. 向量化查询
     const queryEmbedding = await getEmbeddings([query], apiKey)
     const queryVector = queryEmbedding[0]
+    const vectorString = `[${queryVector.join(',')}]`
 
-    // 2. 从数据库获取所有 chunks（带过滤条件）
-    const where: any = {}
-    if (category) where.category = category
-    if (ageStage) where.ageStage = ageStage
+    // ✅ 条件过滤：用 Prisma.sql 拼接，安全且灵活
+    const categoryFilter = category
+      ? Prisma.sql`AND ch.category = ${category}`
+      : Prisma.sql``
 
-    const chunks = await prisma.guideChunk.findMany({
-      where,
-      include: { guide: true }
-    })
+    const ageStageFilter = ageStage
+      ? Prisma.sql`AND ch."ageStage" = ${ageStage}`
+      : Prisma.sql``
 
-    if (chunks.length === 0) {
-      return { chunks: [], citations: [] }
-    }
+    const rows = await prisma.$queryRaw<Array<{
+      id: string
+      guideId: string
+      content: string
+      score: number
+      title: string
+      category: string
+      ageStage: string | null
+      headings: string
+    }>>`
+      SELECT
+        ch.id,
+        ch."guideId",
+        ch.content,
+        1 - (ch.embedding <=> ${vectorString}::vector) AS score,
+        g.title,
+        ch.category,
+        ch."ageStage",
+        ch.headings
+      FROM "GuideChunk" ch
+      JOIN "Guide" g ON ch."guideId" = g.id
+      WHERE ch.embedding IS NOT NULL
+        ${categoryFilter}
+        ${ageStageFilter}
+      ORDER BY ch.embedding <=> ${vectorString}::vector
+      LIMIT ${topK}
+    `
 
-    // 3. 计算相似度
-    const scored = chunks.map(chunk => {
-      const embedding = chunk.embedding ? deserializeVector(chunk.embedding) : []
-      const score = embedding.length > 0 ? cosineSimilarity(queryVector, embedding) : 0
-
-      return {
-        id: chunk.id,
-        guideId: chunk.guideId,
-        content: chunk.content,
-        score,
-        metadata: {
-          title: chunk.guide.title,
-          category: chunk.category,
-          ageStage: chunk.ageStage || undefined,
-          headings: chunk.headings ? JSON.parse(chunk.headings) : []
+    const topChunks: RetrievedChunk[] = rows
+      .filter(row => Number(row.score) >= minScore)
+      .map(row => {
+        let headings: string[] = []
+        if (row.headings) {
+          try {
+            headings = JSON.parse(row.headings)
+          } catch (error) {
+            console.warn(`Failed to parse headings for chunk ${row.id}:`, error)
+            headings = []
+          }
         }
-      } as RetrievedChunk
-    })
+        return {
+          id: row.id,
+          guideId: row.guideId,
+          content: row.content,
+          score: Number(row.score),
+          metadata: {
+            title: row.title,
+            category: row.category,
+            ageStage: row.ageStage ?? undefined,
+            headings
+          }
+        }
+      })
 
-    // 4. 排序并取 Top-K
-    const topChunks = scored
-      .filter(c => c.score >= minScore)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK)
-
-    // 5. 生成引用列表（去重，按 guideId 聚合）
     const citationMap = new Map<string, Citation>()
-
     for (const chunk of topChunks) {
-      if (!citationMap.has(chunk.guideId) || citationMap.get(chunk.guideId)!.similarity < chunk.score) {
+      if (!citationMap.has(chunk.guideId) ||
+          citationMap.get(chunk.guideId)!.similarity < chunk.score) {
         citationMap.set(chunk.guideId, {
           guideId: chunk.guideId,
           title: chunk.metadata.title || '未知指南',
@@ -210,77 +240,12 @@ export async function retrieveKnowledge(
     const citations = Array.from(citationMap.values())
       .sort((a, b) => b.similarity - a.similarity)
 
-    return { chunks: topChunks, citations }
+    return { chunks: topChunks, citations, error: undefined }
+
   } catch (error: any) {
     console.error('Knowledge retrieval error:', error)
-    return { chunks: [], citations: [] }
+    return { chunks: [], citations: [], error: error.message }
   }
-}
-
-/**
- * 构建增强后的 Prompt
- */
-export function buildRAGPrompt(
-  userQuery: string,
-  retrievedChunks: RetrievedChunk[],
-  chatHistory: Array<{ role: string; content: string }> = []
-): string {
-  // 系统人设
-  const systemPrompt = `你是一位专业的猫咪医疗顾问和养护专家，名叫"喵喵医生"。
-
-## 你的角色
-- 专业、耐心、友好的猫咪医师
-- 拥有丰富的猫咪医疗、行为、营养知识
-- 基于科学证据给出建议，不传播谣言
-- 遇到严重问题建议及时就医
-
-## 回答原则
-1. 优先使用提供的专业知识库内容
-2. 结构化回答，使用列表和标题
-3. 健康问题务必提示"建议就医"
-4. 引用知识库来源
-5. 语气温和，使用"您"称呼
-
-## 紧急情况处理
-以下症状立即建议就医：
-- 呼吸困难、无法排尿
-- 持续呕吐/腹泻超过24小时
-- 体温异常、持续不食超过24小时
-
----
-
-以下是相关的知识库内容：
-
-`
-
-  // 添加检索到的知识
-  const knowledgeContext = retrievedChunks
-    .map((chunk, i) => {
-      const source = chunk.metadata.title
-      const headings = chunk.metadata.headings.length > 0
-        ? ` [${chunk.metadata.headings.join(' > ')}]`
-        : ''
-      return `【参考资料 ${i + 1}】${source}${headings}\n${chunk.content}`
-    })
-    .join('\n\n')
-
-  // 对话历史上下文
-  const historyContext = chatHistory
-    .slice(-4) // 只保留最近4轮对话
-    .map(msg => `${msg.role === 'user' ? '用户' : '助手'}: ${msg.content}`)
-    .join('\n')
-
-  // 组装完整 prompt
-  const fullPrompt = `${systemPrompt}${knowledgeContext}
-
----
-
-${historyContext ? `## 历史对话\n${historyContext}\n\n` : ''}## 当前问题
-用户：${userQuery}
-
-请根据以上知识库内容回答用户的问题。如果知识库中没有相关信息，请基于你的专业知识给出建议，但务必说明这是基于一般经验的建议。`
-
-  return fullPrompt
 }
 
 /**

@@ -3,7 +3,7 @@ import { SSEStream } from '../utils/stream'
 import { Response } from 'express'
 import axios from 'axios'
 import https from 'https'
-import { retrieveKnowledge, buildRAGPrompt, type Citation } from './rag.service'
+import { retrieveKnowledge, type Citation } from './rag.service'
 
 // 创建忽略证书验证的 https agent（仅用于开发环境）
 const httpsAgent = new https.Agent({
@@ -44,40 +44,61 @@ export interface CatContext {
   lastRecord?: { date: string; weight?: number | null; notes?: string | null } | null
 }
 
-const SYSTEM_PROMPT = `你是一位专业的猫咪医疗顾问和养护专家，名叫"喵喵医生"。
+const SYSTEM_PROMPT = `你是"喵喵医生"，一位专业的猫咪医疗顾问和养护专家。
 
-## 你的角色
-- 专业、耐心、友好的猫咪医师
-- 拥有丰富的猫咪医疗、行为、营养知识
-- 基于科学证据给出建议，不传播谣言
-- 遇到严重问题建议及时就医
+## ⚠️ 核心原则：按顺序判断，匹配即停止
 
-## 知识库覆盖
-喂养营养、环境准备、健康医疗、行为训练、日常护理、常见问题
+### 步骤1：判断信息是否完整
+**如果用户提到症状但未说明持续时间/严重程度，必须追问！**
 
-## 回答原则
-1. 优先使用提供的专业知识
-2. 结构化回答，使用列表和标题
-3. 健康问题务必提示"建议就医"
-4. 引用知识库来源
-5. 语气温和，使用"您"称呼
-6. 回答简洁明了，通常控制在300字以内
+⚠️ 重要：先检查用户是否已经提供了时间信息
+时间关键词包括：超过、持续、已经、X小时、X天、从X开始、一直等
 
-## 紧急情况处理
-以下症状立即建议就医：
-- 呼吸困难、无法排尿
-- 持续呕吐/腹泻超过24小时
-- 体温异常、持续不食超过24小时
-- 出血、骨折等明显外伤
-- 抽搐、昏迷等神经系统症状
+问诊触发条件（症状关键词 + 无时间信息）：
+- 不吃东西/不喝水 + 无时间 → 追问"持续多久了？"
+- 呕吐/拉稀 + 无时间 → 追问"几次了？持续多久？"
+- 没精神/精神差 + 无时间 → 追问"从什么时候开始？"
+- 咳嗽/喘气 + 无时间 → 追问"持续多久了？"
 
-## 格式要求
-- 使用Markdown格式
-- 重要警告用 **加粗** 标注
-- 建议列表用 - 或数字列表
-- 必要时使用引用块 > 强调`
+问诊格式：
+<ask>单个问题</ask>
 
-function buildCatContextPrompt(catContext: CatContext): string {
+示例：
+- 用户："我的猫不吃东西" → 你：<ask>这种情况持续多久了？</ask> ❌追问
+- 用户："我的猫持续呕吐超过24小时" → 直接进入步骤2 ✅不追问
+- 用户："它呕吐了" → 你：<ask>呕吐几次了？持续多久？</ask> ❌追问
+
+**严禁：在追问时给诊断、建议或判断是否紧急**
+
+### 步骤2：判断是否紧急
+用户明确说了以下【已持续】的症状：
+- "呼吸困难" + 持续进行中
+- "无法排尿" / 憋尿
+- "呕吐/腹泻" + "超过24小时" / "一天多" / "两天了"
+- "不食/不吃" + "超过24小时" / "一天多" / "两天了"
+- 出血 / 骨折 / 抽搐 / 昏迷
+
+→ 第一句必须是"**请立即就医！**"
+
+### 步骤3：正常回答
+症状清晰、信息完整、非紧急情况
+
+→ 基于知识库片段回答
+→ 片段不足时说："我的知识库暂时没有这方面的记录，建议咨询专业兽医"
+
+## 知识库使用规则
+每次对话中，我会提供标注了编号的【知识库参考片段】：
+1. 每个片段开头都会标明来源，例如"【片段1】来源：《指南标题》"
+2. 优先且只基于这些片段回答，不允许凭空推断
+3. 回答末尾必须列出所有参考的指南标题，格式："参考来源：《指南标题1》、《指南标题2》"
+4. 片段为空或不相关时，声明"知识库无记录"
+
+## 输出格式
+- Markdown，300字以内
+- 重要警告加粗
+- 末尾必须有"参考来源：《指南标题1》、《指南标题2》"或"知识库无记录"声明`
+
+export function buildCatContextPrompt(catContext: CatContext): string {
   const genderText = catContext.gender === 'male' ? '公猫' : catContext.gender === 'female' ? '母猫' : '未知性别'
   const vaccineText = catContext.recentVaccines.length > 0
     ? catContext.recentVaccines.map(v => `${v.name}(${v.date})`).join('、')
@@ -116,72 +137,88 @@ function generateToken(apiKey: string): string {
   return `${encodedHeader}.${encodedPayload}.${signature}`
 }
 
-async function buildMessages(
+export async function buildMessages(
   history: ServiceChatMessage[],
   knowledgeContext = '',
   useRAG: boolean = true,
   apiKey: string = '',
   catContext?: CatContext
 ): Promise<{ messages: any[]; citations?: Citation[] }> {
-  const messages: any[] = []
+  const userQuery = history.length > 0
+    ? history[history.length - 1].content
+    : '请介绍一下猫咪养护知识'
+
+  // ✅ system message 永远存在，不受 RAG 开关影响
+  const systemMessage = {
+    role: 'system',
+    content: SYSTEM_PROMPT
+  }
+
+  let knowledgeBlock = ''
   let citations: Citation[] = []
 
+  // ✅ RAG 只负责取回知识片段，不再负责拼 Prompt
   if (useRAG && apiKey) {
-    const userQuery = history.length > 0
-      ? history[history.length - 1].content
-      : '请介绍一下猫咪养护知识'
-
     try {
       const ageStage = catContext
-        ? catContext.ageMonths < 12 ? '幼猫期' : catContext.ageMonths < 84 ? '成年期' : '老年期'
+        ? catContext.ageMonths < 12 ? '幼猫期'
+          : catContext.ageMonths < 84 ? '成年期' : '老年期'
         : undefined
 
       const ragResult = await retrieveKnowledge(userQuery, apiKey, {
         topK: 3,
-        minScore: 0.5,
+        minScore: 0.2,
         ageStage
       })
 
       if (ragResult.chunks.length > 0) {
-        const catPrompt = catContext ? buildCatContextPrompt(catContext) : ''
-        const ragPrompt = buildRAGPrompt(userQuery, ragResult.chunks, history.slice(0, -1))
-
-        messages.push({
-          role: 'user',
-          content: catPrompt ? ragPrompt.replace(
-            '你是一位专业的猫咪医疗顾问',
-            `你是一位专业的猫咪医疗顾问${catPrompt}\n\n你是一位专业的猫咪医疗顾问`
-          ) : ragPrompt
-        })
+        // 给每个片段加编号，使用更明显的格式
+        knowledgeBlock = '## 知识库参考片段\n' +
+          ragResult.chunks.map((chunk, i) =>
+            `【片段${i + 1}】来源：《${chunk.metadata.title || '养护指南'}》\n${chunk.content}`
+          ).join('\n\n')
 
         citations = ragResult.citations
-        return { messages, citations }
+      } else {
+        knowledgeBlock = '## 知识库参考片段\n（本次检索未找到相关内容，请基于通用知识回答，并说明来源不确定）'
       }
     } catch (error) {
       console.error('[AI Service] RAG检索失败，使用默认模式:', error)
+      knowledgeBlock = '## 知识库参考片段\n（检索服务暂时不可用）'
     }
   }
 
-  const catPrompt = catContext ? buildCatContextPrompt(catContext) : ''
-  const fullPrompt = SYSTEM_PROMPT + (catPrompt ? '\n' + catPrompt : '') + (knowledgeContext ? '\n\n' + knowledgeContext : '')
+  // ✅ 猫咪档案、知识片段、问题分别是独立的块，结构清晰
+  const catBlock = catContext ? buildCatContextPrompt(catContext) : ''
 
-  messages.push({ role: 'user', content: fullPrompt })
-
-  for (const msg of history) {
-    messages.push({
-      role: msg.role === 'user' ? 'user' : 'assistant',
-      content: msg.content
-    })
+  const userMessage = {
+    role: 'user',
+    content: [
+      catBlock,
+      knowledgeBlock,
+      `## 用户问题\n${userQuery}`
+    ].filter(Boolean).join('\n\n')
   }
 
-  return { messages }
+  // ✅ 历史对话正确放在 system 和最新 user message 之间
+  const historyMessages = history.slice(0, -1).map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }))
+
+  return {
+    messages: [systemMessage, ...historyMessages, userMessage],
+    citations
+  }
 }
 
-function getApiConfig() {
+export function getApiConfig() {
   const apiKey = process.env.ZHIPUAI_API_KEY || ''
   const token = generateToken(apiKey)
   return { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', token, apiKey }
 }
+
+export { generateToken }
 
 export async function sendMessage(
   userMessage: string,

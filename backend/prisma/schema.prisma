@@ -110,8 +110,8 @@ model GuideChunk {
   ageStage    String?  // 例如: "幼猫期", "成年期"
   headings    String?  // JSON数组，存储标题路径 ["H1", "H2", "H3"]
 
-  // 向量存储 (SQLite 不支持原生向量类型，使用 JSON 字符串存储)
-  embedding   String?  // JSON字符串存储的向量数组
+  // 向量存储
+  embedding   Unsupported("vector(2048)")?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

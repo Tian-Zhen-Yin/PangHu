@@ -22,6 +22,8 @@ const showConversationList = ref(true)
 const isConversationListHidden = ref(false) // 桌面端对话列表隐藏状态
 const messagesContainer = ref<HTMLElement | null>(null)
 const suggestedQuestions = ref<string[]>([])
+const isUserScrolling = ref(false) // 跟踪用户是否在手动滚动
+const showScrollToBottom = ref(false) // 是否显示滚动到底部按钮
 
 // 检查是否为移动端
 const isMobile = ref(window.innerWidth < 768)
@@ -59,32 +61,80 @@ onMounted(async () => {
   }
 })
 
-// 监听消息变化，自动滚动到底部
+// 监听消息变化，智能滚动
 watch(() => chatStore.messages, () => {
   nextTick(() => {
-    scrollToBottom()
+    // 只有在用户没有手动滚动时才自动滚动
+    if (!isUserScrolling.value) {
+      scrollToBottom()
+    }
   })
 }, { deep: true })
 
-// 滚动到底部
-function scrollToBottom() {
+// 监听滚动事件，判断用户是否在手动滚动
+function handleScroll() {
   if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    const container = messagesContainer.value
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+
+    // 如果用户滚动到底部附近，重置手动滚动状态
+    if (isAtBottom) {
+      isUserScrolling.value = false
+      showScrollToBottom.value = false
+    } else if (container.scrollTop > 0 && chatStore.messages.length > 0) {
+      // 用户滚动到其他位置，且有消息存在
+      isUserScrolling.value = true
+      showScrollToBottom.value = true
+    } else {
+      showScrollToBottom.value = false
+    }
   }
+}
+
+// 滚动到底部
+function scrollToBottom(smooth = true) {
+  if (messagesContainer.value) {
+    const container = messagesContainer.value
+    if (smooth) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      })
+    } else {
+      container.scrollTop = container.scrollHeight
+    }
+  }
+}
+
+// 点击滚动到底部按钮
+function handleScrollToBottomClick() {
+  isUserScrolling.value = false
+  showScrollToBottom.value = false
+  scrollToBottom(true)
 }
 
 // 发送消息
 async function handleSend(content: string) {
+  // 发送消息时重置滚动状态，确保滚动到底部
+  isUserScrolling.value = false
   await chatStore.sendMessage({ content, catId: currentCat.value?.id })
+  // 确保发送后滚动到底部
+  nextTick(() => {
+    scrollToBottom(true)
+  })
 }
 
 // 点击预设问题
 function handleSuggestedQuestion(question: string) {
+  // 点击预设问题时重置滚动状态
+  isUserScrolling.value = false
   handleSend(question)
 }
 
 // 新建对话
 async function handleNewConversation() {
+  // 重置滚动状态
+  isUserScrolling.value = false
   await chatStore.createConversation()
   if (isMobile.value) {
     showConversationList.value = false
@@ -93,6 +143,8 @@ async function handleNewConversation() {
 
 // 选择对话
 async function handleSelectConversation(id: string) {
+  // 重置滚动状态
+  isUserScrolling.value = false
   await chatStore.switchConversation(id)
   if (isMobile.value) {
     showConversationList.value = false
@@ -222,10 +274,17 @@ const contextualSuggestions = computed(() => {
           </div>
         </div>
 
-        <!-- 右侧：猫咪切换按钮 -->
-        <button v-if="currentCat" class="cat-switch-btn" @click="router.push('/my-cats')">
-          <MascotCharacter expression="default" size="tiny" :animated="false" />
-        </button>
+        <!-- 右侧：首页和猫咪切换按钮 -->
+        <div class="header-right-mobile">
+          <button class="home-button-mobile" @click="router.push('/')" title="返回首页">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+          </button>
+          <button v-if="currentCat" class="cat-switch-btn" @click="router.push('/my-cats')">
+            <MascotCharacter expression="default" size="tiny" :animated="false" />
+          </button>
+        </div>
       </header>
 
       <!-- 桌面端诊室头部 -->
@@ -241,12 +300,21 @@ const contextualSuggestions = computed(() => {
           </div>
         </div>
         <div class="header-right">
+          <button class="home-button" @click="router.push('/')" title="返回首页">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+          </button>
           <CatSelector />
         </div>
       </header>
 
       <!-- 消息列表 -->
-      <div ref="messagesContainer" class="messages-container">
+      <div
+        ref="messagesContainer"
+        class="messages-container"
+        @scroll="handleScroll"
+      >
         <!-- 空状态 -->
         <div v-if="!chatStore.currentConversation && chatStore.messages.length === 0" class="empty-state">
           <!-- 医生介绍卡片 -->
@@ -340,6 +408,18 @@ const contextualSuggestions = computed(() => {
             <span class="thinking-text">胖虎正在思考...</span>
           </div>
         </template>
+
+        <!-- 滚动到底部按钮 -->
+        <button
+          v-if="showScrollToBottom && chatStore.messages.length > 0"
+          @click="handleScrollToBottomClick"
+          class="scroll-to-bottom-btn"
+          title="滚动到底部"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+        </button>
       </div>
 
       <!-- 输入区域 -->
@@ -373,11 +453,30 @@ const contextualSuggestions = computed(() => {
 
 <style scoped>
 .ai-chat-page {
-  display: flex;
   position: fixed;
   inset: 0;
-  z-index: 1;
-  background-color: var(--color-bg-page);
+  /* 移除 z-index 让其自然堆叠 */
+  /* 奶油色系背景 - 柔和奶白渐变 */
+  background:
+    linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 50%, #FFF5DC 100%);
+  overflow: hidden;
+  box-sizing: border-box;
+  /* 使用Grid布局确保各区域固定 - 使用两列避免重叠 */
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: auto 1fr;
+}
+
+/* 添加奶油色微纹理背景 */
+.ai-chat-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 228, 181, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 236, 179, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(255, 248, 220, 0.02) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 /* ================= 诊室头部 ================= */
@@ -385,6 +484,9 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  backdrop-filter: blur(10px);
+  /* 奶油色背景 */
+  background: rgba(255, 251, 240, 0.85);
 }
 
 .doctor-info {
@@ -434,6 +536,9 @@ const contextualSuggestions = computed(() => {
   width: 280px;
   overflow: visible;
   transition: width 0.3s ease;
+  /* Grid布局下占据第一列，全高 */
+  grid-row: 1;
+  grid-column: 1;
 }
 
 .conversation-list-wrapper.collapsed {
@@ -505,7 +610,7 @@ const contextualSuggestions = computed(() => {
 
 /* 折叠按钮使用 icon-btn 基础样式 */
 
-/* 对话列表切换按钮 */
+/* 对话列表切换按钮 - 奶油色风格 */
 .conversation-toggle-btn {
   position: absolute;
   bottom: 20px;
@@ -516,28 +621,31 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-card);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
+  /* 奶油色背景 */
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  border: 1px solid #FFF5DC;
   border-left: none;
   border-radius: 0 50% 50% 50%;
   cursor: pointer;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
-  transition: right 0.3s ease;
+  box-shadow: 2px 0 8px rgba(255, 236, 179, 0.12);
+  transition: all 0.3s ease;
 }
 
 /* 列表隐藏时，按钮定位 */
 .conversation-toggle-btn.collapsed {
   right: auto;
   left: -16px;
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid #FFF5DC;
   border-right: none;
   border-radius: 50% 50% 50% 0;
 }
 
 .conversation-toggle-btn:hover {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  box-shadow: 2px 0 12px rgba(255, 236, 179, 0.18);
+  transform: scale(1.05);
 }
 
 .conversation-toggle-btn svg {
@@ -557,22 +665,53 @@ const contextualSuggestions = computed(() => {
 
 .chat-area {
   min-width: 0;
-  flex: 1;
+  /* Grid布局下占据第二列，全高 */
+  grid-row: 1;
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  /* 确保聊天区域填充剩余空间 */
+  height: 100%;
+  min-height: 0;
+  /* 确保父级overflow: hidden生效 */
+  contain: layout;
 }
 
 .chat-header {
   padding: var(--space-md) var(--space-xl);
-  background: linear-gradient(180deg, var(--color-bg-card) 0%, var(--color-bg-block) 100%);
-  border-bottom: 2px solid var(--color-border);
+  /* 奶油色半透明背景 */
+  background: rgba(255, 251, 240, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(255, 228, 181, 0.15);
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 16px rgba(255, 236, 179, 0.06);
   position: relative;
   flex-shrink: 0;
+}
+
+.chat-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  /* 奶油色装饰线 */
+  background: linear-gradient(180deg, #FFE5B4 0%, #FFF0DB 100%);
+}
+
+.chat-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 228, 181, 0.15) 50%, transparent 100%);
 }
 
 .chat-header::before {
@@ -603,9 +742,10 @@ const contextualSuggestions = computed(() => {
 .new-chat-btn {
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-full);
-  border: 2px solid var(--color-border);
-  background-color: var(--color-bg-card);
-  color: var(--color-text-primary);
+  /* 奶油色边框和背景 */
+  border: 2px solid #FFF5DC;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -613,14 +753,15 @@ const contextualSuggestions = computed(() => {
   align-items: center;
   gap: var(--space-xs);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
 }
 
 .new-chat-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: #FFECC8;
+  color: #BC8F6F;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 138, 76, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.15);
 }
 
 .new-chat-btn .icon {
@@ -636,18 +777,84 @@ const contextualSuggestions = computed(() => {
   justify-content: center;
   border: none;
   background: none;
-  color: var(--color-text-primary);
+  color: #8B7355;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
 }
 
 .back-button:hover {
-  color: var(--color-primary);
+  color: #BC8F6F;
+  background: rgba(255, 245, 220, 0.5);
 }
 
 .back-icon {
   width: 20px;
   height: 20px;
+}
+
+/* 移动端右侧按钮组 */
+.header-right-mobile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* 首页按钮 - 桌面端 */
+.home-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
+}
+
+.home-button:hover {
+  border-color: #FFECC8;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.12);
+  transform: translateY(-1px);
+}
+
+.home-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 首页按钮 - 移动端 */
+.home-button-mobile {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
+}
+
+.home-button-mobile:hover {
+  border-color: #FFECC8;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.12);
+}
+
+.home-button-mobile svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* 移动端头部中心区域 */
@@ -669,10 +876,12 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-light);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
   border-radius: var(--radius-full);
-  border: 2px solid var(--color-primary);
+  border: 2px solid #FFE5B4;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.12);
 }
 
 .info-text {
@@ -706,27 +915,111 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border);
+  /* 奶油色边框和背景 */
+  border: 1px solid #FFF5DC;
   border-radius: var(--radius-md);
-  background: var(--color-bg-card);
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
 }
 
 .cat-switch-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: #FFECC8;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.12);
+  transform: translateY(-1px);
 }
 
 .messages-container {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
   padding: var(--space-lg) 0;
-  background: linear-gradient(180deg, var(--color-bg-page) 0%, var(--color-bg-page) 50%, var(--color-primary-light) 100%);
+  /* 奶油色渐变背景 */
+  background:
+    linear-gradient(180deg,
+      rgba(255, 251, 240, 0) 0%,
+      rgba(255, 251, 240, 0.3) 50%,
+      rgba(255, 248, 220, 0.5) 100%
+    );
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+  /* 确保容器独立滚动，不影响其他元素 */
+  position: relative;
+  /* 防止内容溢出 */
+  overflow-anchor: none;
+  /* 使用关键字auto让浏览器自动计算高度 */
+  align-self: stretch;
 }
 
-/* ================= 空状态 ================= */
+/* 美化滚动条 - 奶油色系 */
+.messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: rgba(255, 251, 240, 0.5);
+  border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  /* 奶油色渐变 */
+  background: linear-gradient(180deg, #FFE5B4 0%, #FFF0DB 100%);
+  border-radius: 4px;
+  border: 2px solid rgba(255, 251, 240, 0.5);
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFDAB9 0%, #FFE5B4 100%);
+}
+
+/* ================= 滚动到底部按钮 ================= */
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  /* 奶油色背景 */
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
+  border: 2px solid #FFE5B4;
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8B7355;
+  transition: all 0.3s ease;
+  z-index: 5;
+  animation: scrollButtonFade 0.3s ease;
+}
+
+@keyframes scrollButtonFade {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scroll-to-bottom-btn:hover {
+  background: linear-gradient(135deg, #FFECC8 0%, #FFE5B4 100%);
+  box-shadow: 0 6px 16px rgba(255, 236, 179, 0.3);
+  transform: scale(1.1);
+}
+
+.scroll-to-bottom-btn svg {
+  width: 20px;
+  height: 20px;
+  transform: rotate(90deg);
+}
+
+/* ================= 空状态 - 温暖治愈系 ================= */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -735,6 +1028,18 @@ const contextualSuggestions = computed(() => {
   max-width: 700px;
   margin: 0 auto;
   width: 100%;
+  animation: emptyFadeIn 0.6s ease-out;
+}
+
+@keyframes emptyFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .doctor-card {
@@ -742,6 +1047,27 @@ const contextualSuggestions = computed(() => {
   flex-direction: column;
   align-items: center;
   margin-bottom: var(--space-2xl);
+  position: relative;
+}
+
+.doctor-card::before {
+  content: '🐾';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  opacity: 0.3;
+  animation: pawFloat 3s ease-in-out infinite;
+}
+
+@keyframes pawFloat {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
 }
 
 .doctor-avatar-large {
@@ -751,6 +1077,27 @@ const contextualSuggestions = computed(() => {
   max-height: 120px;
   overflow: hidden;
   border-radius: 50%;
+  /* 奶油色光环效果 */
+  box-shadow:
+    0 0 0 4px rgba(255, 228, 181, 0.15),
+    0 0 0 8px rgba(255, 236, 179, 0.08),
+    0 8px 24px rgba(255, 248, 220, 0.2);
+  animation: avatarPulse 4s ease-in-out infinite;
+}
+
+@keyframes avatarPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 4px rgba(255, 228, 181, 0.15),
+      0 0 0 8px rgba(255, 236, 179, 0.08),
+      0 8px 24px rgba(255, 248, 220, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(255, 228, 181, 0.2),
+      0 0 0 12px rgba(255, 236, 179, 0.12),
+      0 12px 32px rgba(255, 248, 220, 0.25);
+  }
 }
 
 .doctor-badge {
@@ -758,12 +1105,14 @@ const contextualSuggestions = computed(() => {
   bottom: -4px;
   right: -8px;
   padding: var(--space-xs) var(--space-md);
-  background: var(--color-primary);
-  color: var(--color-text-white);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  color: #8B7355;
   font-size: 12px;
   font-weight: 700;
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 12px rgba(255, 138, 76, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.25);
+  border: 2px solid #FFFBF0;
 }
 
 .badge-icon {
@@ -774,26 +1123,44 @@ const contextualSuggestions = computed(() => {
 .empty-title {
   font-size: 24px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  /* 奶油棕 */
+  color: #8B7355;
   margin: 0 0 var(--space-sm) 0;
+  text-align: center;
 }
 
 .empty-description {
   font-size: 16px;
-  color: var(--color-text-secondary);
+  /* 奶油色调 */
+  color: #BC8F6F;
   margin: 0 0 var(--space-xs) 0;
+  text-align: center;
+  font-weight: 500;
 }
 
 .empty-hint {
   font-size: 14px;
-  color: var(--color-text-regular);
+  color: #D4B896;
   margin: 0 0 var(--space-md) 0;
+  text-align: center;
 }
 
-/* 快速问题 */
+/* 快速问题 - 温暖卡片风格 */
 .quick-questions {
   width: 100%;
   margin-bottom: var(--space-2xl);
+  animation: quickQuestionsSlide 0.5s ease-out 0.2s both;
+}
+
+@keyframes quickQuestionsSlide {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .section-title {
@@ -802,14 +1169,15 @@ const contextualSuggestions = computed(() => {
   gap: var(--space-xs);
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  /* 奶油棕色 */
+  color: #BC8F6F;
   margin-bottom: var(--space-md);
   width: 100%;
   justify-content: flex-start;
 }
 
 .section-title svg {
-  color: var(--color-primary);
+  color: #D4A574;
 }
 
 .question-grid {
@@ -824,52 +1192,86 @@ const contextualSuggestions = computed(() => {
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md);
-  background: linear-gradient(135deg, #FFFFFF 0%, var(--color-bg-page) 100%);
-  border: 2px solid var(--color-border-light);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  border: 2px solid #FFF5DC;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.question-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  /* 奶油色渐变 */
+  background: linear-gradient(90deg, #FFE5B4 0%, #FFF0DB 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .question-card:hover {
-  border-color: var(--color-primary-medium);
-  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  border-color: #FFECC8;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 138, 76, 0.2);
+  box-shadow: 0 6px 20px rgba(255, 236, 179, 0.12);
+}
+
+.question-card:hover::before {
+  transform: scaleX(1);
 }
 
 .question-icon {
   font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(255, 236, 179, 0.1));
 }
 
 .question-text {
   flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: #8B7355;
 }
 
 .question-arrow {
-  color: var(--color-text-placeholder);
+  color: #D4C4A8;
   transition: all 0.3s ease;
 }
 
 .question-card:hover .question-arrow {
-  color: var(--color-primary);
+  color: #D4A574;
   transform: translateX(4px);
 }
 
-/* 功能引导 */
+/* 功能引导 - 奶油色卡片风格 */
 .feature-guides {
   display: flex;
   gap: var(--space-lg);
   padding: var(--space-lg);
-  background: linear-gradient(135deg, #FFFFFF 0%, var(--color-bg-page) 100%);
-  border: 1px solid var(--color-border-light);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  border: 1px solid #FFF5DC;
   border-radius: var(--radius-lg);
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(255, 236, 179, 0.06);
+  animation: featureGuidesSlide 0.5s ease-out 0.4s both;
+}
+
+@keyframes featureGuidesSlide {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .guide-item {
@@ -877,6 +1279,11 @@ const contextualSuggestions = computed(() => {
   align-items: center;
   gap: var(--space-md);
   flex: 1;
+  transition: transform 0.3s ease;
+}
+
+.guide-item:hover {
+  transform: translateX(4px);
 }
 
 .guide-icon {
@@ -885,10 +1292,12 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
   border-radius: 10px;
-  color: var(--color-primary);
+  color: #8B7355;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.12);
 }
 
 .guide-icon svg {
@@ -905,20 +1314,32 @@ const contextualSuggestions = computed(() => {
 .guide-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #8B7355;
 }
 
 .guide-desc {
   font-size: 12px;
-  color: var(--color-text-regular);
+  color: #BC8F6F;
 }
 
-/* ================= 思考指示器 ================= */
+/* ================= 思考指示器 - 温暖动画 ================= */
 .thinking-indicator {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-xl);
+  animation: thinkingSlide 0.4s ease-out;
+}
+
+@keyframes thinkingSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .thinking-mascot {
@@ -927,9 +1348,21 @@ const contextualSuggestions = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-primary-light);
+  /* 奶油色渐变背景 */
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
   border-radius: var(--radius-full);
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.15);
+  animation: mascotBounce 2s ease-in-out infinite;
+}
+
+@keyframes mascotBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .thinking-dots {
@@ -941,8 +1374,10 @@ const contextualSuggestions = computed(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-primary);
+  /* 奶油色 */
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
   animation: bounce 1.4s infinite;
+  box-shadow: 0 2px 4px rgba(255, 236, 179, 0.2);
 }
 
 .thinking-dots span:nth-child(2) {
@@ -964,23 +1399,40 @@ const contextualSuggestions = computed(() => {
 
 .thinking-text {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: #BC8F6F;
   font-weight: 500;
 }
 
-/* ================= 输入区域 ================= */
+/* ================= 输入区域 - 奶油色系 ================= */
 .input-area {
-  background-color: var(--color-bg-card);
-  border-top: 2px solid var(--color-border);
+  /* 奶油色半透明背景 */
+  background: rgba(255, 251, 240, 0.95);
+  border-top: 2px solid #FFF5DC;
   padding: var(--space-md) var(--space-lg) var(--space-lg);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 -4px 20px rgba(255, 236, 179, 0.06);
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
+  /* 关键：使用 flex 布局自然保持在底部 */
   flex-shrink: 0;
+  flex-grow: 0;
+  position: relative;
 }
 
-/* 智能建议芯片 - 卡片按钮风格 */
+.input-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  /* 奶油色渐变 */
+  background: linear-gradient(90deg, transparent 0%, #FFE5B4 50%, transparent 100%);
+  border-radius: 0 0 3px 3px;
+}
+
+/* 智能建议芯片 - 奶油色卡片风格 */
 .smart-suggestions {
   display: flex;
   gap: var(--space-sm);
@@ -997,22 +1449,42 @@ const contextualSuggestions = computed(() => {
   white-space: nowrap;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
-  background: #FFFFFF;
-  color: var(--color-text-primary);
+  /* 奶油色边框和背景 */
+  border: 1px solid #FFF5DC;
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  color: #8B7355;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.suggestion-chip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  /* 奶油色渐变 */
+  background: linear-gradient(90deg, #FFE5B4 0%, #FFF0DB 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .suggestion-chip:hover {
-  border-color: var(--color-primary-medium);
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  box-shadow: 0 2px 8px rgba(255, 138, 76, 0.15);
-  transform: translateY(-1px);
+  border-color: #FFECC8;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.12);
+  transform: translateY(-2px);
+}
+
+.suggestion-chip:hover::before {
+  transform: scaleX(1);
 }
 
 .disclaimer {
@@ -1021,7 +1493,7 @@ const contextualSuggestions = computed(() => {
   justify-content: center;
   gap: var(--space-xs);
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: #D4C4A8;
   text-align: center;
   margin: var(--space-sm) 0 0 0;
 }
@@ -1030,7 +1502,7 @@ const contextualSuggestions = computed(() => {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  color: var(--color-warning);
+  color: #D4A574;
 }
 
 @media (max-width: 767px) {
@@ -1057,6 +1529,8 @@ const contextualSuggestions = computed(() => {
   .guide-icon {
     width: 28px;
     height: 28px;
+    /* 奶油色渐变背景 */
+    background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
   }
 
   .guide-icon svg {
@@ -1096,6 +1570,12 @@ const contextualSuggestions = computed(() => {
 
   .empty-hint {
     font-size: 12px;
+  }
+
+  /* 移动端头像优化 */
+  .doctor-avatar-large {
+    max-width: 100px;
+    max-height: 100px;
   }
 }
 </style>

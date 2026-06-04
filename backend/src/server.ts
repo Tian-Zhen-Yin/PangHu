@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
-import apiRoutes from './routes'
+import apiRoutes from './routes/index'
 import { errorHandler, notFoundHandler } from './middlewares/error'
 import { startReminderScheduler } from './jobs/reminderChecker'
 
@@ -13,14 +13,15 @@ const PORT = process.env.PORT || 3000
 // 安全头
 app.use(helmet())
 
-// CORS 配置 — 限制允许的来源
+// CORS 配置 — 允许开发和生产环境
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
   .split(',').map(o => o.trim()).filter(Boolean)
 
 app.use(cors({
   origin(origin, callback) {
     // 允许不带 origin 的请求（如 curl、服务端调用）
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    // 允许所有 localhost 来源（开发环境端口可变）
+    if (!origin || origin.startsWith('http://localhost') || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true)
     } else {
       callback(new Error('CORS not allowed'))

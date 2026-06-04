@@ -131,7 +131,7 @@ export async function getEmbeddings(
       console.error(`Batch embedding error (batch ${i / batchSize}):`, error.response?.data || error.message)
       // 失败的批次返回空向量
       for (let j = 0; j < batch.length; j++) {
-        results.push(new Array(1024).fill(0)) // embedding-3 输出 1024 维
+        results.push(new Array(2048).fill(0)) // embedding-3 输出 2048 维
       }
     }
   }
