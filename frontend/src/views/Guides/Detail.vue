@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownView from 'vue-markdown-render'
 import 'highlight.js/styles/github.css'
@@ -7,6 +7,8 @@ import { getGuideById } from '../../api/guide.js'
 import type { Guide } from '../../types/guide.js'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CategoryIcons, { type CategoryIconType } from '../../components/guide/CategoryIcons.vue'
+import GuideOverview from '../../components/guides/GuideOverview.vue'
+import { removeFirstH1, extractFirstH1Title } from '../../utils/markdown'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,6 +43,13 @@ async function fetchGuide() {
     const response = await getGuideById(id)
     if (response.success) {
       guide.value = response.data
+      // 提取首个 H1 作为导读（如果没有导读字段）
+      if (!guide.value.overview && guide.value.content) {
+        const firstH1 = extractFirstH1Title(guide.value.content)
+        if (firstH1) {
+          guide.value.overview = `本文将详细介绍 ${firstH1}，包括相关概念、实践方法和注意事项。`
+        }
+      }
       extractTableOfContents()
     } else {
       error.value = response.message || '获取指南失败'
@@ -105,6 +114,12 @@ function getCategoryIconType(slug?: string): CategoryIconType {
   return iconMap[slug] || 'default'
 }
 
+// 去除 Markdown 首个 H1（避免与页面标题重复）
+const processedMarkdown = computed(() => {
+  if (!guide.value?.content) return ''
+  return removeFirstH1(guide.value.content)
+})
+
 onMounted(() => {
   fetchGuide()
 })
@@ -130,33 +145,15 @@ onMounted(() => {
     <!-- 指南内容 -->
     <template v-else-if="guide">
       <div class="detail-layout">
-        <!-- 左侧目录 - 胖虎导读 -->
-        <aside v-if="tableOfContents.length > 0" class="reading-sidebar">
-          <div class="sidebar-mascot">
-            <MascotCharacter
-              :expression="mascotExpression"
-              size="medium"
-              :animated="true"
-            />
-          </div>
-          <div class="sidebar-content">
-            <h4 class="sidebar-title">胖虎导读</h4>
-            <nav class="toc-nav">
-              <button
-                v-for="item in tableOfContents"
-                :key="item.id"
-                :class="['toc-item', { active: activeTocId === item.id }]"
-                :style="{ paddingLeft: `${item.level * 8 + 8}px` }"
-                @click="scrollToTocItem(item.id)"
-              >
-                {{ item.title }}
-              </button>
-            </nav>
-          </div>
-        </aside>
-
         <!-- 主内容区 -->
         <main class="content-main">
+          <!-- 胖虎导读 -->
+          <GuideOverview
+            v-if="guide.overview"
+            :content="guide.overview"
+            :guide-id="guide.id || guide.slug || 'default'"
+          />
+
           <!-- 顶部导航 -->
           <button @click="goBack" class="back-button">
             <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -195,7 +192,7 @@ onMounted(() => {
 
             <!-- Markdown 内容 -->
             <div class="markdown-content">
-              <MarkdownView :source="guide.content" />
+              <MarkdownView :source="processedMarkdown" />
             </div>
 
             <!-- 交互式反馈 -->
