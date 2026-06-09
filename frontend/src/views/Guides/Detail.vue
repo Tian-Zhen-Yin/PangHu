@@ -8,6 +8,7 @@ import type { Guide } from '../../types/guide.js'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CategoryIcons, { type CategoryIconType } from '../../components/guide/CategoryIcons.vue'
 import GuideOverview from '../../components/guides/GuideOverview.vue'
+import Breadcrumb from '../../components/common/Breadcrumb.vue'
 import { removeFirstH1, extractFirstH1Title } from '../../utils/markdown'
 
 const route = useRoute()
@@ -120,6 +121,14 @@ const processedMarkdown = computed(() => {
   return removeFirstH1(guide.value.content)
 })
 
+// 计算阅读时长（按 300 字/分钟估算）
+const readingTime = computed(() => {
+  if (!guide.value?.content) return 0
+  const wordCount = guide.value.content.length
+  const minutes = Math.ceil(wordCount / 300)
+  return Math.max(1, minutes)
+})
+
 onMounted(() => {
   fetchGuide()
 })
@@ -154,46 +163,44 @@ onMounted(() => {
             :guide-id="guide.id || guide.slug || 'default'"
           />
 
-          <!-- 顶部导航 -->
-          <button @click="goBack" class="back-button">
-            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            返回指南列表
-          </button>
+          <!-- 面包屑导航 -->
+          <Breadcrumb />
 
           <!-- 文章卡片 -->
           <article class="guide-article">
-            <!-- 文章头部 -->
-            <header class="article-header">
-              <div class="article-meta">
-                <span class="category-badge">
-                  <CategoryIcons
-                    :type="getCategoryIconType(guide.category?.slug)"
-                    :size="16"
-                  />
-                  {{ guide.category?.name }}
-                </span>
-                <span class="view-count">
-                  <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  </svg>
-                  {{ guide.viewCount || 0 }}
-                </span>
-              </div>
+            <!-- 文章标题 -->
+            <h1 class="article-title">{{ guide.title }}</h1>
 
-              <h1 class="article-title">{{ guide.title }}</h1>
-
-              <p v-if="guide.excerpt" class="article-excerpt">
-                {{ guide.excerpt }}
-              </p>
-            </header>
-
-            <!-- Markdown 内容 -->
-            <div class="markdown-content">
-              <MarkdownView :source="processedMarkdown" />
+            <!-- 元数据行 -->
+            <div class="article-meta">
+              <span class="meta-item">
+                <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                {{ new Date(guide.createdAt || Date.now()).toLocaleDateString('zh-CN') }}
+              </span>
+              <span class="meta-item">
+                <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ readingTime }} 分钟
+              </span>
+              <span v-if="guide.category" class="meta-item category-badge">
+                <CategoryIcons
+                  :type="getCategoryIconType(guide.category?.slug)"
+                  :size="14"
+                />
+                {{ guide.category.name }}
+              </span>
             </div>
+
+            <!-- 删除 excerpt，保持简洁 -->
+          </article>
+
+          <!-- Markdown 内容 -->
+          <div class="markdown-content">
+            <MarkdownView :source="processedMarkdown" />
+          </div>
 
             <!-- 交互式反馈 -->
             <footer class="article-footer">
@@ -405,31 +412,16 @@ onMounted(() => {
   min-width: 0;
 }
 
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  background: #FFFFFF;
-  border: 1.5px solid var(--color-border-light);
-  border-radius: 100px;
-  color: var(--color-text-primary);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
-}
-
-.back-button:hover {
-  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
-  border-color: var(--color-primary-medium);
-  color: #7C2D12;
-}
-
-.back-icon {
-  width: 16px;
-  height: 16px;
+/* ================= 文章卡片 ================= */
+.guide-article {
+  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid #FFFFFF;
+  box-shadow:
+    0 4px 24px rgba(244, 162, 97, 0.08),
+    0 1px 4px rgba(0, 0, 0, 0.03);
+  margin-bottom: 32px;
 }
 
 /* ================= 文章卡片 ================= */
@@ -441,20 +433,37 @@ onMounted(() => {
   box-shadow:
     0 4px 24px rgba(244, 162, 97, 0.08),
     0 1px 4px rgba(0, 0, 0, 0.03);
+  margin-bottom: 32px;
 }
 
-.article-header {
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #F5F0E8;
+.article-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 24px 0;
+  line-height: 1.3;
 }
 
 .article-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-regular);
+  font-size: 13px;
+}
+
+.meta-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
 }
 
 .category-badge {
@@ -470,34 +479,6 @@ onMounted(() => {
   color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.view-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-text-regular);
-  font-size: 12px;
-}
-
-.icon-eye {
-  width: 14px;
-  height: 14px;
-}
-
-.article-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 12px 0;
-  line-height: 1.3;
-}
-
-.article-excerpt {
-  font-size: 16px;
-  color: var(--color-text-regular);
-  line-height: 1.7;
-  margin: 0;
 }
 
 /* ================= Markdown 内容 ================= */
@@ -736,33 +717,29 @@ onMounted(() => {
   }
 
   /* 文章头部优化 */
-  .article-header {
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+  .article-title {
+    font-size: 20px;
+    line-height: 1.4;
+    margin-bottom: 16px;
   }
 
   .article-meta {
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .meta-item {
+    font-size: 12px;
+  }
+
+  .meta-icon {
+    width: 12px;
+    height: 12px;
   }
 
   .category-badge {
     font-size: 11px;
     padding: 5px 12px;
-  }
-
-  .view-count {
-    font-size: 11px;
-  }
-
-  .article-title {
-    font-size: 20px;
-    line-height: 1.4;
-  }
-
-  .article-excerpt {
-    font-size: 14px;
-    line-height: 1.6;
   }
 
   /* Markdown 内容移动端优化 */
@@ -853,18 +830,6 @@ onMounted(() => {
     margin: 1rem -16px;
     width: calc(100% + 32px);
     border-radius: 0;
-  }
-
-  /* 返回按钮优化 */
-  .back-button {
-    padding: 8px 16px;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-
-  .back-icon {
-    width: 14px;
-    height: 14px;
   }
 
   /* 侧边栏移动端优化 */

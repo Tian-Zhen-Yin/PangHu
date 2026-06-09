@@ -26,4 +26,6 @@ export interface Guide {
   categoryId: string
   category?: GuideCategory
   tags?: string[]
+  createdAt?: string
+  overview?: string
 }
