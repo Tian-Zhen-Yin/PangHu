@@ -9,6 +9,23 @@ import { getAvatarUrl } from '../../utils/format.js'
 const authStore = useAuthStore()
 const catStore = useMyCatStore()
 const { currentCat } = storeToRefs(catStore)
+
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const route = useRoute()
+
+// 判断是否是详情页（需要隐藏头像）
+const isDetailPage = computed(() => {
+  const path = route.path
+  // 指南详情页、模板详情页等
+  return /\/(guides|templates)\/[^/]+$/.test(path)
+})
+
+// 判断是否应该显示头像（不是详情页 + 已登录）
+const shouldShowAvatar = computed(() => {
+  return authStore.isAuthenticated && !isDetailPage.value
+})
 </script>
 
 <template>
@@ -29,7 +46,7 @@ const { currentCat } = storeToRefs(catStore)
         <RouterLink v-if="!authStore.isAuthenticated" to="/login" class="login-btn">
           登录
         </RouterLink>
-        <RouterLink v-else to="/my-cats" class="user-link">
+        <RouterLink v-else-if="shouldShowAvatar" to="/my-cats" class="user-link">
           <div v-if="currentCat" class="current-cat-avatar">
             <img v-if="currentCat.avatar || currentCat.avatarData" :src="getAvatarUrl(currentCat)" :alt="currentCat.name" />
             <span v-else class="avatar-placeholder">{{ currentCat.name?.charAt(0) || '?' }}</span>
