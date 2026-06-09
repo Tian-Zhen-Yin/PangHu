@@ -156,6 +156,9 @@ onMounted(() => {
       <div class="detail-layout">
         <!-- 主内容区 -->
         <main class="content-main">
+          <!-- 面包屑导航 -->
+          <Breadcrumb />
+
           <!-- 胖虎导读 -->
           <GuideOverview
             v-if="guide.overview"
@@ -163,8 +166,24 @@ onMounted(() => {
             :guide-id="guide.id || guide.slug || 'default'"
           />
 
-          <!-- 面包屑导航 -->
-          <Breadcrumb />
+          <!-- 目录树 -->
+          <nav v-if="tableOfContents.length > 0" class="table-of-contents">
+            <h3 class="toc-title">目录</h3>
+            <ul class="toc-list">
+              <li
+                v-for="item in tableOfContents"
+                :key="item.id"
+                :class="['toc-item', `level-${item.level}`, { active: activeTocId === item.id }]"
+              >
+                <button
+                  class="toc-link"
+                  @click="scrollToTocItem(item.id)"
+                >
+                  {{ item.title }}
+                </button>
+              </li>
+            </ul>
+          </nav>
 
           <!-- 文章卡片 -->
           <article class="guide-article">
@@ -194,13 +213,12 @@ onMounted(() => {
               </span>
             </div>
 
-            <!-- 删除 excerpt，保持简洁 -->
-          </article>
+            <!-- Markdown 内容 -->
+            <div class="markdown-content">
+              <MarkdownView :source="processedMarkdown" />
+            </div>
 
-          <!-- Markdown 内容 -->
-          <div class="markdown-content">
-            <MarkdownView :source="processedMarkdown" />
-          </div>
+            <!-- 删除 excerpt，保持简洁 -->
 
             <!-- 交互式反馈 -->
             <footer class="article-footer">
@@ -383,28 +401,93 @@ onMounted(() => {
   gap: 4px;
 }
 
+/* 目录树 */
+.table-of-contents {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: var(--space-2xl);
+}
+
+.toc-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-md) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.toc-title::before {
+  content: '📑';
+  font-size: var(--text-lg);
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
 .toc-item {
+  margin: var(--space-xs) 0;
+}
+
+.toc-link {
+  display: block;
   width: 100%;
   text-align: left;
-  padding: 8px;
-  border: none;
+  padding: var(--space-xs) var(--space-sm);
   background: transparent;
-  color: var(--color-text-primary);
-  font-size: 13px;
-  border-radius: 8px;
+  border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
-.toc-item:hover {
-  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
-  color: #7C2D12;
-}
-
-.toc-item.active {
-  background: var(--color-primary-gradient);
-  color: #FFFFFF;
+/* 层级 1（父级）- semibold, 深色 */
+.toc-item.level-1 .toc-link {
   font-weight: 600;
+  color: #333;
+  padding-left: 0;
+}
+
+/* 层级 2（子级）- regular, 浅色, 缩进 */
+.toc-item.level-2 .toc-link {
+  font-weight: 400;
+  color: #666;
+  padding-left: 16px;
+}
+
+/* 层级 3（子子级）- regular, 更浅色, 更大缩进 */
+.toc-item.level-3 .toc-link {
+  font-weight: 400;
+  color: #999;
+  padding-left: 32px;
+}
+
+/* 悬停效果 */
+.toc-link:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-primary);
+}
+
+/* 激活状态 */
+.toc-item.active .toc-link {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .table-of-contents {
+    padding: var(--space-md);
+  }
 }
 
 /* ================= 主内容区 ================= */
