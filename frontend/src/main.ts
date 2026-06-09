@@ -25,7 +25,12 @@ app.mount('#app')
 
 // 注册 PWA Service Worker（仅在生产环境）
 if (import.meta.env.PROD) {
-  const { registerServiceWorker } = await import('./utils/pwa')
-  await registerServiceWorker()
-  console.log('[PWA] Service Worker registration initiated')
+  import('./utils/pwa').then(async ({ registerServiceWorker }) => {
+    await registerServiceWorker()
+    console.log('[PWA] Service Worker registration initiated')
+  }).catch((error) => {
+    console.error('[PWA] Failed to register Service Worker:', error)
+  })
+} else {
+  console.log('[PWA] Service Worker registration skipped in development mode')
 }

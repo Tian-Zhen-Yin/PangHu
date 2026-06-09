@@ -13,6 +13,37 @@ type OfflineCallback = (online: boolean) => void
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000
 
 /**
+ * 检查是否在生产环境
+ */
+const isProduction = import.meta.env.PROD
+
+/**
+ * 创建开发模式下的 mock PWA 实现
+ */
+function createMockPWAImplementation(): {
+  updateServiceWorker: () => Promise<void>
+  closeUpdatePrompt: () => void
+  notifyUpdateAvailable: (updateFn: () => void) => void
+} {
+  console.log('[PWA] Running in development mode - using mock implementation')
+
+  let updateReadyCallback: UpdateCallback | null = null
+
+  return {
+    updateServiceWorker: async () => {
+      console.log('[PWA] Dev mode - Service Worker update skipped')
+    },
+    closeUpdatePrompt: () => {
+      updateReadyCallback = null
+    },
+    notifyUpdateAvailable: (updateFn: () => void) => {
+      console.log('[PWA] Dev mode - Update notification suppressed')
+      updateReadyCallback = updateFn as any
+    }
+  }
+}
+
+/**
  * Register Service Worker with comprehensive update handling
  *
  * Note: Uses dynamic import to handle development mode where
@@ -23,10 +54,15 @@ export async function registerServiceWorker(): Promise<{
   closeUpdatePrompt: () => void
   notifyUpdateAvailable: (updateFn: () => void) => void
 }> {
+  // 开发模式下直接返回 mock 实现
+  if (!isProduction) {
+    return createMockPWAImplementation()
+  }
+
   let updateReadyCallback: UpdateCallback | null = null
 
   try {
-    // 动态导入 PWA 注册模块
+    // 动态导入 PWA 注册模块（仅在生产环境）
     const { registerSW } = await import('virtual:pwa-register')
 
     const updateSW = registerSW({
