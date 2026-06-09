@@ -295,13 +295,18 @@ onMounted(() => {
 
 .retry-btn {
   padding: 10px 24px;
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   color: white;
   border: none;
   border-radius: 100px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: var(--color-primary-gradient-hover);
+  transform: translateY(-2px);
 }
 
 .detail-content {
@@ -495,13 +500,14 @@ onMounted(() => {
 }
 
 .btn-primary-pill {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   border: none;
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(244, 162, 97, 0.25);
 }
 
 .btn-primary-pill:hover {
+  background: var(--color-primary-gradient-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
 }

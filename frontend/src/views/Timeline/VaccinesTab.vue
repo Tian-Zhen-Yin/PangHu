@@ -173,7 +173,7 @@ function getVaccineStatus(vaccine: Vaccine): string {
 
 .progress-track .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary-gradient) 0%, var(--color-primary) 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-medium) 100%);
   border-radius: 100px;
   transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -261,7 +261,7 @@ function getVaccineStatus(vaccine: Vaccine): string {
 }
 
 .health-row.active .connector-line {
-  background: linear-gradient(180deg, var(--color-primary-gradient) 0%, var(--color-border-light) 50%);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-border-light) 50%);
 }
 
 /* 健康信息卡片 */

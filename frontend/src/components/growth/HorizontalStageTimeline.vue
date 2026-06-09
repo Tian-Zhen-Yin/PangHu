@@ -14,7 +14,7 @@
       </div>
 
       <div class="step-content">
-        <h5 class="stage-name">{{ stage.name }}</h5>
+        <h5 class="stage-name">{{ cleanStageName(stage.name) }}</h5>
         <span class="stage-duration">{{ stage.ageRange || stage.duration || '' }}</span>
       </div>
     </div>
@@ -36,6 +36,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'change'])
+
+// 清理阶段名称 - 删除括号及其内容
+function cleanStageName(name: string): string {
+  if (!name) return ''
+  // 删除中文括号及其内容
+  return name.replace(/（[^）]*）/g, '').replace(/\([^\)]*\)/g, '').trim()
+}
 
 const handleStageSelect = (stage: GrowthStage) => {
   if (props.modelValue?.id !== stage.id) {

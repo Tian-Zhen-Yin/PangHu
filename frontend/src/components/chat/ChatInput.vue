@@ -144,7 +144,7 @@ defineExpose({
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -156,6 +156,7 @@ defineExpose({
 }
 
 .send-button:hover:not(.disabled) {
+  background: var(--color-primary-gradient-hover);
   transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.4);
 }

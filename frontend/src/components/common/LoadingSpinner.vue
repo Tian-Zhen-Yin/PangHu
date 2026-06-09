@@ -44,6 +44,8 @@ const props = withDefaults(defineProps<Props>(), {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 200px; /* 新增：为 Flexbox 提供垂直空间 */
+  flex-direction: column;
 }
 
 .loading-spinner.fullscreen {
@@ -53,6 +55,7 @@ const props = withDefaults(defineProps<Props>(), {
   z-index: 9999;
   flex-direction: column;
   gap: var(--space-xl);
+  min-height: 100vh; /* 新增：覆盖基础值，占满视口高度 */
 }
 
 .loading-spinner.overlay {
@@ -60,6 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
   inset: 0;
   background: rgba(249, 248, 246, 0.8);
   z-index: 100;
+  min-height: 100%; /* 新增：继承父容器高度 */
 }
 
 .spinner-container {
@@ -69,7 +73,6 @@ const props = withDefaults(defineProps<Props>(), {
   align-items: center;
   gap: var(--space-md);
 }
-
 /* Spinner rings */
 .spinner-ring {
   border: 3px solid var(--color-primary-soft);
@@ -257,6 +260,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 /* 移动端优化 */
 @media (max-width: 768px) {
+  .loading-spinner {
+    min-height: 150px; /* 移动端减小高度 */
+  }
+
   .mascot-animation {
     width: 100px;
     height: 100px;

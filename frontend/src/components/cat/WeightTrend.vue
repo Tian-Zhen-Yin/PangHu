@@ -806,7 +806,7 @@ onUnmounted(() => {
 }
 
 .preset-btn.active {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   border-color: transparent;
   color: #FFFFFF;
   box-shadow: 0 2px 8px rgba(244, 162, 97, 0.3);

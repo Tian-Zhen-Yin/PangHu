@@ -341,13 +341,14 @@ const badgeStyle = computed(() => ({
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   border-color: var(--color-primary-medium);
   color: #FFFFFF;
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.25);
 }
 
 .action-btn.primary:hover {
+  background: var(--color-primary-gradient-hover);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(244, 162, 97, 0.35);
 }
