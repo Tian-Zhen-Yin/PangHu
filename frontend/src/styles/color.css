@@ -72,4 +72,16 @@
   --color-chart-weight-up: #FF8A4C;
   --color-chart-weight-down: #10B981;
   --color-chart-fill: rgba(255, 138, 76, 0.1);
+
+  /* ========== 莫兰迪色系 (Morandi Colors) - 小元素专用 ========== */
+  /* 低饱和度、柔和的辅助色，用于标签、图标、状态指示器 */
+  /* 不应用于主按钮、CTA、链接 - 这些保持主色橙色 */
+
+  --morandi-blue: #A8B5C2;      /* 蓝灰 - 分类标签 */
+  --morandi-green: #B5C2A8;     /* 灰绿 - 分类标签 */
+  --morandi-pink: #D4B5C2;      /* 灰粉 - 分类标签 */
+  --morandi-purple: #C5B5D2;    /* 灰紫 - 分类标签 */
+  --morandi-coral: #D4B5B0;     /* 灰珊瑚 - 分类标签 */
+  --morandi-gray: #B5B8BA;      /* 中性灰 - 次要图标 */
+  --morandi-text: #8B8E90;      /* 次要文本图标 */
 }
