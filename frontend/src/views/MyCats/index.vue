@@ -140,11 +140,13 @@ async function handleDelete(cat: Cat) {
 
 <style scoped>
 .my-cats-page {
+  width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 80px;
   position: relative;
-  min-height: 100vh;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* 背景胖虎水印 */
@@ -159,12 +161,16 @@ async function handleDelete(cat: Cat) {
 }
 
 .page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg-page, #F9F8F6);
+  padding: 16px 0 8px 0;
+  backdrop-filter: blur(8px);
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 32px;
-  position: relative;
-  z-index: 1;
 }
 
 .header-left h1 {
@@ -239,20 +245,24 @@ async function handleDelete(cat: Cat) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 400px; /* 新增：页面级加载需要更大的垂直空间 */
   padding: 80px 20px;
   gap: 20px;
+  width: 100%;
+  text-align: center;
 }
 
 .loading-text {
   font-size: 14px;
   color: var(--color-text-placeholder);
   margin: 0;
+  text-align: center;
 }
 
 /* 猫咪卡片网格 */
 .cats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   position: relative;
   z-index: 1;
@@ -412,10 +422,22 @@ async function handleDelete(cat: Cat) {
 
 /* 移动端适配 */
 @media (max-width: 640px) {
+  /* 新增：移动端加载状态调整 */
+  .loading-state {
+    min-height: 300px; /* 移动端减小高度 */
+    padding: 60px 16px;
+  }
+
+  .my-cats-page {
+    padding: 16px 12px 80px;
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    top: 0;
+    padding: 8px 0 12px 0;
   }
 
   .header-actions {
@@ -437,6 +459,7 @@ async function handleDelete(cat: Cat) {
 
   .cats-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .pet-premium-card {
