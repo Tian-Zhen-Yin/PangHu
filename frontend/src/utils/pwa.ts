@@ -5,8 +5,6 @@
  * and offline status monitoring for the Progressive Web App.
  */
 
-import { registerSW } from 'virtual:pwa-register'
-
 // Service Worker update callback types
 type UpdateCallback = (registration: ServiceWorkerRegistration) => void
 type OfflineCallback = (online: boolean) => void
@@ -16,15 +14,22 @@ const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000
 
 /**
  * Register Service Worker with comprehensive update handling
+ *
+ * Note: Uses dynamic import to handle development mode where
+ * virtual:pwa-register module may not be available
  */
-export function registerServiceWorker(): {
+export async function registerServiceWorker(): Promise<{
   updateServiceWorker: () => Promise<void>
   closeUpdatePrompt: () => void
   notifyUpdateAvailable: (updateFn: () => void) => void
-} {
+}> {
   let updateReadyCallback: UpdateCallback | null = null
 
-  const updateSW = registerSW({
+  try {
+    // 动态导入 PWA 注册模块
+    const { registerSW } = await import('virtual:pwa-register')
+
+    const updateSW = registerSW({
     onNeedRefresh() {
       console.log('[PWA] New content available, refresh required')
       // Trigger update prompt callback
@@ -59,15 +64,31 @@ export function registerServiceWorker(): {
     }
   })
 
-  return {
-    updateServiceWorker: async () => {
-      await updateSW(true)
-    },
-    closeUpdatePrompt: () => {
-      updateReadyCallback = null
-    },
-    notifyUpdateAvailable: (updateFn: () => void) => {
-      updateReadyCallback = updateFn as any
+    return {
+      updateServiceWorker: async () => {
+        await updateSW(true)
+      },
+      closeUpdatePrompt: () => {
+        updateReadyCallback = null
+      },
+      notifyUpdateAvailable: (updateFn: () => void) => {
+        updateReadyCallback = updateFn as any
+      }
+    }
+  } catch (error) {
+    // 如果动态导入失败（开发模式下模块不可用），返回模拟实现
+    console.warn('[PWA] Service Worker not available in this environment:', error)
+
+    return {
+      updateServiceWorker: async () => {
+        console.log('[PWA] Update skipped - SW not available')
+      },
+      closeUpdatePrompt: () => {
+        updateReadyCallback = null
+      },
+      notifyUpdateAvailable: (updateFn: () => void) => {
+        console.log('[PWA] Update notification suppressed - SW not available')
+      }
     }
   }
 }

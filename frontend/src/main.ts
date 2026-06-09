@@ -26,6 +26,6 @@ app.mount('#app')
 // 注册 PWA Service Worker（仅在生产环境）
 if (import.meta.env.PROD) {
   const { registerServiceWorker } = await import('./utils/pwa')
-  registerServiceWorker()
+  await registerServiceWorker()
   console.log('[PWA] Service Worker registration initiated')
 }
