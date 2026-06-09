@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownView from 'vue-markdown-render'
 import 'highlight.js/styles/github.css'
@@ -29,6 +29,7 @@ interface TocItem {
 
 const tableOfContents = ref<TocItem[]>([])
 const activeTocId = ref<string>('')
+let observer: IntersectionObserver | null = null
 
 // 返回上一页
 function goBack() {
@@ -89,6 +90,49 @@ function scrollToTocItem(id: string) {
   }
 }
 
+// 设置IntersectionObserver来跟踪当前可见的标题
+function setupHeadingObserver() {
+  // 清理旧的observer
+  if (observer) {
+    observer.disconnect()
+  }
+
+  const headingElements = document.querySelectorAll('.markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6')
+
+  if (headingElements.length === 0) {
+    return
+  }
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id
+          if (id) {
+            activeTocId.value = id
+          }
+        }
+      })
+    },
+    {
+      threshold: 0.1,
+      rootMargin: '-100px 0px -80% 0px'
+    }
+  )
+
+  headingElements.forEach((element) => {
+    observer!.observe(element)
+  })
+}
+
+// 清理observer
+function cleanupObserver() {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+}
+
 // 反馈处理
 function handleFeedback(helpful: boolean) {
   feedbackGiven.value = helpful
@@ -129,8 +173,16 @@ const readingTime = computed(() => {
   return Math.max(1, minutes)
 })
 
-onMounted(() => {
-  fetchGuide()
+onMounted(async () => {
+  await fetchGuide()
+  // 等待DOM更新后再设置观察器
+  setTimeout(() => {
+    setupHeadingObserver()
+  }, 100)
+})
+
+onUnmounted(() => {
+  cleanupObserver()
 })
 </script>
 
@@ -167,9 +219,9 @@ onMounted(() => {
           />
 
           <!-- 目录树 -->
-          <nav v-if="tableOfContents.length > 0" class="table-of-contents">
+          <nav v-if="tableOfContents.length > 0" class="table-of-contents" aria-label="目录">
             <h3 class="toc-title">目录</h3>
-            <ul class="toc-list">
+            <ul class="toc-list" role="list">
               <li
                 v-for="item in tableOfContents"
                 :key="item.id"
@@ -177,6 +229,7 @@ onMounted(() => {
               >
                 <button
                   class="toc-link"
+                  :aria-current="activeTocId === item.id ? 'page' : undefined"
                   @click="scrollToTocItem(item.id)"
                 >
                   {{ item.title }}
@@ -280,15 +333,10 @@ onMounted(() => {
 <style scoped>
 /* ================= 页面容器 ================= */
 .guide-detail-refined {
-  background: var(--color-bg-warm);
-  padding: 24px 24px 100px;
+  min-height: 100vh;
+  padding: var(--space-4xl) var(--space-lg);
+  background: var(--color-bg-page);
   animation: fadeIn 0.4s ease-out;
-}
-
-@media (min-width: 768px) {
-  .guide-detail-refined {
-    padding: 24px 24px 80px;
-  }
 }
 
 @keyframes fadeIn {
@@ -354,12 +402,12 @@ onMounted(() => {
 
 /* ================= 布局 ================= */
 .detail-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 24px;
-  max-width: 1200px;
+  max-width: var(--container-lg);
   margin: 0 auto;
-  align-items: start;
+  display: grid;
+  /* Single column layout */
+  grid-template-columns: 1fr;
+  gap: var(--space-2xl);
 }
 
 /* ================= 侧边栏 - 胖虎导读 ================= */
@@ -410,6 +458,22 @@ onMounted(() => {
   margin-bottom: var(--space-2xl);
 }
 
+/* Key area spacing: 32px (--space-2xl) */
+.guide-overview,
+.table-of-contents,
+.feedback-section {
+  margin-bottom: var(--space-2xl);
+}
+
+@media (max-width: 767px) {
+  /* Mobile key area spacing: 24px */
+  .guide-overview,
+  .table-of-contents,
+  .feedback-section {
+    margin-bottom: var(--space-xl);
+  }
+}
+
 .toc-title {
   font-size: var(--text-base);
   font-weight: 600;
@@ -452,22 +516,22 @@ onMounted(() => {
 /* 层级 1（父级）- semibold, 深色 */
 .toc-item.level-1 .toc-link {
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   padding-left: 0;
 }
 
 /* 层级 2（子级）- regular, 浅色, 缩进 */
 .toc-item.level-2 .toc-link {
   font-weight: 400;
-  color: #666;
-  padding-left: 16px;
+  color: var(--color-text-regular);
+  padding-left: var(--space-lg);
 }
 
 /* 层级 3（子子级）- regular, 更浅色, 更大缩进 */
 .toc-item.level-3 .toc-link {
   font-weight: 400;
-  color: #999;
-  padding-left: 32px;
+  color: var(--color-text-secondary);
+  padding-left: var(--space-2xl);
 }
 
 /* 悬停效果 */
@@ -492,7 +556,8 @@ onMounted(() => {
 
 /* ================= 主内容区 ================= */
 .content-main {
-  min-width: 0;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 /* ================= 文章卡片 ================= */
@@ -520,54 +585,60 @@ onMounted(() => {
 }
 
 .article-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 36px;
+  font-weight: 600;
   color: var(--color-text-primary);
-  margin: 0 0 24px 0;
   line-height: 1.3;
+  margin: 0 0 var(--space-lg) 0;
 }
 
+@media (max-width: 767px) {
+  .article-title {
+    font-size: 28px;
+  }
+}
+
+/* Metadata row */
 .article-meta {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 32px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  margin-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--color-text-regular);
-  font-size: 13px;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
 .meta-icon {
   width: 14px;
   height: 14px;
-  color: var(--color-primary);
+  opacity: 0.7;
 }
 
 .category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: linear-gradient(135deg, var(--color-bg-cream) 0%, var(--color-primary-medium) 100%);
-  border: 1px solid var(--color-primary-medium);
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--morandi-blue);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
 
 /* ================= Markdown 内容 ================= */
 .markdown-content {
-  color: var(--color-text-primary);
-  line-height: 1.8;
+  line-height: 1.6;
+  color: var(--color-text-regular);
 }
 
 .markdown-content :deep(h1),
@@ -584,12 +655,23 @@ onMounted(() => {
 }
 
 .markdown-content :deep(h1) { font-size: 24px; }
-.markdown-content :deep(h2) { font-size: 20px; }
-.markdown-content :deep(h3) { font-size: 18px; }
+.markdown-content :deep(h2) {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: var(--space-2xl) 0 var(--space-lg) 0;
+  padding-top: var(--space-2xl);
+}
+.markdown-content :deep(h3) {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: var(--space-xl) 0 var(--space-md) 0;
+}
 .markdown-content :deep(h4) { font-size: 16px; }
 
 .markdown-content :deep(p) {
-  margin-bottom: 1rem;
+  margin: var(--space-md) 0;
 }
 
 .markdown-content :deep(ul),
@@ -790,8 +872,7 @@ onMounted(() => {
 
 @media (max-width: 767px) {
   .guide-detail-refined {
-    padding: 12px;
-    padding-bottom: 80px; /* 减少底部内边距 */
+    padding: var(--space-md) var(--space-sm);
   }
 
   .guide-article {
@@ -801,18 +882,17 @@ onMounted(() => {
 
   /* 文章头部优化 */
   .article-title {
-    font-size: 20px;
+    font-size: 28px;
     line-height: 1.4;
-    margin-bottom: 16px;
   }
 
   .article-meta {
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
   }
 
   .meta-item {
-    font-size: 12px;
+    font-size: var(--text-xs);
   }
 
   .meta-icon {
@@ -821,14 +901,14 @@ onMounted(() => {
   }
 
   .category-badge {
-    font-size: 11px;
-    padding: 5px 12px;
+    font-size: var(--text-xs);
+    padding: var(--space-xs) var(--space-sm);
   }
 
   /* Markdown 内容移动端优化 */
   .markdown-content {
-    font-size: 15px; /* 增加基础字体大小 */
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.6;
   }
 
   .markdown-content :deep(h1) {
