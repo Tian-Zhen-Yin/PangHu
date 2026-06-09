@@ -878,47 +878,78 @@ onMounted(async () => {
 /* ===================== Responsive ===================== */
 @media (max-width: 767px) {
   .guides-page {
-    padding: 12px;
+    padding: 8px;
+    padding-bottom: 80px; /* 减少底部内边距 */
+  }
+
+  .page-deco {
+    opacity: 0.6; /* 减少装饰元素的影响 */
   }
 
   .deco-blob--warm {
-    width: 300px;
-    height: 300px;
-    top: -80px;
-    right: -80px;
+    width: 200px;
+    height: 200px;
+    top: -60px;
+    right: -60px;
   }
 
   .deco-blob--cream {
-    width: 250px;
-    height: 250px;
-    bottom: 5%;
-    left: -60px;
+    width: 180px;
+    height: 180px;
+    bottom: 10%;
+    left: -50px;
   }
 
+  /* 搜索区域优化 */
   .search-hero {
-    padding: 28px 0 24px;
+    padding: 20px 0 16px;
   }
 
   .hero-title {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1.3;
   }
 
   .hero-hint {
-    font-size: 13px;
-    margin-bottom: 20px;
+    font-size: 12px;
+    margin-bottom: 16px;
   }
 
   .search-bar {
-    padding: 5px 5px 5px 14px;
+    padding: 4px 4px 4px 12px;
+    gap: 8px;
+  }
+
+  .search-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
   }
 
   .search-input {
     font-size: 14px;
   }
 
+  .clear-btn {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+  }
+
+  .clear-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
   .ai-btn {
-    padding: 9px 14px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .ai-btn-dot {
+    width: 5px;
+    height: 5px;
   }
 
   .ai-btn-text {
@@ -927,38 +958,229 @@ onMounted(async () => {
 
   .ai-btn::before {
     content: 'AI';
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
   }
 
-  .recommend-card {
-    padding: 12px 14px;
+  /* 推荐卡片优化 */
+  .recommend-section {
+    margin-bottom: 20px;
   }
 
+  .recommend-card {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .recommend-card-header {
+    margin-bottom: 10px;
+  }
+
+  .recommend-tag {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .recommend-title {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .recommend-excerpt {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* 分类浏览优化 */
+  .category-section {
+    margin-bottom: 20px;
+  }
+
+  .category-header {
+    margin-bottom: 12px;
+  }
+
+  .category-header h2 {
+    font-size: 16px;
+  }
+
+  .category-scroll {
+    gap: 8px;
+    padding: 4px 0;
+    scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  }
+
+  .category-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari 隐藏滚动条 */
+  }
+
+  .category-chip {
+    padding: 8px 12px;
+    font-size: 13px;
+    flex-shrink: 0;
+    border-radius: 20px;
+  }
+
+  .chip-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .chip-label {
+    font-size: 13px;
+  }
+
+  .chip-count {
+    font-size: 11px;
+    padding: 2px 6px;
+    min-width: 18px;
+  }
+
+  /* 内容网格优化 */
   .content-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 
   .content-card {
-    padding: 16px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .card-tag {
+    margin-bottom: 10px;
+    padding: 4px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .card-tag svg {
+    width: 12px;
+    height: 12px;
   }
 
   .card-title {
     font-size: 15px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    min-height: 2.8em; /* 2行高度 */
   }
 
   .card-excerpt {
     font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    min-height: 3em; /* 2行高度 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .card-meta {
+    gap: 12px;
+  }
+
+  .meta-views {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .meta-views svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .card-read-link {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .card-read-link svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 状态显示优化 */
+  .state-block {
+    padding: 60px 20px;
+  }
+
+  .state-mascot {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 16px;
+  }
+
+  .state-text {
+    font-size: 13px;
+  }
+
+  .retry-btn {
+    padding: 10px 24px;
+    font-size: 13px;
   }
 }
 
+/* 超小屏幕适配 */
+@media (max-width: 375px) {
+  .guides-page {
+    padding: 6px;
+  }
+
+  .hero-title {
+    font-size: 18px;
+  }
+
+  .search-bar {
+    padding: 3px 3px 3px 10px;
+  }
+
+  .search-input {
+    font-size: 13px;
+  }
+
+  .ai-btn {
+    padding: 7px 10px;
+  }
+
+  .recommend-card,
+  .content-card {
+    padding: 12px;
+  }
+
+  .card-title {
+    font-size: 14px;
+  }
+
+  .card-excerpt {
+    font-size: 12px;
+  }
+
+  .category-chip {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+/* 平板适配 */
 @media (min-width: 768px) and (max-width: 1023px) {
+  .guides-page {
+    padding: 16px;
+  }
+
   .content-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .recommend-card {
+    padding: 16px 18px;
   }
 }
 
+/* 桌面适配 */
 @media (min-width: 1024px) {
   .content-grid {
     grid-template-columns: repeat(3, 1fr);

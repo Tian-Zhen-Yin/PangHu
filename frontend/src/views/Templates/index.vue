@@ -272,4 +272,135 @@ onMounted(() => {
   border-color: var(--color-primary);
   background: var(--color-bg-cream);
 }
+
+/* ================= 移动端适配 ================= */
+@media (max-width: 767px) {
+  .templates-page {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+  }
+
+  .loading-state,
+  .error-state {
+    padding: 40px 20px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+  }
+
+  .retry-btn {
+    padding: 10px 24px;
+    font-size: 13px;
+  }
+
+  .templates-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .template-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .template-header {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .template-icon {
+    font-size: 1.5rem;
+  }
+
+  .template-category {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .template-name {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .template-description {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .template-meta {
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  .empty-state {
+    padding: 60px 20px;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+
+  .empty-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .empty-text {
+    font-size: 13px;
+  }
+
+  .create-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .templates-page {
+    padding: 8px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .template-card {
+    padding: 12px;
+  }
+
+  .template-name {
+    font-size: 15px;
+  }
+
+  .template-description {
+    font-size: 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .templates-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
 </style>

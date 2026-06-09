@@ -1345,9 +1345,16 @@ watch(() => planStore.plans, () => {
 }
 
 @media (max-width: 600px) {
+  .template-detail {
+    padding: 12px;
+    padding-bottom: 80px;
+  }
+
   .top-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
   }
 
   .back-btn,
@@ -1355,17 +1362,144 @@ watch(() => planStore.plans, () => {
     width: 100%;
   }
 
+  .back-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .back-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .action-buttons {
     justify-content: space-between;
+    gap: 8px;
+  }
+
+  .action-buttons .btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .plan-info {
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 16px;
   }
 
   .plan-info-content {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+
+  .plan-title {
+    font-size: 18px;
+  }
+
+  .plan-meta {
+    font-size: 13px;
   }
 
   .progress-info {
     width: 100%;
+    gap: 12px;
+  }
+
+  .progress-item {
+    font-size: 12px;
+  }
+
+  .rich-content {
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .rich-content :deep(h1),
+  .rich-content :deep(h2),
+  .rich-content :deep(h3),
+  .rich-content :deep(h4),
+  .rich-content :deep(h5),
+  .rich-content :deep(h6) {
+    font-size: 1.1em;
+    margin-top: 1.2rem;
+  }
+
+  .rich-content :deep(p) {
+    margin-bottom: 0.8rem;
+  }
+
+  .rich-content :deep(ul),
+  .rich-content :deep(ol) {
+    padding-left: 1.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .rich-content :deep(li) {
+    margin-bottom: 0.4rem;
+  }
+
+  .rich-content :deep(code) {
+    font-size: 0.9em;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .rich-content :deep(pre) {
+    padding: 0.75rem;
+    font-size: 13px;
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+  }
+
+  .rich-content :deep(blockquote) {
+    padding: 12px;
+    margin: 1rem -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+  }
+
+  .rich-content :deep(img) {
+    margin: 1rem -16px;
+    width: calc(100% + 32px);
+    max-width: calc(100% + 32px);
+    border-radius: 12px;
+  }
+
+  .rich-content :deep(table) {
+    display: block;
+    overflow-x: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+  }
+
+  .rich-content :deep(th),
+  .rich-content :deep(td) {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 375px) {
+  .template-detail {
+    padding: 8px;
+  }
+
+  .plan-title {
+    font-size: 16px;
+  }
+
+  .rich-content {
+    font-size: 14px;
+    padding: 12px;
   }
 }
 </style>

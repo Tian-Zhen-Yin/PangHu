@@ -729,34 +729,248 @@ onMounted(() => {
 
 @media (max-width: 767px) {
   .guide-detail-refined {
-    padding: 16px;
+    padding: 12px;
+    padding-bottom: 80px; /* 减少底部内边距 */
   }
 
   .guide-article {
-    padding: 20px;
-    border-radius: 20px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  /* 文章头部优化 */
+  .article-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .article-meta {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .category-badge {
+    font-size: 11px;
+    padding: 5px 12px;
+  }
+
+  .view-count {
+    font-size: 11px;
   }
 
   .article-title {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1.4;
   }
 
   .article-excerpt {
     font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Markdown 内容移动端优化 */
+  .markdown-content {
+    font-size: 15px; /* 增加基础字体大小 */
+    line-height: 1.7;
+  }
+
+  .markdown-content :deep(h1) {
+    font-size: 20px;
+    margin-top: 1.5rem;
+  }
+
+  .markdown-content :deep(h2) {
+    font-size: 18px;
+    margin-top: 1.5rem;
+  }
+
+  .markdown-content :deep(h3) {
+    font-size: 16px;
+    margin-top: 1.2rem;
+  }
+
+  .markdown-content :deep(h4) {
+    font-size: 15px;
+  }
+
+  .markdown-content :deep(p) {
+    margin-bottom: 0.8rem;
+  }
+
+  .markdown-content :deep(ul),
+  .markdown-content :deep(ol) {
+    padding-left: 1.2rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .markdown-content :deep(li) {
+    margin-bottom: 0.3rem;
+  }
+
+  /* 代码块优化 */
+  .markdown-content :deep(pre) {
+    padding: 0.75rem;
+    font-size: 13px;
+    overflow-x: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .markdown-content :deep(code) {
+    font-size: 0.85em;
+    padding: 0.15rem 0.4rem;
+  }
+
+  /* 表格横向滚动 */
+  .markdown-content :deep(table) {
+    display: block;
+    overflow-x: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+  }
+
+  .markdown-content :deep(th),
+  .markdown-content :deep(td) {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap; /* 防止表格内容换行 */
+  }
+
+  /* 图片优化 */
+  .markdown-content :deep(img) {
+    margin: 1rem -16px; /* 图片延伸到边缘 */
+    width: calc(100% + 32px);
+    max-width: calc(100% + 32px);
+    border-radius: 12px;
+  }
+
+  /* 引用块优化 */
+  .markdown-content :deep(blockquote) {
+    padding: 12px;
+    margin: 1rem -16px;
+    width: calc(100% + 32px);
+    border-radius: 0;
+  }
+
+  /* 返回按钮优化 */
+  .back-button {
+    padding: 8px 16px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .back-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 侧边栏移动端优化 */
+  .reading-sidebar {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .sidebar-mascot {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-title {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .toc-item {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  /* 反馈区域优化 */
+  .article-footer {
+    margin-top: 24px;
+    padding-top: 20px;
   }
 
   .feedback-section {
     flex-direction: column;
     text-align: center;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .feedback-mascot {
+    width: 40px;
+    height: 40px;
+  }
+
+  .feedback-question {
+    font-size: 13px;
+    margin-bottom: 10px;
   }
 
   .feedback-buttons {
-    justify-content: center;
+    gap: 8px;
+    width: 100%;
   }
 
   .feedback-btn {
     flex: 1;
     justify-content: center;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .btn-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .feedback-thanks {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+
+  .thanks-text {
+    font-size: 13px;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 375px) {
+  .guide-detail-refined {
+    padding: 8px;
+  }
+
+  .guide-article {
+    padding: 12px;
+  }
+
+  .article-title {
+    font-size: 18px;
+  }
+
+  .markdown-content {
+    font-size: 14px;
+  }
+
+  .markdown-content :deep(h1) {
+    font-size: 18px;
+  }
+
+  .markdown-content :deep(h2) {
+    font-size: 16px;
+  }
+
+  .category-badge {
+    font-size: 10px;
+    padding: 4px 10px;
   }
 }
 </style>
