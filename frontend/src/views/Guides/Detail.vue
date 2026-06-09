@@ -564,19 +564,7 @@ onUnmounted(() => {
 .guide-article {
   background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
   border-radius: 24px;
-  padding: 32px;
-  border: 1px solid #FFFFFF;
-  box-shadow:
-    0 4px 24px rgba(244, 162, 97, 0.08),
-    0 1px 4px rgba(0, 0, 0, 0.03);
-  margin-bottom: 32px;
-}
-
-/* ================= 文章卡片 ================= */
-.guide-article {
-  background: linear-gradient(145deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
-  border-radius: 24px;
-  padding: 32px;
+  padding: 20px;
   border: 1px solid #FFFFFF;
   box-shadow:
     0 4px 24px rgba(244, 162, 97, 0.08),
@@ -589,7 +577,7 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.3;
-  margin: 0 0 var(--space-lg) 0;
+  margin: 0 0 var(--space-xl) 0;
 }
 
 @media (max-width: 767px) {
@@ -613,7 +601,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  font-size: var(--text-sm);
+  font-size: 14px;
   color: var(--color-text-secondary);
 }
 
@@ -892,7 +880,7 @@ onUnmounted(() => {
   }
 
   .meta-item {
-    font-size: var(--text-xs);
+    font-size: 12px;
   }
 
   .meta-icon {
