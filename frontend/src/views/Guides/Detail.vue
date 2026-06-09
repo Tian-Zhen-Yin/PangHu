@@ -258,10 +258,15 @@ onMounted(() => {
 <style scoped>
 /* ================= 页面容器 ================= */
 .guide-detail-refined {
-  min-height: 100vh;
   background: var(--color-bg-warm);
-  padding: 24px;
+  padding: 24px 24px 100px;
   animation: fadeIn 0.4s ease-out;
+}
+
+@media (min-width: 768px) {
+  .guide-detail-refined {
+    padding: 24px 24px 80px;
+  }
 }
 
 @keyframes fadeIn {
@@ -304,7 +309,7 @@ onMounted(() => {
 .retry-btn,
 .action-btn {
   padding: 12px 28px;
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   color: #FFFFFF;
   border: none;
   border-radius: 100px;
@@ -312,6 +317,11 @@ onMounted(() => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  background: var(--color-primary-gradient-hover);
+  transform: translateY(-2px);
 }
 
 .retry-btn:hover,
@@ -388,7 +398,7 @@ onMounted(() => {
 }
 
 .toc-item.active {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   color: #FFFFFF;
   font-weight: 600;
 }

@@ -50,7 +50,7 @@
   /* ========== ✒️ 文本层级 (Text Colors) ========== */
   --color-text-primary: #2D2926;
   --color-text-regular: #666666;
-  --color-text-secondary: #999999;
+  --color-text-secondary: #8B8680;          /* warm gray, improved contrast (was #999999) */
   --color-text-light: #BFB5B0;
   --color-text-placeholder: #B5B0AB;       /* warm placeholder, replaces #94a3b8/#9CA3AF */
   --color-text-white: #FFFFFF;

@@ -193,7 +193,7 @@ async function handleDelete(cat: Cat) {
 
 /* 按钮样式 */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -209,6 +209,7 @@ async function handleDelete(cat: Cat) {
 }
 
 .btn-primary:hover {
+  background: var(--color-primary-gradient-hover);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(244, 162, 97, 0.4);
 }

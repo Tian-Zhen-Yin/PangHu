@@ -174,8 +174,8 @@ onMounted(async () => {
     <!-- Authenticated Dashboard -->
     <div v-else class="dashboard-content">
       <div v-if="isLoading" class="loading-state">
-        <MascotCharacter expression="yawning" size="large" :animated="true" />
-        <p>正在加载...</p>
+        <MascotCharacter expression="yawning" size="large" :animated="true" :float-animation="true" />
+        <p class="loading-text">正在加载仪表盘数据...</p>
       </div>
 
       <template v-else-if="catStore.currentCat">
@@ -339,6 +339,34 @@ onMounted(async () => {
   align-items: center;
   min-height: 60vh;
   padding: var(--space-lg);
+}
+
+/* Dashboard 内容容器 */
+.dashboard-content {
+  min-height: 100vh; /* 占满整个视口高度 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* 占满整个视口高度，实现垂直居中 */
+  padding: 80px 20px;
+  gap: 20px;
+  width: 100%;
+  text-align: center;
+  flex: 1; /* 占据剩余空间 */
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--color-text-placeholder);
+  margin: 0;
+  text-align: center;
 }
 
 .guest-content {
@@ -774,7 +802,7 @@ onMounted(async () => {
 /* FAB */
 .fab-button {
   position: fixed;
-  bottom: calc(80px + var(--space-lg));
+  bottom: calc(64px + var(--space-lg));
   right: var(--space-xl);
   width: 60px;
   height: 60px;
@@ -806,6 +834,15 @@ onMounted(async () => {
 }
 
 @media (max-width: 767px) {
+  /* 加载状态移动端调整 */
+  .loading-state {
+    padding: 60px 16px;
+  }
+
+  .loading-text {
+    font-size: 13px;
+  }
+
   .hero-card { padding: var(--space-lg); border-radius: var(--radius-sm); }
   .profile-bar { padding-bottom: 14px; }
   .profile-avatar { width: 52px; height: 52px; }
@@ -819,6 +856,6 @@ onMounted(async () => {
 @media (max-width: 640px) {
   .timeline-vertical { padding-left: 18px; }
   .timeline-vertical::before { left: 5px; }
-  .fab-button { bottom: calc(80px + var(--space-md)); right: var(--space-lg); width: 56px; height: 56px; }
+  .fab-button { bottom: calc(64px + var(--space-md)); right: var(--space-lg); width: 56px; height: 56px; }
 }
 </style>

@@ -262,6 +262,30 @@ const activeTab = computed(() => {
   .header-right :deep(.current-cat) {
     width: 100%;
   }
+
+  /* 移动端胶囊导航 - 防止文字换行 */
+  .premium-tabs-container {
+    flex-wrap: nowrap;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 10px 8px;
+  }
+
+  .tab-text {
+    font-size: 12px;
+  }
+
+  .tab-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .tab-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
 }
 
 /* ========== 横向布局容器 ========== */
@@ -292,15 +316,22 @@ const activeTab = computed(() => {
   padding: var(--space-sm);
   gap: var(--space-xs);
   margin: var(--space-md) 0 var(--space-xl) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.premium-tabs-container::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-btn {
   flex: 1;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  padding: 10px 0;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   border-radius: var(--radius-full);
@@ -315,11 +346,15 @@ const activeTab = computed(() => {
   height: 16px;
   stroke: currentColor;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
 }
 
 .tab-text {
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 默认微标样式 (灰色) */

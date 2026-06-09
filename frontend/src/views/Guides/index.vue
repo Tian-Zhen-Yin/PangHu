@@ -274,12 +274,17 @@ onMounted(async () => {
 /* ===================== Page + Atmosphere ===================== */
 .guides-page {
   position: relative;
-  min-height: 100vh;
   background: var(--color-bg-warm);
-  padding: 20px;
+  padding: 20px 20px 100px;
   max-width: 960px;
   margin: 0 auto;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .guides-page {
+    padding: 20px 20px 80px;
+  }
 }
 
 /* Decorative blobs — warm depth, never flat */

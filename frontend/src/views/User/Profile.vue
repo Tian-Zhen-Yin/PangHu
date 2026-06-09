@@ -395,9 +395,14 @@ onMounted(async () => {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
   background: var(--color-bg-page);
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 100px;
+}
+
+@media (min-width: 768px) {
+  .profile-page {
+    padding: 2rem 1rem 80px;
+  }
 }
 
 .profile-container {

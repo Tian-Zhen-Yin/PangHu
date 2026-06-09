@@ -174,10 +174,15 @@ watch(() => route.query.q, (newQuery) => {
 
 <style scoped>
 .search-page {
-  min-height: 100vh;
   background: var(--color-bg-page);
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 100px;
   animation: fadeIn 0.3s ease;
+}
+
+@media (min-width: 768px) {
+  .search-page {
+    padding: 2rem 1rem 80px;
+  }
 }
 
 @keyframes fadeIn {

@@ -1499,6 +1499,73 @@ watch(selectedStage, () => {
   .header-right :deep(.current-cat) {
     width: 100%;
   }
+
+  /* 移动端胶囊导航优化 - 防止文字换行 */
+  .premium-tabs-container {
+    flex-wrap: nowrap; /* 防止换行 */
+    overflow-x: auto; /* 允许横向滚动 */
+  }
+
+  .tab-btn {
+    flex: 0 0 auto; /* 不伸缩，由内容撑开 */
+    padding: 10px 10px; /* 保持左右留白 */
+  }
+
+  .tab-text {
+    font-size: 12px; /* 缩小字体 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-icon {
+    width: 14px;
+    height: 14px; /* 缩小图标 */
+  }
+
+  .tab-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  /* 移动端筛选菜单 - 底部抽屉样式 */
+  .filter-dropdown-menu,
+  .date-filter-dropdown {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    min-width: 100%;
+    border-radius: 1rem 1rem 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: calc(var(--z-overlay) + 100); /* 抽屉在遮罩层之上 */
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* 移动端添加遮罩层 */
+  .filter-dropdown-menu::before,
+  .date-filter-dropdown::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1; /* 相对于抽屉元素，遮罩层在下面 */
+  }
+  }
 }
 
 /* ========== 横向布局容器 ========== */
@@ -1529,15 +1596,22 @@ watch(selectedStage, () => {
   padding: var(--space-sm);
   gap: var(--space-xs);
   margin: var(--space-md) 0 var(--space-xl) 0;
+  overflow-x: auto; /* 允许横向滚动 */
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+}
+
+.premium-tabs-container::-webkit-scrollbar {
+  display: none; /* Chrome/Safari 隐藏滚动条 */
 }
 
 .tab-btn {
   flex: 1;
+  flex-shrink: 0; /* 防止按钮被压缩导致文字换行 */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-  padding: 10px 0;
+  padding: 10px 12px; /* 增加左右 padding，防止文字换行 */
   background: transparent;
   border: none;
   border-radius: var(--radius-full);
@@ -1556,6 +1630,9 @@ watch(selectedStage, () => {
 .tab-text {
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap; /* 防止文字换行 */
+  overflow: hidden; /* 防止文字溢出 */
+  text-overflow: ellipsis; /* 文字溢出时显示省略号 */
 }
 
 /* 默认微标样式 (灰色) */
@@ -2188,7 +2265,7 @@ watch(selectedStage, () => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary-gradient) 0%, var(--color-primary) 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-medium) 100%);
   border-radius: 100px;
   transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -2276,7 +2353,7 @@ watch(selectedStage, () => {
 }
 
 .health-row.active .connector-line {
-  background: linear-gradient(180deg, var(--color-primary-gradient) 0%, var(--color-border-light) 50%);
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-border-light) 50%);
 }
 
 /* 健康信息卡片 */
@@ -2628,14 +2705,23 @@ watch(selectedStage, () => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  box-sizing: border-box;
+  width: 100%;
+  flex-wrap: wrap; /* 空间不足时自动换行，防止按钮被截断 */
 }
 
 /* ========== 记录筛选器 ========== */
-.record-filter-wrapper {
+.record-filter-wrapper,
+.date-filter-wrapper {
   position: relative;
+  flex-shrink: 0; /* 不收缩，保持自然宽度，触发 flex-wrap 自动换行 */
 }
 
-.filter-trigger-btn {
+.filter-trigger-btn,
+.date-filter-trigger-btn {
+  white-space: nowrap; /* 防止文字换行 */
+  overflow: hidden; /* 防止文字溢出 */
+  text-overflow: ellipsis; /* 溢出显示省略号 */
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2685,7 +2771,7 @@ watch(selectedStage, () => {
   border: 1px solid var(--color-border);
   border-radius: 1rem;
   box-shadow: var(--shadow-card-hover);
-  z-index: 100;
+  z-index: var(--z-drawer);
   overflow: hidden;
 }
 
@@ -2788,9 +2874,13 @@ watch(selectedStage, () => {
 /* ========== 日期筛选器 ========== */
 .date-filter-wrapper {
   position: relative;
+  flex-shrink: 0; /* 不收缩，保持自然宽度，触发 flex-wrap 自动换行 */
 }
 
 .date-filter-trigger-btn {
+  white-space: nowrap; /* 防止文字换行 */
+  overflow: hidden; /* 防止文字溢出 */
+  text-overflow: ellipsis; /* 溢出显示省略号 */
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2836,7 +2926,7 @@ watch(selectedStage, () => {
   border: 1px solid var(--color-border);
   border-radius: 1rem;
   box-shadow: var(--shadow-card-hover);
-  z-index: 100;
+  z-index: var(--z-drawer);
   overflow: hidden;
 }
 
@@ -2868,7 +2958,7 @@ watch(selectedStage, () => {
 }
 
 .date-preset-btn.is-selected {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   border-color: transparent;
   color: #FFFFFF;
 }
@@ -3019,6 +3109,7 @@ watch(selectedStage, () => {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-primary-btn);
+  flex-shrink: 0; /* 防止按钮被压缩 */
 }
 
 .btn-add-record:hover {

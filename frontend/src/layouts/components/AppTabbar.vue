@@ -12,7 +12,10 @@ const tabItems = computed(() => [
 ])
 
 function isActive(path: string): boolean {
-  return route.path === path
+  if (path === '/') {
+    return route.path === '/'
+  }
+  return route.path.startsWith(path)
 }
 </script>
 
@@ -28,11 +31,6 @@ function isActive(path: string): boolean {
       <span class="tab-icon">{{ item.icon }}</span>
       <span class="tab-label">{{ item.name }}</span>
     </RouterLink>
-
-    <!-- 中间的大加号按钮 -->
-    <RouterLink to="/timeline/new" class="tab-add">
-      <span class="add-icon">+</span>
-    </RouterLink>
   </nav>
 </template>
 
@@ -40,16 +38,25 @@ function isActive(path: string): boolean {
 .tabbar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
+  left: 0;
+  right: 0;
   height: 64px;
   background: #ffffff;
   border-top: 1px solid var(--color-divider, #F2F2F2);
   display: flex;
   align-items: center;
+  justify-content: center;
   z-index: 100;
+}
+
+@media (min-width: 480px) {
+  .tabbar {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 430px;
+    max-width: calc(100vw - 32px);
+    right: auto;
+  }
 }
 
 .tab-item {
@@ -69,31 +76,20 @@ function isActive(path: string): boolean {
   display: block;
   font-size: 22px;
   margin-bottom: 2px;
+  transition: filter 0.2s ease;
+}
+
+/* inactive 状态的图标变灰，统一风格 */
+.tab-item:not(.active) .tab-icon {
+  filter: grayscale(100%) opacity(0.6);
+}
+
+/* active 状态的图标保持原色 */
+.tab-item.active .tab-icon {
+  filter: none;
 }
 
 .tab-label {
   font-size: 11px;
-}
-
-.tab-add {
-  width: 56px;
-  height: 56px;
-  background: var(--color-primary, #FFB86C);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 8px;
-  position: relative;
-  top: -20px;
-  box-shadow: 0 6px 16px rgba(255, 184, 108, 0.4);
-  text-decoration: none;
-  flex: none;
-}
-
-.add-icon {
-  font-size: 28px;
-  color: white;
-  font-weight: 300;
 }
 </style>

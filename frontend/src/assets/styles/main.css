@@ -9,6 +9,7 @@
   font-weight: var(--font-normal);
   color: var(--color-text-main);
   background-color: var(--color-bg-page);
+  scrollbar-gutter: stable; /* 预留滚动条空间，防止页面抖动 */
 }
 
 body {

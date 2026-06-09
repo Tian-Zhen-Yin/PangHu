@@ -591,9 +591,14 @@ watch(() => planStore.plans, () => {
 
 <style scoped>
 .template-detail-page {
-  min-height: 100vh;
   background: var(--color-bg-page);
-  padding: 1rem;
+  padding: 1rem 1rem 100px;
+}
+
+@media (min-width: 768px) {
+  .template-detail-page {
+    padding: 1rem 1rem 80px;
+  }
 }
 
 .loading-state,

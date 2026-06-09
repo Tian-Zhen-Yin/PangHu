@@ -46,6 +46,70 @@ const selectedDatePreset = ref('all')
 const showDateFilterMenu = ref(false)
 const today = computed(() => new Date().toISOString().slice(0, 10))
 
+// Dropdown positioning refs
+const filterTriggerRef = ref<HTMLElement | null>(null)
+const dateFilterTriggerRef = ref<HTMLElement | null>(null)
+const filterDropdownStyle = computed(() => {
+  if (!filterTriggerRef.value) return {}
+  const rect = filterTriggerRef.value.getBoundingClientRect()
+  // Check if menu would overflow left edge
+  const menuWidth = 280
+  const wouldOverflow = rect.left < menuWidth
+
+  // Calculate vertical position - check if menu would extend beyond viewport bottom
+  const spaceBelow = window.innerHeight - rect.bottom
+  const menuHeight = 300 // Estimated menu height
+  const shouldPositionAbove = spaceBelow < menuHeight + 16 // 16px safety margin
+
+  return {
+    position: 'fixed',
+    top: shouldPositionAbove ? 'auto' : `${rect.bottom + 8}px`,
+    bottom: shouldPositionAbove ? `${window.innerHeight - rect.top + 8}px` : 'auto',
+    right: wouldOverflow ? '16px' : `${window.innerWidth - rect.right}px`,
+    left: wouldOverflow ? '16px' : 'auto',
+    zIndex: 1001
+  }
+})
+const dateDropdownStyle = computed(() => {
+  if (!dateFilterTriggerRef.value) return {}
+  const rect = dateFilterTriggerRef.value.getBoundingClientRect()
+  // Check if menu would overflow left edge
+  const menuWidth = 320
+  const wouldOverflow = rect.left < menuWidth
+
+  // Calculate vertical position - check if menu would extend beyond viewport bottom
+  const spaceBelow = window.innerHeight - rect.bottom
+  const menuHeight = 360 // Estimated menu height (date picker is taller)
+  const shouldPositionAbove = spaceBelow < menuHeight + 16 // 16px safety margin
+
+  return {
+    position: 'fixed',
+    top: shouldPositionAbove ? 'auto' : `${rect.bottom + 8}px`,
+    bottom: shouldPositionAbove ? `${window.innerHeight - rect.top + 8}px` : 'auto',
+    right: wouldOverflow ? '16px' : `${window.innerWidth - rect.right}px`,
+    left: wouldOverflow ? '16px' : 'auto',
+    zIndex: 1001
+  }
+})
+
+// Close dropdowns on escape key
+function handleEscapeKey(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    showFilterMenu.value = false
+    showDateFilterMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleEscapeKey)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleEscapeKey)
+})
+
 const DATE_PRESETS = [
   { key: 'all', label: '全部日期' },
   { key: '7days', label: '最近7天' },
@@ -129,15 +193,6 @@ const filteredRecordsByMonth = computed(() => {
   map.forEach((records, month) => groups.push({ month, records }))
 
   return groups.sort((a, b) => b.month.localeCompare(a.month))
-})
-
-// Lifecycle
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
 })
 
 // Functions
@@ -300,6 +355,7 @@ async function deletePetRecord(recordId: string) {
         <!-- Type filter -->
         <div class="record-filter-wrapper">
           <button
+            ref="filterTriggerRef"
             class="filter-trigger-btn"
             @click="showFilterMenu = !showFilterMenu"
             :class="{ 'is-active': recordFilter !== 'all' }"
@@ -310,36 +366,12 @@ async function deletePetRecord(recordId: string) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-
-          <transition name="filter-dropdown">
-            <div v-show="showFilterMenu" class="filter-dropdown-menu">
-              <div class="filter-menu-header">
-                <span>筛选记录</span>
-                <button @click="showFilterMenu = false" class="close-btn">×</button>
-              </div>
-              <div class="filter-options">
-                <button
-                  v-for="(config, key) in FILTER_CONFIG"
-                  :key="key"
-                  class="filter-option"
-                  :class="{ 'is-selected': recordFilter === key }"
-                  @click="recordFilter = key as RecordFilterType; showFilterMenu = false"
-                >
-                  <span class="option-icon">{{ config.icon }}</span>
-                  <div class="option-content">
-                    <span class="option-label">{{ config.label }}</span>
-                    <span class="option-description">{{ config.description }}</span>
-                  </div>
-                  <span v-if="recordFilter === key" class="option-check">✓</span>
-                </button>
-              </div>
-            </div>
-          </transition>
         </div>
 
         <!-- Date filter -->
         <div class="date-filter-wrapper">
           <button
+            ref="dateFilterTriggerRef"
             class="date-filter-trigger-btn"
             @click="showDateFilterMenu = !showDateFilterMenu"
             :class="{ 'is-active': startDate || endDate }"
@@ -353,44 +385,6 @@ async function deletePetRecord(recordId: string) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-
-          <transition name="filter-dropdown">
-            <div v-show="showDateFilterMenu" class="date-filter-dropdown">
-              <div class="filter-menu-header">
-                <span>日期筛选</span>
-                <button @click="showDateFilterMenu = false" class="close-btn">×</button>
-              </div>
-
-              <div class="date-presets">
-                <button
-                  v-for="preset in DATE_PRESETS"
-                  :key="preset.key"
-                  class="date-preset-btn"
-                  :class="{ 'is-selected': selectedDatePreset === preset.key }"
-                  @click="selectDatePreset(preset.key)"
-                >
-                  {{ preset.label }}
-                </button>
-              </div>
-
-              <div class="date-range-section">
-                <div class="date-range-inputs">
-                  <div class="date-input-group">
-                    <label>开始日期</label>
-                    <input v-model="startDate" type="date" class="date-input" :max="endDate || today" @change="onRecordDateChange" />
-                  </div>
-                  <span class="date-separator">至</span>
-                  <div class="date-input-group">
-                    <label>结束日期</label>
-                    <input v-model="endDate" type="date" class="date-input" :min="startDate" :max="today" @change="onRecordDateChange" />
-                  </div>
-                </div>
-                <button v-if="startDate || endDate" @click="clearRecordDateFilter" class="btn-clear-date">
-                  清除筛选
-                </button>
-              </div>
-            </div>
-          </transition>
         </div>
 
         <button @click="openAddRecordModal" class="btn-add-record">
@@ -402,14 +396,80 @@ async function deletePetRecord(recordId: string) {
       </div>
     </div>
 
-    <!-- 调试状态条 - 已登录时显示 -->
-    <div v-if="authStore.isAuthenticated" style="background:#e8f4fd; padding:8px 16px; margin:0 0 12px; border-radius:6px; font-size:13px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-      <span>⏳ {{ petStore.loading ? '加载中' : '✅完成' }}</span>
-      <span>📊 记录数: {{ petStore.records.length }}</span>
-      <span>🔍 筛选后: {{ filteredRecords.length }}</span>
-      <span>🐱 猫咪: {{ currentCat?.name || '无' }}</span>
-      <button @click="petStore.fetchRecords(currentCat?.id)" style="padding:2px 8px; background:#4a90d9; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">刷新</button>
-    </div>
+    <!-- 遮罩层：下拉菜单显示时显示 -->
+    <transition name="overlay-fade">
+      <div
+        v-if="showFilterMenu || showDateFilterMenu"
+        class="dropdown-overlay"
+        @click="showFilterMenu = false; showDateFilterMenu = false"
+      ></div>
+    </transition>
+
+    <!-- Teleport 下拉菜单 -->
+    <Teleport to="body">
+      <transition name="filter-dropdown">
+        <div v-show="showFilterMenu" class="filter-dropdown-menu" :style="filterDropdownStyle">
+          <div class="filter-menu-header">
+            <span>筛选记录</span>
+            <button @click="showFilterMenu = false" class="close-btn">×</button>
+          </div>
+          <div class="filter-options">
+            <button
+              v-for="(config, key) in FILTER_CONFIG"
+              :key="key"
+              class="filter-option"
+              :class="{ 'is-selected': recordFilter === key }"
+              @click="recordFilter = key as RecordFilterType; showFilterMenu = false"
+            >
+              <span class="option-icon">{{ config.icon }}</span>
+              <div class="option-content">
+                <span class="option-label">{{ config.label }}</span>
+                <span class="option-description">{{ config.description }}</span>
+              </div>
+              <span v-if="recordFilter === key" class="option-check">✓</span>
+            </button>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="filter-dropdown">
+        <div v-show="showDateFilterMenu" class="date-filter-dropdown" :style="dateDropdownStyle">
+          <div class="filter-menu-header">
+            <span>日期筛选</span>
+            <button @click="showDateFilterMenu = false" class="close-btn">×</button>
+          </div>
+
+          <div class="date-presets">
+            <button
+              v-for="preset in DATE_PRESETS"
+              :key="preset.key"
+              class="date-preset-btn"
+              :class="{ 'is-selected': selectedDatePreset === preset.key }"
+              @click="selectDatePreset(preset.key)"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
+
+          <div class="date-range-section">
+            <div class="date-range-inputs">
+              <div class="date-input-group">
+                <label>开始日期</label>
+                <input v-model="startDate" type="date" class="date-input" :max="endDate || today" @change="onRecordDateChange" />
+              </div>
+              <span class="date-separator">至</span>
+              <div class="date-input-group">
+                <label>结束日期</label>
+                <input v-model="endDate" type="date" class="date-input" :min="startDate" :max="today" @change="onRecordDateChange" />
+              </div>
+            </div>
+            <button v-if="startDate || endDate" @click="clearRecordDateFilter" class="btn-clear-date">
+              清除筛选
+            </button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
     <!-- Login prompt -->
     <div v-if="!authStore.isAuthenticated" class="login-prompt">
@@ -716,6 +776,27 @@ async function deletePetRecord(recordId: string) {
   to { opacity: 1; }
 }
 
+/* ========== Dropdown Overlay ========== */
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.overlay-fade-enter-active,
+.overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+}
+
 /* ========== Growth Header ========== */
 .growth-header {
   display: flex;
@@ -755,6 +836,7 @@ async function deletePetRecord(recordId: string) {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 /* ========== Type Filter ========== */
@@ -775,6 +857,8 @@ async function deletePetRecord(recordId: string) {
   color: var(--color-text-regular);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .filter-trigger-btn:hover {
@@ -790,7 +874,10 @@ async function deletePetRecord(recordId: string) {
 
 .filter-icon { font-size: 1rem; }
 
-.filter-label { font-size: 0.875rem; }
+.filter-label {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
 
 .dropdown-arrow {
   width: 1rem;
@@ -801,15 +888,12 @@ async function deletePetRecord(recordId: string) {
 .dropdown-arrow.is-open { transform: rotate(180deg); }
 
 .filter-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
   min-width: 280px;
+  max-width: calc(100vw - 32px);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 1rem;
-  box-shadow: var(--shadow-card-hover);
-  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
 
@@ -897,6 +981,8 @@ async function deletePetRecord(recordId: string) {
   color: var(--color-text-regular);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .date-filter-trigger-btn:hover {
@@ -911,18 +997,18 @@ async function deletePetRecord(recordId: string) {
 }
 
 .calendar-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
-.date-filter-label { font-size: 0.875rem; }
+.date-filter-label {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
 
 .date-filter-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
   min-width: 320px;
+  max-width: calc(100vw - 32px);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 1rem;
-  box-shadow: var(--shadow-card-hover);
-  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
 
@@ -953,7 +1039,7 @@ async function deletePetRecord(recordId: string) {
 }
 
 .date-preset-btn.is-selected {
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary-gradient);
   border-color: transparent;
   color: #FFFFFF;
 }
@@ -1037,6 +1123,57 @@ async function deletePetRecord(recordId: string) {
   .btn-clear-date { width: auto; }
 }
 
+/* ========== Mobile Responsive ========== */
+@media (max-width: 640px) {
+  .growth-actions {
+    width: 100%;
+  }
+
+  .records-timeline {
+    padding-left: 2rem;
+  }
+
+  .record-item {
+    padding-left: 1rem;
+  }
+
+  .record-item::before {
+    left: -2rem;
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .record-date {
+    position: static;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .record-day {
+    font-size: 1.125rem;
+  }
+
+  .record-content {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .record-photo-main {
+    width: 100px;
+    height: 100px;
+  }
+
+  .record-pet-name {
+    font-size: 1rem;
+  }
+
+  .growth-title {
+    font-size: 1.125rem;
+  }
+}
+
 /* ========== Add Record Button ========== */
 .btn-add-record {
   display: flex;
@@ -1052,6 +1189,8 @@ async function deletePetRecord(recordId: string) {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-primary-btn);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-add-record:hover {
@@ -1381,7 +1520,7 @@ async function deletePetRecord(recordId: string) {
   font-weight: 600;
   color: var(--color-text-secondary);
   padding: 0.75rem 0;
-  margin: 0 0 1rem 0;
+  margin: 0.25rem 0 1rem 0;
 }
 
 .month-count {
