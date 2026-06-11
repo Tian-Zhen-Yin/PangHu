@@ -51,19 +51,9 @@ if (Test-Path $windowsBtPath) {
     Write-Host "$WINDOWS.~BT does not exist" -ForegroundColor Gray
 }
 
-# Cleanup Windows update download cache
-Write-Host "Cleaning Windows update download cache..." -ForegroundColor White
-try {
-    Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
-    $downloadPath = "$env:SystemRoot\SoftwareDistribution\Download"
-    if (Test-Path $downloadPath) {
-        Remove-Item "$downloadPath\*" -Recurse -Force
-        Write-Host "Cleaned Windows update cache" -ForegroundColor Green
-    }
-    Start-Service -Name wuauserv -ErrorAction SilentlyContinue
-} catch {
-    Write-Host "Failed to clean update cache" -ForegroundColor Red
-}
+# Skip Windows update download cache (better handled by cleanmgr tool)
+Write-Host "Skipping Windows update cache (use cleanmgr tool instead)" -ForegroundColor Gray
+Write-Host "Run: cleanmgr and select 'Windows Update Cleanup'" -ForegroundColor Gray
 Write-Host ""
 
 # Cleanup system temp files
