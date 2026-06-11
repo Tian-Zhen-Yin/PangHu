@@ -58,7 +58,7 @@ export interface CreateAdminLogRequest {
   action: string
   module: string
   targetId?: string
-  detail?: string
+  detail?: Record<string, unknown>
   ip?: string
   userAgent?: string
 }
@@ -120,4 +120,5 @@ export interface AdminJwtPayload {
   adminId: string
   username: string
   role: string
+  type: 'access' | 'refresh'
 }
