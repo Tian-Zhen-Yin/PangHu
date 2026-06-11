@@ -10,7 +10,11 @@ export default defineConfig({
       'backend/src/__tests__/**/*.test.ts'
     ],
     exclude: [
-      'backend/src/__tests__/api/**',
+      'backend/src/__tests__/api/admin.api.test.ts',
+      'backend/src/__tests__/api/users.api.test.ts',
+      'backend/src/__tests__/api/boundary.api.test.ts',
+      'backend/src/__tests__/api/permissions.api.test.ts',
+      'backend/src/__tests__/api/security.api.test.ts',
       'backend/src/__tests__/performance/**',
       'backend/src/__tests__/middlewares/**',
       'backend/src/__tests__/utils/sanitize.test.ts'
