@@ -1,9 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAdminStore } from '../stores/admin'
+import { adminRoutes } from './admin'
 
 // 路由分组优化 - 按功能模块分割代码
 const routes: RouteRecordRaw[] = [
+  // 管理后台路由
+  ...adminRoutes,
+
   // 首页和核心页面（优先级高）
   {
     path: '/',
@@ -170,6 +175,7 @@ const router = createRouter({
 })
 
 let authInitialized = false
+let adminInitialized = false
 
 // 路由守卫
 router.beforeEach((to, _from, next) => {
@@ -180,11 +186,44 @@ router.beforeEach((to, _from, next) => {
     authInitialized = true
   }
 
-  // 设置页面标题
-  document.title = to.meta.title as string || '哈吉咪养成计划'
+  // 初始化管理员认证状态（只执行一次）
+  if (!adminInitialized) {
+    const adminStore = useAdminStore()
+    adminStore.initAdmin()
+    adminInitialized = true
+  }
 
   const authStore = useAuthStore()
   const isAuthenticated = authStore.isAuthenticated
+
+  // 处理管理员路由
+  if (to.meta.admin) {
+    const adminStore = useAdminStore()
+
+    // 设置管理员页面标题
+    document.title = `${to.meta.title as string} - 后台管理`
+
+    // 需要认证的管理员页面
+    if (to.meta.requiresAuth && !adminStore.isAuthenticated) {
+      next({
+        name: 'AdminLogin',
+        query: { redirect: to.fullPath }
+      })
+      return
+    }
+
+    // 已认证管理员访问登录页，重定向到仪表板
+    if (to.name === 'AdminLogin' && adminStore.isAuthenticated) {
+      next({ name: 'AdminDashboard' })
+      return
+    }
+
+    next()
+    return
+  }
+
+  // 设置普通页面标题
+  document.title = to.meta.title as string || '哈吉咪养成计划'
 
   // 需要认证的页面
   if (to.meta.requiresAuth && !isAuthenticated) {
