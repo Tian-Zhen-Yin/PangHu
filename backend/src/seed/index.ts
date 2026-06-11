@@ -1,10 +1,14 @@
 import prisma from '../config/database'
+import { seedAdmins } from './admin-seed'
 
 /**
  * 数据种子 - 猫咪成长阶段数据
  */
 async function main() {
   console.log('开始种子数据...')
+
+  // Seed admin users
+  await seedAdmins()
 
   // 清理现有数据（注意顺序，先清理有外键的表）
   await prisma.template.deleteMany({})
