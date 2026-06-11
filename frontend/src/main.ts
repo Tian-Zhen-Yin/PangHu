@@ -5,6 +5,7 @@ import router from './router/index'
 import App from './App.vue'
 import { setupGlobalErrorHandler } from './utils/errorHandler'
 import { useAuthStore } from './stores/auth'
+import { useAdminStore } from './stores/admin'
 import './assets/styles/main.css'
 import './styles/tokens.css'
 
@@ -20,6 +21,10 @@ setupGlobalErrorHandler(app)
 // 初始化认证状态（从 localStorage 恢复登录状态）
 const authStore = useAuthStore()
 authStore.initAuth()
+
+// Initialize admin authentication state
+const adminStore = useAdminStore()
+adminStore.initAdmin()
 
 app.mount('#app')
 
