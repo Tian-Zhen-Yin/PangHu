@@ -369,3 +369,45 @@ model UserNotificationPreference {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// 管理员表
+model Admin {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String   // bcrypt hash
+  email       String?  @unique
+  role        String   @default("admin") // "super" or "admin"
+  name        String?
+  avatar      String?
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  logs        AdminLog[]
+
+  @@index([username])
+  @@index([role])
+  @@map("admins")
+}
+
+// 操作日志表
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String?
+  admin     Admin?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  action    String   // login, logout, create, update, delete
+  module    String   // auth, dashboard, user, guide, etc.
+  targetId  String?  // ID of affected record
+  detail    String?  // JSON string with additional context
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
+  @@map("admin_logs")
+}
