@@ -1,113 +1,113 @@
-# C盘清理自动化脚本
-# 需要管理员权限运行
+# C Drive Cleanup Automation Script
+# Run as Administrator
 
 Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "      C盘清理自动化脚本" -ForegroundColor Cyan
+Write-Host "   C Drive Cleanup Script" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 检查管理员权限
-Write-Host "[1/7] 检查管理员权限..." -ForegroundColor Yellow
+# Check admin privileges
+Write-Host "[1/7] Checking admin privileges..." -ForegroundColor Yellow
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "错误：此脚本需要管理员权限运行" -ForegroundColor Red
-    Write-Host "请右键点击PowerShell，选择'以管理员身份运行'" -ForegroundColor Red
-    Read-Host "按Enter键退出"
+    Write-Host "ERROR: This script requires administrator privileges" -ForegroundColor Red
+    Write-Host "Please right-click PowerShell and select 'Run as Administrator'" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
-Write-Host "管理员权限确认" -ForegroundColor Green
+Write-Host "Admin privileges confirmed" -ForegroundColor Green
 Write-Host ""
 
-# 记录当前状态
-Write-Host "[2/7] 记录清理前的C盘状态..." -ForegroundColor Yellow
+# Record current state
+Write-Host "[2/7] Recording current C drive state..." -ForegroundColor Yellow
 $cDrive = Get-PSDrive C
 $beforeFreeGB = [math]::Round($cDrive.Free / 1GB, 2)
-Write-Host "清理前可用空间: $beforeFreeGB GB" -ForegroundColor White
+Write-Host "Free space before cleanup: $beforeFreeGB GB" -ForegroundColor White
 Write-Host ""
 
-Write-Host "即将开始清理C盘，预计释放 10-20 GB 空间" -ForegroundColor Yellow
-Write-Host "建议先执行：清空回收站、运行cleanmgr" -ForegroundColor Yellow
+Write-Host "About to start C drive cleanup, expected to free 10-20 GB" -ForegroundColor Yellow
+Write-Host "Recommended: Empty Recycle Bin and run cleanmgr first" -ForegroundColor Yellow
 Write-Host ""
 
-$continue = Read-Host "是否继续执行自动化清理? (Y/N)"
+$continue = Read-Host "Continue with automated cleanup? (Y/N)"
 if ($continue -ne "Y") {
-    Write-Host "已取消清理" -ForegroundColor Yellow
+    Write-Host "Cleanup cancelled" -ForegroundColor Yellow
     exit 0
 }
 Write-Host ""
 
-# 清理Windows更新临时文件
-Write-Host "[3/7] 清理Windows更新临时文件..." -ForegroundColor Yellow
+# Cleanup Windows update temp files
+Write-Host "[3/7] Cleaning Windows update temp files..." -ForegroundColor Yellow
 
 $windowsBtPath = "C:\$WINDOWS.~BT"
 if (Test-Path $windowsBtPath) {
     try {
         Remove-Item $windowsBtPath -Recurse -Force
-        Write-Host "已删除 $WINDOWS.~BT" -ForegroundColor Green
+        Write-Host "Deleted $WINDOWS.~BT" -ForegroundColor Green
     } catch {
-        Write-Host "删除 $WINDOWS.~BT 失败" -ForegroundColor Red
+        Write-Host "Failed to delete $WINDOWS.~BT" -ForegroundColor Red
     }
 } else {
-    Write-Host "$WINDOWS.~BT 不存在" -ForegroundColor Gray
+    Write-Host "$WINDOWS.~BT does not exist" -ForegroundColor Gray
 }
 
-# 清理Windows更新下载缓存
-Write-Host "清理Windows更新下载缓存..." -ForegroundColor White
+# Cleanup Windows update download cache
+Write-Host "Cleaning Windows update download cache..." -ForegroundColor White
 try {
     Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
     $downloadPath = "$env:SystemRoot\SoftwareDistribution\Download"
     if (Test-Path $downloadPath) {
         Remove-Item "$downloadPath\*" -Recurse -Force
-        Write-Host "已清理更新下载缓存" -ForegroundColor Green
+        Write-Host "Cleaned Windows update cache" -ForegroundColor Green
     }
     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
 } catch {
-    Write-Host "清理更新下载缓存失败" -ForegroundColor Red
+    Write-Host "Failed to clean update cache" -ForegroundColor Red
 }
 Write-Host ""
 
-# 清理系统临时文件
-Write-Host "[4/7] 清理系统临时文件..." -ForegroundColor Yellow
+# Cleanup system temp files
+Write-Host "[4/7] Cleaning system temp files..." -ForegroundColor Yellow
 
 $windowsTempPath = "$env:SystemRoot\Temp"
 if (Test-Path $windowsTempPath) {
     try {
         Remove-Item "$windowsTempPath\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理 Windows Temp" -ForegroundColor Green
+        Write-Host "Cleaned Windows Temp" -ForegroundColor Green
     } catch {
-        Write-Host "清理 Windows Temp 失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean Windows Temp" -ForegroundColor Yellow
     }
 }
 
 if (Test-Path "C:\temp") {
     try {
         Remove-Item "C:\temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理 C:\temp" -ForegroundColor Green
+        Write-Host "Cleaned C:\temp" -ForegroundColor Green
     } catch {
-        Write-Host "清理 C:\temp 失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean C:\temp" -ForegroundColor Yellow
     }
 }
 
 if (Test-Path "C:\tmp") {
     try {
         Remove-Item "C:\tmp\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理 C:\tmp" -ForegroundColor Green
+        Write-Host "Cleaned C:\tmp" -ForegroundColor Green
     } catch {
-        Write-Host "清理 C:\tmp 失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean C:\tmp" -ForegroundColor Yellow
     }
 }
 Write-Host ""
 
-# 清理用户临时文件
-Write-Host "[5/7] 清理用户临时文件..." -ForegroundColor Yellow
+# Cleanup user temp files
+Write-Host "[5/7] Cleaning user temp files..." -ForegroundColor Yellow
 
 $userTempPath = $env:TEMP
 if (Test-Path $userTempPath) {
     try {
         Remove-Item "$userTempPath\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理用户Temp文件夹" -ForegroundColor Green
+        Write-Host "Cleaned user Temp folder" -ForegroundColor Green
     } catch {
-        Write-Host "清理用户Temp失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean user Temp" -ForegroundColor Yellow
     }
 }
 
@@ -115,49 +115,49 @@ $localTempPath = "$env:LOCALAPPDATA\Temp"
 if (Test-Path $localTempPath) {
     try {
         Remove-Item "$localTempPath\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理 LocalAppData Temp" -ForegroundColor Green
+        Write-Host "Cleaned LocalAppData Temp" -ForegroundColor Green
     } catch {
-        Write-Host "清理 LocalAppData Temp 失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean LocalAppData Temp" -ForegroundColor Yellow
     }
 }
 Write-Host ""
 
-# 清理Windows错误报告
-Write-Host "[6/7] 清理Windows错误报告..." -ForegroundColor Yellow
+# Cleanup Windows error reports
+Write-Host "[6/7] Cleaning Windows error reports..." -ForegroundColor Yellow
 
 $werPath = "C:\ProgramData\Microsoft\Windows\WER"
 if (Test-Path $werPath) {
     try {
         Remove-Item "$werPath\*" -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "已清理Windows错误报告" -ForegroundColor Green
+        Write-Host "Cleaned Windows error reports" -ForegroundColor Green
     } catch {
-        Write-Host "清理错误报告失败" -ForegroundColor Yellow
+        Write-Host "Failed to clean error reports" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "错误报告文件夹不存在" -ForegroundColor Gray
+    Write-Host "Error reports folder does not exist" -ForegroundColor Gray
 }
 Write-Host ""
 
-# 检查Windows.old
-Write-Host "[7/7] 检查Windows.old文件夹..." -ForegroundColor Yellow
+# Check Windows.old
+Write-Host "[7/7] Checking Windows.old folder..." -ForegroundColor Yellow
 
 $windowsOldPath = "C:\Windows.old"
 if (Test-Path $windowsOldPath) {
     try {
         $size = (Get-ChildItem $windowsOldPath -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1GB
-        Write-Host "发现 Windows.old，大小: $([math]::Round($size, 2)) GB" -ForegroundColor Yellow
-        Write-Host "建议运行 cleanmgr 删除" -ForegroundColor Cyan
+        Write-Host "Found Windows.old, size: $([math]::Round($size, 2)) GB" -ForegroundColor Yellow
+        Write-Host "Recommend running cleanmgr to delete it" -ForegroundColor Cyan
     } catch {
-        Write-Host "检查 Windows.old 失败" -ForegroundColor Red
+        Write-Host "Failed to check Windows.old" -ForegroundColor Red
     }
 } else {
-    Write-Host "未发现 Windows.old" -ForegroundColor Gray
+    Write-Host "Windows.old not found" -ForegroundColor Gray
 }
 Write-Host ""
 
-# 显示结果
+# Display results
 Write-Host "====================================" -ForegroundColor Cyan
-Write-Host "         清理结果" -ForegroundColor Cyan
+Write-Host "       Cleanup Results" -ForegroundColor Cyan
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -165,31 +165,33 @@ $cDriveAfter = Get-PSDrive C
 $afterFreeGB = [math]::Round($cDriveAfter.Free / 1GB, 2)
 $releasedGB = [math]::Round($afterFreeGB - $beforeFreeGB, 2)
 
-Write-Host "清理前可用空间: $beforeFreeGB GB" -ForegroundColor White
-Write-Host "清理后可用空间: $afterFreeGB GB" -ForegroundColor White
-Write-Host "释放空间: $releasedGB GB" -ForegroundColor Green
+Write-Host "Free space before: $beforeFreeGB GB" -ForegroundColor White
+Write-Host "Free space after: $afterFreeGB GB" -ForegroundColor White
+Write-Host "Space freed: $releasedGB GB" -ForegroundColor Green
 Write-Host ""
 
 if ($releasedGB -ge 10) {
-    Write-Host "清理成功！已达到预期目标" -ForegroundColor Green
+    Write-Host "Cleanup successful! Target achieved (10-20 GB)" -ForegroundColor Green
 } elseif ($releasedGB -ge 5) {
-    Write-Host "清理部分完成，建议运行 cleanmgr 获取更多空间" -ForegroundColor Yellow
+    Write-Host "Partial cleanup, freed $releasedGB GB" -ForegroundColor Yellow
+    Write-Host "Recommend running cleanmgr for more space" -ForegroundColor Yellow
 } else {
-    Write-Host "清理效果不明显，建议运行 cleanmgr" -ForegroundColor Red
+    Write-Host "Cleanup effect minimal, only freed $releasedGB GB" -ForegroundColor Red
+    Write-Host "Recommend running cleanmgr for more space" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "后续步骤：" -ForegroundColor Cyan
-Write-Host "1. 重启电脑" -ForegroundColor White
-Write-Host "2. 检查程序是否正常运行" -ForegroundColor White
-Write-Host "3. 检查Windows更新功能" -ForegroundColor White
+Write-Host "Next steps:" -ForegroundColor Cyan
+Write-Host "1. Restart computer" -ForegroundColor White
+Write-Host "2. Check if programs run normally" -ForegroundColor White
+Write-Host "3. Check Windows Update function" -ForegroundColor White
 Write-Host ""
 
 if (Test-Path $windowsOldPath) {
-    Write-Host "4. 使用 cleanmgr 删除 Windows.old" -ForegroundColor Yellow
+    Write-Host "4. Use cleanmgr to delete Windows.old" -ForegroundColor Yellow
 }
 
 Write-Host "====================================" -ForegroundColor Cyan
 Write-Host ""
 
-Read-Host "按Enter键退出"
+Read-Host "Press Enter to exit"
