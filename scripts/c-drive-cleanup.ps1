@@ -17,7 +17,7 @@ if (-not $isAdmin) {
     Read-Host "按Enter键退出"
     exit 1
 }
-Write-Host "✓ 管理员权限确认" -ForegroundColor Green
+Write-Host "管理员权限确认" -ForegroundColor Green
 Write-Host ""
 
 # ==================== 任务1: 记录当前状态 ====================
@@ -60,12 +60,12 @@ if (Test-Path $windowsBtPath) {
         Write-Host "  发现 $WINDOWS.~BT 文件夹，大小: $([math]::Round($size, 2)) MB" -ForegroundColor White
 
         Remove-Item $windowsBtPath -Recurse -Force -ErrorAction Stop
-        Write-Host "  ✓ 已删除 $WINDOWS.~BT" -ForegroundColor Green
+        Write-Host "  已删除 $WINDOWS.~BT" -ForegroundColor Green
     } catch {
-        Write-Host "  ✗ 删除 $WINDOWS.~BT 失败: $_" -ForegroundColor Red
+        Write-Host "  删除 $WINDOWS.~BT 失败: $_" -ForegroundColor Red
     }
 } else {
-    Write-Host "  - $WINDOWS.~BT 不存在，跳过" -ForegroundColor Gray
+    Write-Host "  $WINDOWS.~BT 不存在，跳过" -ForegroundColor Gray
 }
 
 # 清理 Windows 更新下载缓存
@@ -78,15 +78,15 @@ try {
     $downloadPath = "$env:SystemRoot\SoftwareDistribution\Download"
     if (Test-Path $downloadPath) {
         Get-ChildItem $downloadPath -Force | Remove-Item -Recurse -Force -ErrorAction Stop
-        Write-Host "  ✓ 已清理更新下载缓存" -ForegroundColor Green
+        Write-Host "  已清理更新下载缓存" -ForegroundColor Green
     } else {
-        Write-Host "  - 更新下载缓存不存在，跳过" -ForegroundColor Gray
+        Write-Host "  更新下载缓存不存在，跳过" -ForegroundColor Gray
     }
 
     # 重启 Windows 更新服务
     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
 } catch {
-    Write-Host "  ✗ 清理更新下载缓存失败: $_" -ForegroundColor Red
+    Write-Host "  清理更新下载缓存失败: $_" -ForegroundColor Red
 
     # 确保服务重启
     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
@@ -105,12 +105,12 @@ try {
     $count = ($items | Measure-Object).Count
     if ($count -gt 0) {
         $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+        Write-Host "  已清理 $count 个项目" -ForegroundColor Green
     } else {
-        Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+        Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
     }
 } catch {
-    Write-Host "  ✗ 清理失败（部分文件可能正在使用）: $_" -ForegroundColor Yellow
+    Write-Host "  清理失败（部分文件可能正在使用）: $_" -ForegroundColor Yellow
 }
 
 # 清理 C:\temp
@@ -122,12 +122,12 @@ if (Test-Path $cTempPath) {
         $count = ($items | Measure-Object).Count
         if ($count -gt 0) {
             $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+            Write-Host "  已清理 $count 个项目" -ForegroundColor Green
         } else {
-            Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+            Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  ✗ 清理失败: $_" -ForegroundColor Yellow
+        Write-Host "  清理失败: $_" -ForegroundColor Yellow
     }
 }
 
@@ -140,12 +140,12 @@ if (Test-Path $cTmpPath) {
         $count = ($items | Measure-Object).Count
         if ($count -gt 0) {
             $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+            Write-Host "  已清理 $count 个项目" -ForegroundColor Green
         } else {
-            Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+            Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  ✗ 清理失败: $_" -ForegroundColor Yellow
+        Write-Host "  清理失败: $_" -ForegroundColor Yellow
     }
 }
 Write-Host ""
@@ -165,12 +165,12 @@ try {
     $count = ($items | Measure-Object).Count
     if ($count -gt 0) {
         $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+        Write-Host "  已清理 $count 个项目" -ForegroundColor Green
     } else {
-        Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+        Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
     }
 } catch {
-    Write-Host "  ✗ 清理失败（部分文件可能正在使用）: $_" -ForegroundColor Yellow
+    Write-Host "  清理失败（部分文件可能正在使用）: $_" -ForegroundColor Yellow
 }
 
 # 清理 LocalAppData Temp
@@ -182,12 +182,12 @@ if (Test-Path $localTempPath) {
         $count = ($items | Measure-Object).Count
         if ($count -gt 0) {
             $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+            Write-Host "  已清理 $count 个项目" -ForegroundColor Green
         } else {
-            Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+            Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  ✗ 清理失败: $_" -ForegroundColor Yellow
+        Write-Host "  清理失败: $_" -ForegroundColor Yellow
     }
 }
 Write-Host ""
@@ -206,15 +206,15 @@ if (Test-Path $werPath) {
         $count = ($items | Measure-Object).Count
         if ($count -gt 0) {
             $items | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            Write-Host "  ✓ 已清理 $count 个项目" -ForegroundColor Green
+            Write-Host "  已清理 $count 个项目" -ForegroundColor Green
         } else {
-            Write-Host "  - 文件夹为空，跳过" -ForegroundColor Gray
+            Write-Host "  文件夹为空，跳过" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  ✗ 清理失败: $_" -ForegroundColor Yellow
+        Write-Host "  清理失败: $_" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  - 错误报告文件夹不存在，跳过" -ForegroundColor Gray
+    Write-Host "  错误报告文件夹不存在，跳过" -ForegroundColor Gray
 }
 Write-Host ""
 
@@ -229,8 +229,8 @@ if (Test-Path $windowsOldPath) {
         Write-Host "  发现 Windows.old 文件夹" -ForegroundColor Yellow
         Write-Host "  大小: $([math]::Round($size, 2)) GB" -ForegroundColor White
         Write-Host ""
-        Write-Host "  ⚠ Windows.old 是Windows升级后的旧系统文件备份" -ForegroundColor Yellow
-        Write-Host "  ⚠ 删除后无法回退到旧版本Windows" -ForegroundColor Yellow
+        Write-Host "  Windows.old 是Windows升级后的旧系统文件备份" -ForegroundColor Yellow
+        Write-Host "  删除后无法回退到旧版本Windows" -ForegroundColor Yellow
         Write-Host ""
         Write-Host "  建议使用磁盘清理工具删除:" -ForegroundColor Cyan
         Write-Host "  1. 运行 cleanmgr" -ForegroundColor White
@@ -238,10 +238,10 @@ if (Test-Path $windowsOldPath) {
         Write-Host "  3. 勾选'以前的Windows安装'" -ForegroundColor White
         Write-Host "  4. 点击确定删除" -ForegroundColor White
     } catch {
-        Write-Host "  ✗ 检查 Windows.old 失败: $_" -ForegroundColor Red
+        Write-Host "  检查 Windows.old 失败: $_" -ForegroundColor Red
     }
 } else {
-    Write-Host "  - 未发现 Windows.old 文件夹" -ForegroundColor Gray
+    Write-Host "  未发现 Windows.old 文件夹" -ForegroundColor Gray
 }
 Write-Host ""
 
@@ -266,12 +266,12 @@ Write-Host ""
 
 # 结果评估
 if ($releasedGB -ge 10) {
-    Write-Host "✓ 清理成功！已达到预期目标 (10-20 GB)" -ForegroundColor Green
+    Write-Host "清理成功！已达到预期目标 (10-20 GB)" -ForegroundColor Green
 } elseif ($releasedGB -ge 5) {
-    Write-Host "⚠ 清理部分完成，释放了 $releasedGB GB" -ForegroundColor Yellow
+    Write-Host "清理部分完成，释放了 $releasedGB GB" -ForegroundColor Yellow
     Write-Host "  建议：运行磁盘清理工具 (cleanmgr) 获取更多空间" -ForegroundColor Yellow
 } else {
-    Write-Host "✗ 清理效果不明显，仅释放了 $releasedGB GB" -ForegroundColor Red
+    Write-Host "清理效果不明显，仅释放了 $releasedGB GB" -ForegroundColor Red
     Write-Host "  建议：运行磁盘清理工具 (cleanmgr) 获取更多空间" -ForegroundColor Yellow
 }
 
