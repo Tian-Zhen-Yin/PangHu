@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { body } from 'express-validator'
+import { body, validationResult } from 'express-validator'
 import { loginAdmin, getAdminById, updateAdmin, changePassword as changePasswordService } from '../../services/admin/auth.service'
 import { createLog } from '../../services/admin/log.service'
 import { successResponse } from '../../utils/response'
@@ -11,6 +11,15 @@ import type { LoginRequest, UpdateAdminRequest, ChangePasswordRequest } from '..
  * Admin login
  */
 export async function login(req: Request, res: Response) {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: '请求数据验证失败',
+      errors: errors.array()
+    })
+  }
+
   try {
     const body = req.body as LoginRequest
     const { ip, userAgent } = extractRequestMetadata(req)
@@ -104,6 +113,15 @@ export async function getMe(req: Request, res: Response) {
  * Update admin profile
  */
 export async function updateProfile(req: Request, res: Response) {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: '请求数据验证失败',
+      errors: errors.array()
+    })
+  }
+
   try {
     const adminId = (req as any).admin?.adminId
     if (!adminId) {
@@ -143,6 +161,15 @@ export async function updateProfile(req: Request, res: Response) {
  * Change password
  */
 export async function changePassword(req: Request, res: Response) {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: '请求数据验证失败',
+      errors: errors.array()
+    })
+  }
+
   try {
     const adminId = (req as any).admin?.adminId
     if (!adminId) {

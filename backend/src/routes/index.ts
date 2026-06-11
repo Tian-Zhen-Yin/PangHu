@@ -12,6 +12,7 @@ import knowledgeRoutes from './knowledge.routes'
 import weightStandardRoutes from './weightStandards.routes'
 import notificationRoutes from './notifications.routes'
 import proactiveRoutes from './proactive.routes'
+import adminRoutes from './admin.routes'
 
 const router = Router()
 
@@ -31,6 +32,7 @@ router.use('/knowledge', knowledgeRoutes)
 router.use('/weight-standards', weightStandardRoutes)
 router.use('/notifications', notificationRoutes)
 router.use('/proactive', proactiveRoutes)
+router.use('/admin', adminRoutes)
 
 // 健康检查
 router.get('/health', (_req, res) => {
