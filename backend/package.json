@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:test-data": "ts-node src/seed/test-data.ts",
     "eval:prompt": "ts-node src/eval/prompt-eval.ts",
+    "test": "cd .. && npx vitest run --config vitest.backend.config.ts",
     "postinstall": "prisma generate"
   },
   "keywords": [
