@@ -13,10 +13,37 @@
         <router-link
           to="/admin"
           class="nav-item"
-          active-class="active"
+          exact-active-class="active"
         >
           <el-icon><DataAnalysis /></el-icon>
           <span class="nav-text">数据概览</span>
+        </router-link>
+
+        <router-link
+          to="/admin/users"
+          class="nav-item"
+          active-class="active"
+        >
+          <el-icon><User /></el-icon>
+          <span class="nav-text">用户管理</span>
+        </router-link>
+
+        <router-link
+          to="/admin/guides"
+          class="nav-item"
+          active-class="active"
+        >
+          <el-icon><Document /></el-icon>
+          <span class="nav-text">指南管理</span>
+        </router-link>
+
+        <router-link
+          to="/admin/templates"
+          class="nav-item"
+          active-class="active"
+        >
+          <el-icon><Memo /></el-icon>
+          <span class="nav-text">模板管理</span>
         </router-link>
 
         <!-- More menu items will be added in later phases -->
@@ -85,6 +112,9 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   DataAnalysis,
+  Document,
+  Memo,
+  User,
   Expand,
   Fold,
   SwitchButton
@@ -127,19 +157,19 @@ async function handleCommand(command: string) {
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #f0f2f5;
 }
 
-/* Sidebar */
+/* Sidebar - Modern Professional */
 .sidebar {
-  width: 210px;
-  background: #304156;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  transition: width 0.3s;
+  width: 220px;
+  background: linear-gradient(180deg, #1a1f2c 0%, #242836 100%);
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar.collapsed {
@@ -147,52 +177,72 @@ async function handleCommand(command: string) {
 }
 
 .sidebar-header {
-  height: 56px;
+  height: 64px;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 500;
   color: #fff;
+  letter-spacing: 0.5px;
 }
 
 .badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  background: #ff6b6b;
+  font-size: 11px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .sidebar-nav {
-  padding: 8px 0;
+  padding: 12px 0;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 48px;
-  padding: 0 16px;
-  color: #bfcbd9;
+  gap: 14px;
+  height: 44px;
+  padding: 0 20px;
+  margin: 0 8px;
+  color: #a3b1cc;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(59, 130, 246, 0.1);
   color: #fff;
+  transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: #ffb86c;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  font-weight: 500;
+}
+
+.nav-item .el-icon {
+  font-size: 18px;
+  transition: transform 0.25s;
+}
+
+.nav-item:hover .el-icon {
+  transform: scale(1.1);
 }
 
 .collapsed .nav-text {
@@ -202,32 +252,39 @@ async function handleCommand(command: string) {
 /* Main Wrapper */
 .main-wrapper {
   flex: 1;
-  margin-left: 210px;
-  transition: margin-left 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-collapsed {
-  margin-left: 64px;
+  /* No need for margin-left with flex layout */
 }
 
-/* Header */
+/* Header - Modern Clean */
 .header {
-  height: 56px;
+  height: 64px;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e8e8e8;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  position: sticky;
-  top: 0;
-  z-index: 99;
+  padding: 0 24px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.header-left .el-button {
+  border: none;
+  background: transparent;
+  color: #5a6c7f;
+  transition: all 0.25s;
+}
+
+.header-left .el-button:hover {
+  background: #f0f2f5;
+  color: #3b82f6;
 }
 
 .header-right {
@@ -239,45 +296,75 @@ async function handleCommand(command: string) {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.25s;
 }
 
 .user-info:hover {
-  background: #f5f7fa;
+  background: #f0f2f5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.user-info .el-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .username {
   font-size: 14px;
-  color: #303133;
+  font-weight: 500;
+  color: #1a1f2c;
 }
 
 .role-badge {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .email {
   font-size: 12px;
-  color: #909399;
+  color: #64748b;
 }
 
-/* Main Content */
+/* Main Content - Better Spacing */
 .main-content {
-  padding: 24px;
-  min-height: calc(100vh - 56px);
+  flex: 1;
+  padding: 0;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Transitions */
+.main-content > * {
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px 32px;
+}
+
+.main-content > *:first-child {
+  padding-top: 32px;
+}
+
+/* Transitions - Smoother */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+</style>
+
+<style>
+/* Global admin styles import */
+@import './admin-styles.css';
 </style>

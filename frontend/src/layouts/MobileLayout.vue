@@ -7,15 +7,16 @@ import AppTabbar from './components/AppTabbar.vue'
 const route = useRoute()
 
 const isAiChat = computed(() => route.name === 'AIChat')
+const isAdminRoute = computed(() => route.meta.admin === true)
 </script>
 
 <template>
   <div class="mobile-layout">
-    <AppHeader v-if="!isAiChat" />
-    <main class="main-content" :class="{ 'full-bleed': isAiChat }">
+    <AppHeader v-if="!isAiChat && !isAdminRoute" />
+    <main class="main-content" :class="{ 'full-bleed': isAiChat || isAdminRoute }">
       <slot />
     </main>
-    <AppTabbar v-if="!isAiChat" />
+    <AppTabbar v-if="!isAiChat && !isAdminRoute" />
   </div>
 </template>
 

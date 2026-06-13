@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MarkdownView from 'vue-markdown-render'
 import 'highlight.js/styles/github.css'
@@ -31,9 +31,13 @@ const tableOfContents = ref<TocItem[]>([])
 const activeTocId = ref<string>('')
 let observer: IntersectionObserver | null = null
 
-// 返回上一页
+// 返回指南列表：有历史就回上一页，没有就跳 /guides
 function goBack() {
-  router.back()
+  if (window.history.state?.back) {
+    router.back()
+  } else {
+    router.push('/guides')
+  }
 }
 
 // 获取指南详情
@@ -63,18 +67,27 @@ async function fetchGuide() {
   }
 }
 
-// 提取目录
+// 生成 heading 的 DOM id（目录项 id 与渲染后的 heading id 共用同一套规则）
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, '-')
+}
+
+// 提取目录（基于 processedMarkdown，确保与实际渲染的 heading 一一对应）
 function extractTableOfContents() {
-  if (!guide.value?.content) return
+  const source = processedMarkdown.value
+  if (!source) {
+    tableOfContents.value = []
+    return
+  }
 
   const headingRegex = /^(#{1,3})\s+(.+)$/gm
   const toc: TocItem[] = []
   let match
 
-  while ((match = headingRegex.exec(guide.value.content)) !== null) {
+  while ((match = headingRegex.exec(source)) !== null) {
     const level = match[1]!.length
     const title = match[2]!.trim()
-    const id = title.toLowerCase().replace(/\s+/g, '-')
+    const id = slugify(title)
 
     toc.push({ id, title, level })
   }
@@ -173,12 +186,37 @@ const readingTime = computed(() => {
   return Math.max(1, minutes)
 })
 
+// 给 markdown 渲染出的 heading 元素注入 id（marked 默认不输出 id，导致目录点击无法跳转）
+// 重名标题自动追加 -1, -2… 避免重复
+function assignHeadingIds() {
+  const headings = document.querySelectorAll<HTMLElement>(
+    '.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6'
+  )
+  const usedIds = new Set<string>()
+
+  headings.forEach((h) => {
+    const text = h.textContent || ''
+    const base = slugify(text)
+    let id = base
+    let n = 1
+    while (usedIds.has(id)) {
+      id = `${base}-${n++}`
+    }
+    usedIds.add(id)
+    h.id = id
+  })
+}
+
+// markdown 内容变化时：等 DOM 更新 → 注入 heading id → 重新设置滚动观察器
+watch(processedMarkdown, async () => {
+  await nextTick()
+  assignHeadingIds()
+  setupHeadingObserver()
+})
+
 onMounted(async () => {
   await fetchGuide()
-  // 等待DOM更新后再设置观察器
-  setTimeout(() => {
-    setupHeadingObserver()
-  }, 100)
+  // fetchGuide 内会触发 processedMarkdown 变化，由上面的 watch 接管 id 分配与 observer 设置
 })
 
 onUnmounted(() => {
@@ -210,13 +248,6 @@ onUnmounted(() => {
         <main class="content-main">
           <!-- 面包屑导航 -->
           <Breadcrumb />
-
-          <!-- 胖虎导读 -->
-          <GuideOverview
-            v-if="guide.overview"
-            :content="guide.overview"
-            :guide-id="guide.id || guide.slug || 'default'"
-          />
 
           <!-- 目录树 -->
           <nav v-if="tableOfContents.length > 0" class="table-of-contents" aria-label="目录">
@@ -265,6 +296,13 @@ onUnmounted(() => {
                 {{ guide.category.name }}
               </span>
             </div>
+
+            <!-- 胖虎导读（作为引言嵌入文章卡片，避免首屏多卡片堆叠） -->
+            <GuideOverview
+              v-if="guide.overview"
+              :content="guide.overview"
+              :guide-id="guide.id || guide.slug || 'default'"
+            />
 
             <!-- Markdown 内容 -->
             <div class="markdown-content">
@@ -623,6 +661,22 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
+/* ================= 嵌入式胖虎导读（引言块） ================= */
+/* 嵌入文章卡片内，去掉独立卡片的阴影/背景，改为带左边框的引言块，避免"卡片套卡片" */
+.guide-article :deep(.guide-overview) {
+  background: var(--color-bg-warm, #FFF8F3);
+  box-shadow: none;
+  padding: var(--space-md) var(--space-lg);
+  margin: 0 0 var(--space-xl) 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-left: 3px solid var(--color-primary-medium);
+}
+
+/* 折叠状态的渐变遮罩颜色需要同步为引言块背景色 */
+.guide-article :deep(.guide-overview:not(.expanded)) .overview-content::after {
+  background: linear-gradient(to bottom, transparent, var(--color-bg-warm, #FFF8F3));
+}
+
 /* ================= Markdown 内容 ================= */
 .markdown-content {
   line-height: 1.6;
@@ -861,6 +915,16 @@ onUnmounted(() => {
 @media (max-width: 767px) {
   .guide-detail-refined {
     padding: var(--space-md) var(--space-sm);
+  }
+
+  /* 移动端隐藏面包屑：与 AppHeader 的返回按钮功能重复 */
+  .guide-detail-refined :deep(.breadcrumb) {
+    display: none;
+  }
+
+  /* 移动端隐藏文章目录：屏幕窄，占首屏空间大，价值低 */
+  .table-of-contents {
+    display: none;
   }
 
   .guide-article {

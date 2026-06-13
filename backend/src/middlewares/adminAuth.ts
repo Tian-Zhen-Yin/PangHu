@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyAdminAccessToken } from '../utils/adminJwt'
-import type { AdminJwtPayload } from '../utils/adminJwt'
+import type { AdminJwtPayload } from '../types/admin'
 import { getAdminById } from '../services/admin/auth.service'
 
 // Extend Express Request
-interface AdminRequest extends Request {
+export interface AdminRequest extends Request {
   admin?: AdminJwtPayload & { permissions?: string[] }
 }
 

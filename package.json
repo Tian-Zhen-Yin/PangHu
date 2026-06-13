@@ -5,10 +5,25 @@
     "@prisma/client": "^6.19.2",
     "pg": "^8.16.0"
   },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^1.2.0",
+    "playwright": "^1.40.0",
+    "supertest": "^6.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
   "scripts": {
     "vercel-build": "cd backend && npm run build",
     "postinstall": "node scripts/vercel-postinstall.js || true",
     "deploy": "NODE_TLS_REJECT_UNAUTHORIZED=0 vercel",
-    "deploy:prod": "NODE_TLS_REJECT_UNAUTHORIZED=0 vercel --prod"
+    "deploy:prod": "NODE_TLS_REJECT_UNAUTHORIZED=0 vercel --prod",
+    "test:preflight": "ts-node tests/preflight.ts",
+    "test:unit": "vitest run",
+    "test:api": "vitest run --config vitest.api.config.ts",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:preflight && npm run test:unit && npm run test:api",
+    "test:coverage": "vitest run --coverage"
   }
 }

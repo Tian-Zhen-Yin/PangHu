@@ -26,7 +26,11 @@ authStore.initAuth()
 const adminStore = useAdminStore()
 adminStore.initAdmin()
 
-app.mount('#app')
+// 等待路由解析完初始 URL（含异步组件与守卫）再挂载，避免刷新 /admin/* 时
+// 先以 route.path='/' 渲染一帧客户端 AppShell，造成页面闪烁
+router.isReady().then(() => {
+  app.mount('#app')
+})
 
 // 注册 PWA Service Worker（仅在生产环境）
 if (import.meta.env.PROD) {

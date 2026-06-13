@@ -203,7 +203,10 @@ onMounted(async () => {
                     <h2 class="profile-name">{{ catStore.currentCat.name }}</h2>
                     <span class="current-badge">当前</span>
                   </div>
-                  <p class="profile-meta">{{ getAgeText(catStore.currentCat) }} · {{ catStore.currentCat.weight || '--' }}kg</p>
+                  <div class="profile-chips">
+                    <span class="profile-chip">{{ getAgeText(catStore.currentCat) }}</span>
+                    <span class="profile-chip">{{ catStore.currentCat.weight || '--' }}kg</span>
+                  </div>
                 </div>
               </div>
               <StatusPill
@@ -317,13 +320,6 @@ onMounted(async () => {
         </section>
       </template>
     </div>
-
-    <!-- FAB -->
-    <button v-if="authStore.isAuthenticated" class="fab-button" @click="addRecord">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-      </svg>
-    </button>
   </div>
 </template>
 
@@ -513,11 +509,26 @@ onMounted(async () => {
   letter-spacing: 0.02em;
 }
 
-.profile-meta {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+/* 年龄/体重信息以 chip 形式呈现，比一行灰字更有信息架构感 */
+.profile-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
   margin: var(--space-xs) 0 0 0;
-  font-weight: var(--font-normal);
+}
+
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
 }
 
 .actions-row { display: flex; gap: var(--space-md); }
@@ -530,7 +541,7 @@ onMounted(async () => {
   justify-content: center;
   gap: var(--space-sm);
   padding: var(--space-md) 22px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   cursor: pointer;
@@ -802,35 +813,6 @@ onMounted(async () => {
   border-radius: 1px;
 }
 
-/* FAB */
-.fab-button {
-  position: fixed;
-  bottom: calc(64px + var(--space-lg));
-  right: var(--space-xl);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--color-primary-gradient);
-  border: none;
-  color: var(--color-text-white);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-primary-btn);
-  transition: all 0.3s ease;
-  z-index: var(--z-fixed);
-}
-
-.fab-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 8px 32px rgba(255, 138, 76, 0.5);
-}
-
-.fab-button:active { transform: scale(0.95); }
-
-.fab-button svg { width: 28px; height: 28px; }
-
 @media (min-width: 768px) {
   .timeline-vertical { padding-left: var(--space-2xl); }
   .timeline-vertical::before { left: 9px; }
@@ -848,17 +830,20 @@ onMounted(async () => {
 
   .hero-card { padding: var(--space-lg); border-radius: var(--radius-sm); }
   .profile-bar { padding-bottom: 14px; }
+  /* 让 cat-profile 占满第一行，StatusPill 自然换到第二行，避免窄屏挤一行 */
+  .cat-profile { flex-basis: 100%; }
   .profile-avatar { width: 52px; height: 52px; }
   .profile-name { font-size: var(--text-lg); }
   .actions-row { gap: var(--space-sm); }
-  .hero-action-btn { max-width: none; padding: 9px var(--space-lg); border-radius: var(--radius-xs); }
+  .hero-action-btn { max-width: none; padding: 9px var(--space-lg); border-radius: var(--radius-md); }
   .data-grid { grid-template-columns: 1fr; gap: var(--space-sm); }
   .data-item { padding: var(--space-md); }
+  /* 单列布局下，gauge 不需要桌面端那么高，减少周围留白 */
+  .gauge-container { min-height: 120px; }
 }
 
 @media (max-width: 640px) {
   .timeline-vertical { padding-left: 18px; }
   .timeline-vertical::before { left: 5px; }
-  .fab-button { bottom: calc(64px + var(--space-md)); right: var(--space-lg); width: 56px; height: 56px; }
 }
 </style>

@@ -9,7 +9,12 @@
   font-weight: var(--font-normal);
   color: var(--color-text-main);
   background-color: var(--color-bg-page);
-  scrollbar-gutter: stable; /* 预留滚动条空间，防止页面抖动 */
+}
+
+/* 始终显示垂直滚动条：既避免 scrollbar-gutter: stable 造成的空白槽，
+   又避免短/长页面切换时的水平抖动 */
+html {
+  overflow-y: scroll;
 }
 
 body {

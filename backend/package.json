@@ -15,7 +15,7 @@
     "db:test-data": "ts-node src/seed/test-data.ts",
     "eval:prompt": "ts-node src/eval/prompt-eval.ts",
     "test": "cd .. && npx vitest run --config vitest.backend.config.ts",
-    "test:unit": "cd .. && npx vitest run --config vitest.backend.config.ts --root backend/src/__tests__",
+    "test:unit": "cd .. && npx vitest run --config vitest.backend.config.ts",
     "test:api": "cd .. && npx vitest run --config vitest.api.config.ts",
     "test:watch": "cd .. && npx vitest --config vitest.backend.config.ts",
     "test:coverage": "cd .. && npx vitest run --config vitest.backend.config.ts --coverage",

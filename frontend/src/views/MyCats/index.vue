@@ -146,7 +146,9 @@ async function handleDelete(cat: Cat) {
   padding: 24px 16px 80px;
   position: relative;
   box-sizing: border-box;
-  overflow-x: hidden;
+  /* 用 clip 而非 hidden：hidden 会触发 CSS 规范的副作用——
+     把 overflow-y 强制变成 auto，导致容器内部出现垂直滚动条 */
+  overflow-x: clip;
 }
 
 /* 背景胖虎水印 */

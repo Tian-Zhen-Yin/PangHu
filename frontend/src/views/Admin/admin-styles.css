@@ -1,0 +1,423 @@
+/* Admin Dashboard Global Styles */
+/* Modern professional design system */
+
+/* ==================== Element Plus Overrides ==================== */
+
+/* Card Component */
+.el-card {
+  border-radius: 16px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.el-card .el-card__header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.08) !important;
+  padding: 16px 24px !important;
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1f2c;
+  letter-spacing: -0.2px;
+}
+
+.el-card .el-card__body {
+  padding: 24px !important;
+}
+
+/* Button Component */
+.el-button {
+  border-radius: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.el-button:active {
+  transform: translateY(0);
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  border: none !important;
+}
+
+.el-button--primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.el-button--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: none !important;
+}
+
+.el-button--success:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.el-button--warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border: none !important;
+}
+
+.el-button--warning:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.el-button--danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  border: none !important;
+}
+
+.el-button--danger:hover {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.el-button--info {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  border: none !important;
+}
+
+.el-button--info:hover {
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.el-button.is-circle {
+  border-radius: 50% !important;
+}
+
+/* Input Component */
+.el-input .el-input__wrapper {
+  border-radius: 12px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-input .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15) inset;
+}
+
+.el-input .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) inset !important;
+}
+
+.el-input.is-disabled .el-input__wrapper {
+  background: #f8fafc !important;
+}
+
+/* Form Component */
+.el-form .el-form-item__label {
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+.el-form .el-form-item__error {
+  background: rgba(239, 68, 68, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* Table Component */
+.el-table {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+}
+
+.el-table th {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.3px !important;
+  text-transform: uppercase;
+}
+
+.el-table tr:hover > td {
+  background: rgba(59, 130, 246, 0.03) !important;
+}
+
+.el-table .el-table__cell {
+  padding: 16px 24px !important;
+}
+
+/* Tag Component */
+.el-tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2px !important;
+  padding: 4px 12px !important;
+  border: none !important;
+}
+
+.el-tag--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+}
+
+.el-tag--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+.el-tag--warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.el-tag--danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.el-tag--info {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+}
+
+/* Dropdown Component */
+.el-dropdown-menu {
+  border-radius: 12px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12) !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-dropdown-menu .el-dropdown-menu__item:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  color: #3b82f6 !important;
+}
+
+/* MessageBox Component */
+.el-message-box {
+  border-radius: 16px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15) !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.el-message-box .el-message-box__header {
+  padding: 24px 32px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.08) !important;
+}
+
+.el-message-box .el-message-box__title {
+  color: #1a1f2c !important;
+  font-weight: 600 !important;
+}
+
+.el-message-box .el-message-box__content {
+  padding: 32px !important;
+}
+
+.el-message-box .el-message-box__btns {
+  padding: 24px 32px !important;
+}
+
+/* Dialog Component */
+.el-dialog {
+  border-radius: 16px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15) !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.el-dialog .el-dialog__header {
+  padding: 24px 32px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.08) !important;
+}
+
+.el-dialog .el-dialog__title {
+  color: #1a1f2c !important;
+  font-weight: 600 !important;
+}
+
+.el-dialog .el-dialog__body {
+  padding: 32px !important;
+}
+
+.el-dialog .el-dialog__footer {
+  padding: 24px 32px !important;
+  border-top: 1px solid rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Message Component */
+.el-message {
+  border-radius: 12px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12) !important;
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  padding: 12px 20px !important;
+}
+
+.el-message--success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
+  border-left: 4px solid #10b981 !important;
+}
+
+.el-message--warning {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%) !important;
+  border-left: 4px solid #f59e0b !important;
+}
+
+.el-message--error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%) !important;
+  border-left: 4px solid #ef4444 !important;
+}
+
+.el-message--info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+  border-left: 4px solid #3b82f6 !important;
+}
+
+/* Loading Component */
+.el-loading-mask {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+.el-loading-spinner .circular {
+  stroke: #3b82f6 !important;
+}
+
+/* DatePicker Component */
+.el-picker__popper {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Badge Component */
+.el-badge .el-badge__content {
+  border-radius: 9999px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* Avatar Component */
+.el-avatar {
+  border-radius: 12px !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ==================== Utility Classes ==================== */
+
+.admin-page {
+  width: 100%;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(59, 130, 246, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-section:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: rgba(59, 130, 246, 0.15);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.admin-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1f2c;
+  letter-spacing: -0.2px;
+}
+
+.admin-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* ==================== Animations ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==================== Scrollbar ==================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 6px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}

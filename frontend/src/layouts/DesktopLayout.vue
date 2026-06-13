@@ -6,14 +6,15 @@ import AppSidebar from './components/AppSidebar.vue'
 
 const route = useRoute()
 const isAiChat = computed(() => route.name === 'AIChat')
+const isAdminRoute = computed(() => route.meta.admin === true)
 </script>
 
 <template>
   <div class="desktop-layout">
-    <AppHeader v-if="!isAiChat" />
+    <AppHeader v-if="!isAiChat && !isAdminRoute" />
     <div class="layout-container">
-      <AppSidebar v-if="!isAiChat" />
-      <main class="main-content" :class="{ 'full-bleed': isAiChat }">
+      <AppSidebar v-if="!isAiChat && !isAdminRoute" />
+      <main class="main-content" :class="{ 'full-bleed': isAiChat || isAdminRoute }">
         <slot />
       </main>
     </div>

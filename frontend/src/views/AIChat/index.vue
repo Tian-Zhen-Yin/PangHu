@@ -315,8 +315,8 @@ const contextualSuggestions = computed(() => {
         class="messages-container"
         @scroll="handleScroll"
       >
-        <!-- 空状态 -->
-        <div v-if="!chatStore.currentConversation && chatStore.messages.length === 0" class="empty-state">
+        <!-- 空状态：消息为空时显示（不论是否有 currentConversation，新建对话也能看到首屏） -->
+        <div v-if="chatStore.messages.length === 0" class="empty-state">
           <!-- 医生介绍卡片 -->
           <div class="doctor-card">
             <div class="doctor-avatar-large">
@@ -329,7 +329,6 @@ const contextualSuggestions = computed(() => {
             </div>
             <h2 class="empty-title">你好，我是喵喵医生</h2>
             <p class="empty-description">我是 {{ currentCat?.name || '小猫咪' }} 的专属健康顾问</p>
-            <p class="empty-hint">选择下方问题开始咨询，或直接输入您的问题</p>
           </div>
 
           <!-- 快速入口问题 -->
@@ -353,36 +352,6 @@ const contextualSuggestions = computed(() => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
               </button>
-            </div>
-          </div>
-
-          <!-- 功能引导 -->
-          <div class="feature-guides">
-            <div class="guide-item">
-              <div class="guide-icon chart-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 3v18h18"/>
-                  <path d="M18 17V9"/>
-                  <path d="M13 17V5"/>
-                  <path d="M8 17v-3"/>
-                </svg>
-              </div>
-              <div class="guide-text">
-                <span class="guide-title">成长记录分析</span>
-                <span class="guide-desc">基于猫咪成长数据提供专业建议</span>
-              </div>
-            </div>
-            <div class="guide-item">
-              <div class="guide-icon book-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-              </div>
-              <div class="guide-text">
-                <span class="guide-title">养猫知识库</span>
-                <span class="guide-desc">引用权威来源，确保建议可靠</span>
-              </div>
             </div>
           </div>
         </div>
@@ -437,7 +406,7 @@ const contextualSuggestions = computed(() => {
         </div>
         <ChatInput
           :disabled="chatStore.isStreaming"
-          :placeholder="chatStore.currentConversation ? `描述症状，例如：不吃饭、呕吐、精神差…` : '可以问：猫咪不吃饭怎么办？'"
+          :placeholder="chatStore.messages.length > 0 ? '继续提问…' : '输入您的问题…'"
           @send="handleSend"
         />
         <p class="disclaimer">
@@ -731,6 +700,11 @@ const contextualSuggestions = computed(() => {
 
 .chat-header.mobile::before {
   width: 3px;
+}
+
+/* 移动端隐藏"宠物健康助手"副标题：窄屏不需要次要信息，避免 4 元素挤一行 */
+.chat-header.mobile .doctor-role {
+  display: none;
 }
 
 .chat-header.desktop {
@@ -1138,13 +1112,6 @@ const contextualSuggestions = computed(() => {
   font-weight: 500;
 }
 
-.empty-hint {
-  font-size: 14px;
-  color: #D4B896;
-  margin: 0 0 var(--space-md) 0;
-  text-align: center;
-}
-
 /* 快速问题 - 温暖卡片风格 */
 .quick-questions {
   width: 100%;
@@ -1247,79 +1214,6 @@ const contextualSuggestions = computed(() => {
 .question-card:hover .question-arrow {
   color: #D4A574;
   transform: translateX(4px);
-}
-
-/* 功能引导 - 奶油色卡片风格 */
-.feature-guides {
-  display: flex;
-  gap: var(--space-lg);
-  padding: var(--space-lg);
-  /* 奶油色渐变背景 */
-  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
-  border: 1px solid #FFF5DC;
-  border-radius: var(--radius-lg);
-  width: 100%;
-  box-shadow: 0 4px 16px rgba(255, 236, 179, 0.06);
-  animation: featureGuidesSlide 0.5s ease-out 0.4s both;
-}
-
-@keyframes featureGuidesSlide {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.guide-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  flex: 1;
-  transition: transform 0.3s ease;
-}
-
-.guide-item:hover {
-  transform: translateX(4px);
-}
-
-.guide-icon {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* 奶油色渐变背景 */
-  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
-  border-radius: 10px;
-  color: #8B7355;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.12);
-}
-
-.guide-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.guide-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.guide-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #8B7355;
-}
-
-.guide-desc {
-  font-size: 12px;
-  color: #BC8F6F;
 }
 
 /* ================= 思考指示器 - 温暖动画 ================= */
@@ -1515,29 +1409,6 @@ const contextualSuggestions = computed(() => {
     padding: var(--space-sm) var(--space-md);
   }
 
-  /* 功能引导移动端优化 */
-  .feature-guides {
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
-  }
-
-  .guide-item {
-    gap: var(--space-sm);
-  }
-
-  .guide-icon {
-    width: 28px;
-    height: 28px;
-    /* 奶油色渐变背景 */
-    background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
-  }
-
-  .guide-icon svg {
-    width: 16px;
-    height: 16px;
-  }
-
   .messages-container {
     padding: var(--space-md) 0;
   }
@@ -1566,10 +1437,6 @@ const contextualSuggestions = computed(() => {
 
   .empty-description {
     font-size: 13px;
-  }
-
-  .empty-hint {
-    font-size: 12px;
   }
 
   /* 移动端头像优化 */

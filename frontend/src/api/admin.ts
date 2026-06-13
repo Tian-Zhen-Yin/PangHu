@@ -119,3 +119,257 @@ export async function getRecentLogs(limit: number = 5): Promise<ApiResponse<Admi
   })
   return response.data
 }
+
+// Guide Management APIs
+export interface GuideListParams {
+  page?: number
+  pageSize?: number
+  categoryId?: string
+  keyword?: string
+}
+
+export interface Guide {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt?: string
+  coverImage?: string
+  categoryId: string
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  tags?: string[]
+  viewCount: number
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    chunks: number
+  }
+}
+
+export interface GuideCategory {
+  id: string
+  name: string
+  slug: string
+  icon?: string
+  description?: string
+  order: number
+  _count?: {
+    guides: number
+  }
+}
+
+export interface PaginatedGuides {
+  items: Guide[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+}
+
+export async function getGuides(params: GuideListParams): Promise<ApiResponse<PaginatedGuides>> {
+  const response = await adminApi.get<ApiResponse<PaginatedGuides>>('/guides', { params })
+  return response.data
+}
+
+export async function getGuideById(id: string): Promise<ApiResponse<Guide>> {
+  const response = await adminApi.get<ApiResponse<Guide>>(`/guides/${id}`)
+  return response.data
+}
+
+export async function createGuide(data: Partial<Guide>): Promise<ApiResponse<Guide>> {
+  const response = await adminApi.post<ApiResponse<Guide>>('/guides', data)
+  return response.data
+}
+
+export async function updateGuide(id: string, data: Partial<Guide>): Promise<ApiResponse<Guide>> {
+  const response = await adminApi.put<ApiResponse<Guide>>(`/guides/${id}`, data)
+  return response.data
+}
+
+export async function deleteGuide(id: string): Promise<ApiResponse<null>> {
+  const response = await adminApi.delete<ApiResponse<null>>(`/guides/${id}`)
+  return response.data
+}
+
+export async function getGuideCategories(): Promise<ApiResponse<GuideCategory[]>> {
+  const response = await adminApi.get<ApiResponse<GuideCategory[]>>('/guides/categories')
+  return response.data
+}
+
+export async function ingestGuide(id: string): Promise<ApiResponse<{ guideId: string }>> {
+  const response = await adminApi.post<ApiResponse<{ guideId: string }>>(`/guides/${id}/ingest`)
+  return response.data
+}
+
+export async function ingestAllGuides(): Promise<ApiResponse<{ count: number }>> {
+  const response = await adminApi.post<ApiResponse<{ count: number }>>('/guides/ingest-all')
+  return response.data
+}
+
+// Template Management APIs
+export interface TemplateListParams {
+  page?: number
+  pageSize?: number
+  category?: string
+  keyword?: string
+}
+
+export interface Template {
+  id: string
+  name: string
+  description: string
+  category: string
+  stageId?: string | null
+  content: any
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TemplateCategory {
+  name: string
+  count: number
+}
+
+export interface TemplateStage {
+  id: string
+  name: string
+  ageRange: string
+  order: number
+}
+
+export interface PaginatedTemplates {
+  items: Template[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+}
+
+export async function getTemplates(params: TemplateListParams): Promise<ApiResponse<PaginatedTemplates>> {
+  const response = await adminApi.get<ApiResponse<PaginatedTemplates>>('/templates', { params })
+  return response.data
+}
+
+export async function getTemplateById(id: string): Promise<ApiResponse<Template>> {
+  const response = await adminApi.get<ApiResponse<Template>>(`/templates/${id}`)
+  return response.data
+}
+
+export async function createTemplate(data: Partial<Template>): Promise<ApiResponse<Template>> {
+  const response = await adminApi.post<ApiResponse<Template>>('/templates', data)
+  return response.data
+}
+
+export async function updateTemplate(id: string, data: Partial<Template>): Promise<ApiResponse<Template>> {
+  const response = await adminApi.put<ApiResponse<Template>>(`/templates/${id}`, data)
+  return response.data
+}
+
+export async function deleteTemplate(id: string): Promise<ApiResponse<null>> {
+  const response = await adminApi.delete<ApiResponse<null>>(`/templates/${id}`)
+  return response.data
+}
+
+export async function getTemplateCategories(): Promise<ApiResponse<TemplateCategory[]>> {
+  const response = await adminApi.get<ApiResponse<TemplateCategory[]>>('/templates/categories')
+  return response.data
+}
+
+export async function getTemplateStages(): Promise<ApiResponse<TemplateStage[]>> {
+  const response = await adminApi.get<ApiResponse<TemplateStage[]>>('/templates/stages')
+  return response.data
+}
+
+// User Management APIs
+export interface UserListParams {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  memberType?: string
+  status?: string
+}
+
+export interface User {
+  id: string
+  username: string
+  email: string
+  memberType: string
+  memberExpiredAt?: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: {
+    cats: number
+    plans: number
+    conversations: number
+  }
+}
+
+export interface UserStats {
+  totalUsers: number
+  freeUsers: number
+  premiumUsers: number
+  newUsersThisMonth: number
+  activeUsers: number
+  premiumRate: string
+}
+
+export interface PaginatedUsers {
+  items: User[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+}
+
+export async function getUsers(params: UserListParams): Promise<ApiResponse<PaginatedUsers>> {
+  const response = await adminApi.get<ApiResponse<PaginatedUsers>>('/users', { params })
+  return response.data
+}
+
+export async function getUserById(id: string): Promise<ApiResponse<User>> {
+  const response = await adminApi.get<ApiResponse<User>>(`/users/${id}`)
+  return response.data
+}
+
+export async function updateUser(id: string, data: Partial<User>): Promise<ApiResponse<User>> {
+  const response = await adminApi.put<ApiResponse<User>>(`/users/${id}`, data)
+  return response.data
+}
+
+export async function deleteUser(id: string): Promise<ApiResponse<null>> {
+  const response = await adminApi.delete<ApiResponse<null>>(`/users/${id}`)
+  return response.data
+}
+
+export async function resetUserPassword(id: string): Promise<ApiResponse<{ tempPassword: string }>> {
+  const response = await adminApi.post<ApiResponse<{ tempPassword: string }>>(`/users/${id}/reset-password`)
+  return response.data
+}
+
+export async function toggleUserStatus(id: string, data: { memberType: string }): Promise<ApiResponse<User>> {
+  const response = await adminApi.post<ApiResponse<User>>(`/users/${id}/toggle-status`, data)
+  return response.data
+}
+
+export async function getUserStats(): Promise<ApiResponse<UserStats>> {
+  const response = await adminApi.get<ApiResponse<UserStats>>('/users/stats')
+  return response.data
+}
+
+export async function exportUsers(format: 'json' | 'csv' = 'json'): Promise<any> {
+  const response = await adminApi.get('/users/export', {
+    params: { format },
+    responseType: format === 'csv' ? 'blob' : 'json',
+  })
+  return response.data
+}
