@@ -67,7 +67,7 @@ async function callWithTimeout<T>(
 /**
  * 执行单个工具（含超时 + 重试）
  */
-async function executeTool(
+export async function executeTool(
   step: PlanStep,
   ctx: AgentContext,
   onProgress?: (result: ToolResult) => void
@@ -211,4 +211,22 @@ export async function executePlan(
   }
 
   return results
+}
+
+/**
+ * 单工具调用入口(供 AgentLoop 使用)。
+ * 复用 executeTool 的全部能力:Zod 校验、超时、重试、abort、cache。
+ *
+ * @param toolName 工具名(必须已注册到 toolRegistry)
+ * @param parameters 工具参数(将经过 Zod 校验)
+ * @param ctx Agent 上下文
+ * @param reason 可选的调用理由(由 LLM 提供时传入)
+ */
+export async function callTool(
+  toolName: string,
+  parameters: Record<string, unknown>,
+  ctx: AgentContext,
+  reason: string = 'LLM tool-calling'
+): Promise<ToolResult> {
+  return executeTool({ toolName, parameters, reason }, ctx)
 }
