@@ -1,0 +1,434 @@
+# GitOps Kubernetes 部署配置
+# 目录路径: k8s/
+# 说明: 声明式 Kubernetes 部署，支持 ArgoCD / Harness CD
+#
+# 使用方式:
+#   kubectl apply -f k8s/namespace.yaml
+#   kubectl apply -f k8s/backend/
+#   kubectl apply -f k8s/frontend/
+#
+# ArgoCD 自动同步: Git 仓库变更 → ArgoCD 自动部署到集群
+
+---
+# ====== 1. Namespace ======
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: panghu
+  labels:
+    app.kubernetes.io/name: panghu
+    app.kubernetes.io/part-of: panghu-养成计划
+    environment: {{ .Values.environment | default "staging" }}
+    harnessed.io/pipeline: PangHu-CI-CD
+
+---
+# ====== 2. ConfigMap: 环境配置 ======
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: panghu-backend-config
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: {{ .Values.environment | default "staging" }}
+  LOG_LEVEL: {{ .Values.backend.logLevel | default "info" }}
+  PORT: "3000"
+  # Agent 系统配置
+  AGENT_DEFAULT_MODE: {{ .Values.agent.defaultMode | default "true" }}
+  AGENT_STREAMING_ENABLED: {{ .Values.agent.streamingEnabled | default "true" }}
+  AGENT_TOOL_TIMEOUT_MS: {{ .Values.agent.toolTimeoutMs | default "5000" }}
+  AGENT_MAX_TOOLS_PER_REQUEST: {{ .Values.agent.maxToolsPerRequest | default "5" }}
+  # RAG 配置
+  RAG_TOP_K: {{ .Values.rag.topK | default "5" }}
+  RAG_MIN_SIMILARITY: {{ .Values.rag.minSimilarity | default "0.7" }}
+---
+# ====== 3. ConfigMap: 特性开关（运行时可覆盖） ======
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: panghu-feature-flags
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: feature-flags
+data:
+  # Agent 核心功能开关（JSON 格式，方便运行时读取）
+  feature-flags.json: |
+    {
+      "AGENT_MODE": true,
+      "AGENT_STREAMING": true,
+      "AGENT_TOOL_VISUALIZATION": true,
+      "HEALTH_ASSESSMENT_CARD": true,
+      "WEIGHT_TREND_CARD": true,
+      "VACCINE_STATUS_CARD": true,
+      "RAG_SEARCH": true,
+      "CITATIONS_DISPLAY": true,
+      "MULTI_CAT_COMPARISON": false,
+      "PROACTIVE_HEALTH_ALERTS": false,
+      "AGENT_CONTEXT_MEMORY": true,
+      "SUGGESTED_QUESTIONS": true,
+      "SMART_SUGGESTIONS": true,
+      "AGENT_COT_DISPLAY": false
+    }
+
+---
+# ====== 4. Secret: 敏感配置 ======
+apiVersion: v1
+kind: Secret
+metadata:
+  name: panghu-backend-secrets
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: secrets
+type: Opaque
+stringData:
+  DATABASE_URL: {{ .Secrets.databaseUrl }}
+  JWT_SECRET: {{ .Secrets.jwtSecret }}
+  ZHIPUAI_API_KEY: {{ .Secrets.zhipuaiApiKey }}
+  ZHIPUAI_MODEL: {{ .Values.backend.llmModel | default "glm-4-flash" }}
+
+---
+# ====== 5. Deployment: 后端 ======
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: panghu-backend
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: api
+    version: {{ .Values.image.tag | default "latest" }}
+  annotations:
+    # ArgoCD/Harness 同步注释
+    argocd.argoproj.io/sync-wave: "1"
+    harnessed.io/buildId: {{ .Values.build.id | default "" | quote }}
+    harnessed.io/commitSha: {{ .Values.git.commitSha | default "" | quote }}
+spec:
+  replicas: {{ .Values.backend.replicas | default 2 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: panghu-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: panghu-backend
+        app.kubernetes.io/component: api
+        version: {{ .Values.image.tag | default "latest" }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      # 亲和性：优先调度到同一可用区
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: panghu-backend
+                topologyKey: topology.kubernetes.io/zone
+
+      containers:
+        - name: backend
+          image: {{ .Values.image.repository }}/panghu-backend:{{ .Values.image.tag | default "latest" }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: panghu-backend-config
+                  key: NODE_ENV
+            - name: AGENT_DEFAULT_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: panghu-backend-config
+                  key: AGENT_DEFAULT_MODE
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: panghu-backend-secrets
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: panghu-backend-secrets
+                  key: JWT_SECRET
+            - name: ZHIPUAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: panghu-backend-secrets
+                  key: ZHIPUAI_API_KEY
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]  # 优雅停机，等待连接耗尽
+
+---
+# ====== 6. Service: 后端 API ======
+apiVersion: v1
+kind: Service
+metadata:
+  name: panghu-backend-svc
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: api
+  annotations:
+    # AWS ALB 慢启动（给新 Pod 预热时间）
+    alb.sdk.nginx.com/load-balancer-attributes: slow_start=30s
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: panghu-backend
+
+---
+# ====== 7. HorizontalPodAutoscaler: 后端自动扩缩容 ======
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: panghu-backend-hpa
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: panghu-backend
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    # 基于 CPU 自动扩缩
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    # 基于 Agent 请求量自动扩缩（自定义指标）
+    - type: Pods
+      pods:
+        metric:
+          name: agent_requests_total_per_second
+        target:
+          type: AverageValue
+          averageValue: "10"  # 每 Pod 每秒 > 10 请求时扩容
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60  # 扩容冷却 60s
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 缩容冷却 5min
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+
+---
+# ====== 8. Ingress: API 网关 ======
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: panghu-api-ingress
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
+    # 限流
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    nginx.ingress.kubernetes.io/limit-connections: "100"
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    # WebSocket 支持（SSE 长连接）
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  rules:
+    - host: api.panghu.example.com
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: panghu-backend-svc
+                port:
+                  number: 80
+
+---
+# ====== 9. PodDisruptionBudget: 高可用保护 ======
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: panghu-backend-pdb
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+spec:
+  minAvailable: 1  # 至少保留 1 个可用副本
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: panghu-backend
+
+---
+# ====== 10. ServiceMonitor: Prometheus 监控 ======
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: panghu-backend-monitor
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    prometheus: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: panghu-backend
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - panghu
+
+---
+# ====== 11. PrometheusRule: Agent 告警规则 ======
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: panghu-agent-alerts
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    prometheus: prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: agent-performance
+      interval: 30s
+      rules:
+        # Agent 响应超时告警
+        - alert: AgentHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(panghu_agent_request_duration_seconds_bucket[5m])) by (le)
+            ) > 5
+          for: 5m
+          labels:
+            severity: warning
+            component: agent
+          annotations:
+            summary: "Agent 响应延迟过高"
+            description: "P95 响应时间超过 5 秒，当前值: {{ $value }}s"
+
+        # 工具调用失败率告警
+        - alert: AgentToolFailureRate
+          expr: |
+            sum(rate(panghu_agent_tool_calls_total{status="error"}[5m]))
+            /
+            sum(rate(panghu_agent_tool_calls_total[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            component: agent-tools
+          annotations:
+            summary: "Agent 工具调用失败率超过 10%"
+            description: "当前失败率: {{ $value | humanizePercentage }}"
+
+        # Agent 请求成功率告警
+        - alert: AgentLowSuccessRate
+          expr: |
+            sum(rate(panghu_agent_requests_total{status="success"}[5m]))
+            /
+            sum(rate(panghu_agent_requests_total[5m])) < 0.9
+          for: 5m
+          labels:
+            severity: warning
+            component: agent
+          annotations:
+            summary: "Agent 请求成功率低于 90%"
+            description: "当前成功率: {{ $value | humanizePercentage }}"
+
+        # LLM 调用超时
+        - alert: LLMTimeoutRate
+          expr: |
+            sum(rate(panghu_llm_timeout_total[5m])) > 0.05
+          for: 3m
+          labels:
+            severity: warning
+            component: llm
+          annotations:
+            summary: "LLM 调用超时率上升"
+            description: "LLM 超时率: {{ $value | humanizePercentage }}"
+
+    - name: agent-capacity
+      interval: 60s
+      rules:
+        # 容量预警
+        - alert: AgentHighLoad
+          expr: |
+            sum(rate(panghu_agent_requests_total[5m])) > 100
+          for: 10m
+          labels:
+            severity: info
+            component: capacity
+          annotations:
+            summary: "Agent 负载较高"
+            description: "当前请求速率: {{ $value }} req/s，建议关注扩容策略"

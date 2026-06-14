@@ -1,0 +1,50 @@
+# Helm Values 配置文件
+# 路径: k8s/values.staging.yaml
+# 说明: Staging 环境部署配置
+
+environment: staging
+
+# ====== 镜像配置 ======
+image:
+  repository: registry.example.com/panghu
+  tag: latest  # 由 CI 流水线自动注入 build ID
+
+# ====== Git 信息 ======
+git:
+  commitSha: ""
+  branch: ""
+
+# ====== CI/CD 信息 ======
+build:
+  id: ""
+  pipelineId: ""
+
+# ====== 后端配置 ======
+backend:
+  replicas: 2
+  logLevel: debug
+  llmModel: glm-4-flash
+
+# ====== 前端配置 ======
+frontend:
+  replicas: 2
+  apiBaseUrl: https://staging-api.panghu.example.com
+  wsBaseUrl: wss://staging-api.panghu.example.com
+
+# ====== Agent 配置 ======
+agent:
+  defaultMode: true
+  streamingEnabled: true
+  toolTimeoutMs: 5000
+  maxToolsPerRequest: 5
+
+# ====== RAG 配置 ======
+rag:
+  topK: 5
+  minSimilarity: 0.7
+
+# ====== 密钥（通过 --set 或 SealedSecret 注入）======
+secrets:
+  databaseUrl: ""
+  jwtSecret: ""
+  zhipuaiApiKey: ""

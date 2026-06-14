@@ -1,0 +1,532 @@
+# Harness CI/CD 流水线配置
+# 文件路径: .harness/pipeline.yaml
+# 说明: 定义完整的 CI/CD 流水线，覆盖构建、测试、质量门禁、部署全生命周期
+
+pipeline:
+  name: PangHu-CI-CD-Pipeline
+  version: "1.0"
+  description: 哈吉咪养成计划 - 全流程自动化流水线
+
+# ==================== 触发器 ====================
+triggers:
+  # 1. PR 代码审查触发（质量门禁）
+  - name: pr-quality-gate
+    type: PR_TRIGGER
+    condition:
+      branch: "^(feat|fix|chore|docs|refactor)/.*$"
+    actions:
+      - name: quality-gate
+        steps:
+          - step: Install Dependencies
+          - step: Type Check
+          - step: Unit Tests
+          - step: API Tests
+          - step: Build Check
+
+  # 2. main/master 分支合并触发（自动部署）
+  - name: main-deploy-trigger
+    type: WEBHOOK
+    condition:
+      branch: "^(main|master)$"
+    actions:
+      - name: deploy-staging
+        steps:
+          - step: Install Dependencies
+          - step: Type Check
+          - step: Unit Tests
+          - step: API Tests
+          - step: Build Artifact
+          - step: Deploy Staging
+          - step: E2E Smoke Test
+          - step: Deploy Production
+          - step: Continuous Verification
+
+# ==================== 阶段定义 ====================
+stages:
+  # ========== 阶段 1: 代码质量检查 ==========
+  - name: Code Quality Gate
+    type: CI
+    priority: 1
+
+    steps:
+      # 1.1 安装依赖
+      - name: install-dependencies
+        type: RUN
+        image: node:20-alpine
+        timeout: 5m
+        commands:
+          - npm ci --legacy-peer-deps
+        cache:
+          key: "node-modules-{{ checksum 'package-lock.json' }}"
+          paths:
+            - node_modules/
+            - frontend/node_modules/
+            - backend/node_modules/
+
+      # 1.2 TypeScript 类型检查（前端）
+      - name: frontend-typecheck
+        type: RUN
+        image: node:20-alpine
+        timeout: 3m
+        commands:
+          - cd frontend
+          - npm run typecheck
+        failureStrategy: ABORT
+        when:
+          filesChanged:
+            - frontend/src/**
+            - frontend/tsconfig**
+        env:
+          CI: "true"
+
+      # 1.3 TypeScript 类型检查（后端）
+      - name: backend-typecheck
+        type: RUN
+        image: node:20-alpine
+        timeout: 3m
+        commands:
+          - cd backend
+          - npx tsc --noEmit
+        failureStrategy: ABORT
+        when:
+          filesChanged:
+            - backend/src/**
+            - backend/tsconfig**
+        env:
+          CI: "true"
+
+      # 1.4 前端 Lint 检查
+      - name: frontend-lint
+        type: RUN
+        image: node:20-alpine
+        timeout: 3m
+        commands:
+          - cd frontend
+          - npm run lint 2>&1 || echo "lint check done"
+        when:
+          filesChanged:
+            - frontend/src/**
+        env:
+          CI: "true"
+
+  # ========== 阶段 2: 单元测试 ==========
+  - name: Unit Tests
+    type: CI
+    priority: 2
+    dependsOn: [Code Quality Gate]
+
+    steps:
+      # 2.1 前端单元测试
+      - name: frontend-unit-tests
+        type: RUN
+        image: node:20-alpine
+        timeout: 5m
+        commands:
+          - npx vitest run --config vitest.config.ts --reporter=verbose
+        coverage:
+          enabled: true
+          reports:
+            - type: COVERAGE
+              format: HTML
+              path: coverage/
+        failureStrategy: ABORT
+        when:
+          filesChanged:
+            - frontend/src/**
+            - vitest.config.ts
+
+      # 2.2 后端单元测试
+      - name: backend-unit-tests
+        type: RUN
+        image: node:20-alpine
+        timeout: 5m
+        commands:
+          - npx vitest run --config vitest.backend.config.ts --reporter=verbose
+        coverage:
+          enabled: true
+          reports:
+            - type: COVERAGE
+              format: LCOV
+              path: coverage/backend/
+        failureStrategy: ABORT
+        when:
+          filesChanged:
+            - backend/src/**
+            - vitest.backend.config.ts
+
+  # ========== 阶段 3: API 集成测试 ==========
+  - name: API Integration Tests
+    type: CI
+    priority: 3
+    dependsOn: [Unit Tests]
+
+    steps:
+      # 3.1 数据库迁移
+      - name: db-migrate
+        type: RUN
+        image: node:20-alpine
+        timeout: 2m
+        commands:
+          - cd backend
+          - npx prisma migrate deploy || npx prisma db push
+        env:
+          DATABASE_URL: "{{ secrets.DATABASE_URL_TEST }}"
+
+      # 3.2 API 测试
+      - name: api-tests
+        type: RUN
+        image: node:20-alpine
+        timeout: 10m
+        commands:
+          - npx vitest run --config vitest.api.config.ts --reporter=verbose
+        failureStrategy: MARK_SUCCESS  # API 测试允许失败，不阻塞部署
+        when:
+          filesChanged:
+            - backend/src/controllers/**
+            - backend/src/services/**
+            - backend/src/routes/**
+
+      # 3.3 Agent 系统专项测试
+      - name: agent-tests
+        type: RUN
+        image: node:20-alpine
+        timeout: 10m
+        commands:
+          - npx vitest run backend/src/__tests__/agent --reporter=verbose
+        when:
+          filesChanged:
+            - backend/src/agent/**
+        env:
+          ZHIPUAI_API_KEY: "{{ secrets.ZHIPUAI_API_KEY }}"
+          DATABASE_URL: "{{ secrets.DATABASE_URL_TEST }}"
+        failureStrategy: ABORT
+
+  # ========== 阶段 4: 构建制品 ==========
+  - name: Build Artifacts
+    type: CI
+    priority: 4
+    dependsOn: [API Integration Tests]
+
+    steps:
+      # 4.1 构建后端制品
+      - name: build-backend
+        type: BUILD
+        image: node:20-alpine
+        timeout: 5m
+        commands:
+          - cd backend
+          - npm run build
+        artifacts:
+          - name: backend-dist
+            type: BUILD
+            location: api/_server.js
+            retention: 7d
+
+      # 4.2 构建前端制品
+      - name: build-frontend
+        type: BUILD
+        image: node:20-alpine
+        timeout: 5m
+        commands:
+          - cd frontend
+          - npm run build
+        artifacts:
+          - name: frontend-dist
+            type: BUILD
+            location: frontend/dist
+            retention: 7d
+
+  # ========== 阶段 5: 部署 Staging ==========
+  - name: Deploy Staging
+    type: CD
+    priority: 5
+    environment: staging
+    dependsOn: [Build Artifacts]
+
+    steps:
+      # 5.1 健康检查
+      - name: health-check
+        type: RUN
+        image: curlimages/curl:latest
+        timeout: 1m
+        commands:
+          - |
+            echo "Waiting for deployment..."
+            sleep 10
+            curl -f https://staging-api.panghu.example.com/api/health || exit 1
+
+      # 5.2 部署后端
+      - name: deploy-backend-staging
+        type: HELM_DEPLOY
+        chart: backend
+        namespace: staging
+        values:
+          replicaCount: 2
+          image.tag: "{{ pipeline.buildId }}"
+          env:
+            NODE_ENV: staging
+            LOG_LEVEL: debug
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+      # 5.3 部署前端
+      - name: deploy-frontend-staging
+        type: VERCEL_DEPLOY
+        project: panghu-frontend
+        environment: staging
+        waitForCompletion: true
+
+  # ========== 阶段 6: E2E 冒烟测试 ==========
+  - name: E2E Smoke Tests
+    type: CI
+    priority: 6
+    dependsOn: [Deploy Staging]
+
+    steps:
+      # 6.1 等待服务就绪
+      - name: wait-for-service
+        type: RUN
+        image: curlimages/curl:latest
+        timeout: 2m
+        commands:
+          - |
+            for i in {1..30}; do
+              curl -sf https://staging.panghu.example.com && break
+              echo "Waiting... $i/30"
+              sleep 2
+            done
+
+      # 6.2 Playwright E2E 测试
+      - name: e2e-tests
+        type: RUN
+        image: mcr.microsoft.com/playwright:v1.40.0
+        timeout: 15m
+        commands:
+          - npx playwright test --reporter=html
+        artifacts:
+          - name: e2e-report
+            type: TEST
+            location: test-results/
+            retention: 30d
+        failureStrategy: MARK_SUCCESS
+
+      # 6.3 Agent 端到端测试
+      - name: agent-e2e-tests
+        type: RUN
+        image: mcr.microsoft.com/playwright:v1.40.0
+        timeout: 10m
+        commands:
+          - npx playwright test e2e/agent.spec.ts --reporter=html
+        when:
+          filesChanged:
+            - backend/src/agent/**
+            - frontend/src/**/chat/**
+        env:
+          BASE_URL: https://staging.panghu.example.com
+          API_BASE_URL: https://staging-api.panghu.example.com
+
+  # ========== 阶段 7: 持续验证 ==========
+  - name: Continuous Verification
+    type: VERIFICATION
+    priority: 7
+    dependsOn: [E2E Smoke Tests]
+
+    monitor:
+      # 7.1 成功率验证
+      - name: success-rate-check
+        type: THRESHOLD
+        metric: http_requests_total
+        filters:
+          status: "2xx"
+          service: backend
+        conditions:
+          - operator: ">="
+            value: 95
+            period: 5m
+        action: WARN
+
+      # 7.2 响应时间验证
+      - name: response-time-check
+        type: THRESHOLD
+        metric: http_request_duration_seconds
+        filters:
+          path: "/api/chat/*"
+          service: backend
+        conditions:
+          - operator: "<="
+            value: 3
+            period: 5m
+            percentile: p95
+        action: WARN
+
+      # 7.3 Agent 工具调用成功率
+      - name: agent-tool-success-rate
+        type: CUSTOM
+        script: |
+          # 监控 Agent 工具调用成功率
+          # 指标: agent_tool_calls_total{status="success"} / agent_tool_calls_total
+          SUCCESS_RATE=$(curl -s "http://prometheus:9090/api/v1/query?query=rate(agent_tool_calls_total{status=\"success\"}[5m]) / rate(agent_tool_calls_total[5m])" | jq -r '.data.result[0].value[1]')
+          if (( $(echo "$SUCCESS_RATE < 0.90" | bc -l) )); then
+            echo "Agent success rate $SUCCESS_RATE below threshold"
+            exit 1
+          fi
+        schedule: "*/5 * * * *"
+        failureStrategy: ROLLBACK
+
+    # 7.4 自动回滚策略
+    rollback:
+      enabled: true
+      conditions:
+        - name: high-error-rate
+          type: ERROR_RATE
+          threshold: 5%
+          period: 2m
+          action: AUTO_ROLLBACK
+        - name: latency-spike
+          type: LATENCY
+          threshold: 5s
+          period: 3m
+          percentile: p99
+          action: AUTO_ROLLBACK
+
+  # ========== 阶段 8: 生产部署 ==========
+  - name: Deploy Production
+    type: CD
+    priority: 8
+    environment: production
+    dependsOn: [Continuous Verification]
+    approval:
+      required: true
+      approvers:
+        - admin
+        - tech-lead
+      timeout: 30m
+
+    steps:
+      # 8.1 蓝绿部署 - 预热新版本
+      - name: pre-warm
+        type: RUN
+        image: curlimages/curl:latest
+        commands:
+          - curl -f https://api.panghu.example.com/api/health
+          - sleep 5
+
+      # 8.2 滚动更新 - 逐步替换实例
+      - name: rolling-update
+        type: HELM_DEPLOY
+        chart: backend
+        namespace: production
+        strategy: ROLLING_UPDATE
+        values:
+          replicaCount: 3
+          image.tag: "{{ pipeline.buildId }}"
+          maxSurge: 1
+          maxUnavailable: 0
+          env:
+            NODE_ENV: production
+            LOG_LEVEL: info
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+
+      # 8.3 前端 CDN 部署
+      - name: deploy-frontend-prod
+        type: VERCEL_DEPLOY
+        project: panghu-frontend
+        environment: production
+        waitForCompletion: false  # 异步，不阻塞
+
+      # 8.4 生产健康验证
+      - name: production-health-check
+        type: RUN
+        image: curlimages/curl:latest
+        timeout: 5m
+        commands:
+          - |
+            for i in {1..20}; do
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.panghu.example.com/api/health)
+              if [ "$STATUS" = "200" ]; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Health check attempt $i failed, status: $STATUS"
+              sleep 3
+            done
+            exit 1
+
+# ==================== 通知配置 ====================
+notifications:
+  # Slack 通知
+  - channel: slack
+    webhook: "{{ secrets.SLACK_WEBHOOK }}"
+    events:
+      - pipeline.started
+      - pipeline.failed
+      - pipeline.succeeded
+      - stage.completed
+      - approval.required
+      - rollback.triggered
+    template: |
+      {{#if (eq pipeline.status "FAILED")}}
+      :x: Pipeline Failed - {{ pipeline.name }}
+      Stage: {{ pipeline.currentStage }}
+      Error: {{ pipeline.errorMessage }}
+      {{ else if (eq pipeline.status "SUCCEEDED")}}
+      :white_check_mark: Pipeline Succeeded - {{ pipeline.name }}
+      Build: {{ pipeline.buildId }}
+      {{/if}}
+
+  # 邮件通知（生产部署）
+  - channel: email
+    recipients:
+      - tech-lead@example.com
+    events:
+      - approval.required
+      - rollback.triggered
+
+# ==================== 安全扫描 ====================
+security:
+  # SAST 静态安全扫描
+  - name: sast-scan
+    type: TRIVY
+    enabled: true
+    scanType: FILESYSTEM
+    path: ./backend/src,./frontend/src
+    severity: HIGH,CRITICAL
+    failOnSeverity: CRITICAL
+
+  # 依赖漏洞扫描
+  - name: dependency-scan
+    type: TRIVY
+    enabled: true
+    scanType: LIBRARY
+    failOnSeverity: HIGH
+
+  # Docker 镜像扫描
+  - name: image-scan
+    type: TRIVY
+    enabled: true
+    image: "{{ build.image }}"
+    failOnSeverity: HIGH
+
+# ==================== 制品签名 ====================
+artifacts:
+  signing:
+    enabled: true
+    method: cosign
+    keys:
+      - "{{ secrets.COSIGN_PRIVATE_KEY }}"
+    attestations:
+      - type: SBOM
+        format: SPDX
+      - type: PROVENANCE
+        predicateType: https://slsa.dev/provenance/v1

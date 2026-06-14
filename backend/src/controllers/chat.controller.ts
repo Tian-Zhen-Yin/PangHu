@@ -6,6 +6,11 @@ import { sendMessageStream, sendMessage, type ChatMessage } from '../services/ai
 import { getKnowledgeContext } from '../services/knowledge.service'
 import { isSSERequest } from '../utils/stream'
 import { getCatContext } from '../services/cat.service'
+import { catAgent } from '../agent'
+import { consumeConfirmation, cancelConfirmation } from '../services/confirmation.service'
+import { AllergyRecordTool } from '../agent/tools/allergyRecord.tool'
+import type { AgentContext } from '../agent/types/agent'
+import { getTodoStatus, setTodoCompleted } from '../services/todo.service'
 
 /**
  * 获取用户的所有对话
@@ -131,34 +136,43 @@ export async function updateConversationTitle(req: Request, res: Response) {
 }
 
 /**
- * 发送消息（流式响应）
+ * 发送消息（流式响应）— 支持 Agent 框架
  */
 export async function sendMessageHandler(req: Request, res: Response) {
-  const { conversationId, content, catId } = req.body
+  const { conversationId, content, catId, useAgent } = req.body
   const userId = (req as any).user?.userId
 
   if (!content || content.trim().length === 0) {
     return res.status(400).json(successResponse(null, '消息内容不能为空'))
   }
 
-  // 如果是SSE请求，使用流式响应
+  const agentEnabled = useAgent !== false
+
+  if (agentEnabled && isSSERequest(req.headers.accept)) {
+    return handleAgentStreamingMessage(conversationId, content, userId, catId, res)
+  }
+
   if (isSSERequest(req.headers.accept)) {
     return handleStreamingMessage(conversationId, content, userId, catId, req, res)
   }
 
-  // 否则使用普通响应（保持兼容性）
   return handleNormalMessage(conversationId, content, userId, catId, res)
 }
 
 /**
- * 处理流式消息
+ * Agent 驱动的流式消息处理
+ *
+ * 流程：Router → Planner → Executor (SSE 实时推送) → LLM 流式输出 (逐 token)
+ * 客户端断开自动取消 pipeline
+ *
+ * P0 #1: 真正拉取历史并传入 catAgent.handleStreaming，恢复上下文记忆。
+ * P0 #2: 流式结束后累积文本入库，保证刷新页面不丢失 AI 回复。
  */
-async function handleStreamingMessage(
+async function handleAgentStreamingMessage(
   conversationId: string | undefined,
   content: string,
   userId: string,
   catId: string | undefined,
-  req: Request,
   res: Response
 ) {
   let conversation: any
@@ -175,7 +189,98 @@ async function handleStreamingMessage(
     if (!conversation) {
       return res.status(404).json(successResponse(null, '对话不存在'))
     }
-    // 如果对话没有关联猫咪但本次传入了catId，更新关联
+    if (catId && !conversation.catId) {
+      await prisma.conversation.update({ where: { id: conversation.id }, data: { catId } })
+    }
+  }
+
+  // 保存用户消息（在拉取历史之前，确保历史不含当前消息）
+  const userMessage = await prisma.message.create({
+    data: { conversationId: conversation.id, role: 'user', content }
+  })
+
+  // P0 #1: 拉取对话历史（最多 20 条），传入 Agent
+  const historyRows = await prisma.message.findMany({
+    where: { conversationId: conversation.id, id: { not: userMessage.id } },
+    orderBy: { createdAt: 'asc' },
+    take: 20
+  })
+  const chatHistory: ChatMessage[] = historyRows
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role as ChatMessage['role'], content: m.content }))
+
+  const effectiveCatId = catId || conversation.catId
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+
+  // 委托给 CatAgent 流式方法，其内部处理：
+  // - Router → Planner → Executor（每步 SSE 实时推送）→ LLM 逐 token 输出
+  // - 客户端断开自动 abort
+  // - 返回累积的回复文本以供持久化
+  const result = await catAgent.handleStreaming(
+    content,
+    userId,
+    conversationId || 'adhoc',
+    res,
+    effectiveCatId,
+    chatHistory
+  )
+
+  // P0 #2: 持久化 assistant 回复，避免刷新页面丢失
+  if (result.content && result.content.trim().length > 0) {
+    try {
+      await prisma.message.create({
+        data: {
+          conversationId: conversation.id,
+          role: 'assistant',
+          content: result.content,
+          markdownContent: result.content,
+          referencedGuides: JSON.stringify(result.citations),
+          metadata: JSON.stringify({
+            traceId: result.traceId,
+            tools: result.toolNames,
+            agentMode: true,
+          })
+        }
+      })
+      await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: { updatedAt: new Date() }
+      })
+    } catch (err: any) {
+      console.error('[Chat] Failed to persist agent assistant message:', err.message)
+    }
+  }
+}
+
+/**
+ * 处理流式消息（旧版本 - 保留兼容）
+ */
+async function handleStreamingMessage(
+  conversationId: string | undefined,
+  content: string,
+  userId: string,
+  catId: string | undefined,
+  _req: Request,
+  res: Response
+) {
+  let conversation: any
+
+  if (!conversationId) {
+    const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
+    conversation = await prisma.conversation.create({
+      data: { userId, title, catId: catId || null }
+    })
+  } else {
+    conversation = await prisma.conversation.findFirst({
+      where: { id: conversationId, userId }
+    })
+    if (!conversation) {
+      return res.status(404).json(successResponse(null, '对话不存在'))
+    }
     if (catId && !conversation.catId) {
       await prisma.conversation.update({ where: { id: conversation.id }, data: { catId } })
     }
@@ -192,12 +297,11 @@ async function handleStreamingMessage(
   })
 
   const chatHistory: ChatMessage[] = history
-    .filter(m => m.role !== 'system')
-    .map(m => ({ role: m.role as ChatMessage['role'], content: m.content }))
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({ role: m.role as ChatMessage['role'], content: m.content }))
 
   const knowledgeContext = await getKnowledgeContext(content)
 
-  // 获取猫咪上下文
   const effectiveCatId = catId || conversation.catId
   const catContext = effectiveCatId ? await getCatContext(effectiveCatId, userId) : undefined
 
@@ -296,4 +400,126 @@ export async function getSuggestedQuestions(_req: Request, res: Response) {
   ]
 
   res.json(successResponse(questions))
+}
+
+/**
+ * V2.0 确认写入操作（过敏录入等）
+ * POST /api/chat/confirm
+ * @body { confirmationId, action: 'confirm' | 'cancel', edits?: {...} }
+ */
+export async function confirmActionHandler(req: Request, res: Response) {
+  const userId = (req as any).user?.userId
+  if (!userId) {
+    return res.status(401).json(successResponse(null, '未授权'))
+  }
+
+  const { confirmationId, action, edits } = req.body
+
+  if (!confirmationId || !action) {
+    return res.status(400).json(successResponse(null, '缺少 confirmationId 或 action'))
+  }
+
+  // 取消操作
+  if (action === 'cancel') {
+    const cancelled = cancelConfirmation(confirmationId, userId)
+    if (!cancelled) {
+      return res.status(404).json(successResponse(null, '确认请求不存在或已过期'))
+    }
+    return res.json(successResponse({ cancelled: true }, '操作已取消'))
+  }
+
+  // 确认操作
+  if (action === 'confirm') {
+    const session = consumeConfirmation(confirmationId, userId)
+    if (!session) {
+      return res.status(410).json(successResponse(null, '确认请求不存在或已过期'))
+    }
+
+    // 构造带确认令牌的 AgentContext
+    const ctx: AgentContext = {
+      userId,
+      sessionId: 'confirm-' + confirmationId,
+      selectedCatId: session.catId,
+      traceId: 'confirm-' + Date.now(),
+      logger: console,
+      cache: new Map(),
+      confirmationToken: {
+        verified: true,
+        confirmedAt: new Date(),
+        confirmationId,
+      },
+    }
+
+    // 合并用户编辑的数据
+    const input = {
+      catId: session.catId,
+      allergen: edits?.allergen || '',
+      symptoms: edits?.symptoms || '',
+      severity: edits?.severity || 'moderate',
+      occurrenceDate: edits?.occurrenceDate,
+      treatment: edits?.treatment,
+      notes: edits?.notes,
+    }
+
+    if (!input.allergen) {
+      return res.status(400).json(successResponse(null, '过敏原不能为空'))
+    }
+
+    const result = await AllergyRecordTool.call(input, ctx)
+    return res.json(successResponse(result, result.message))
+  }
+
+  return res.status(400).json(successResponse(null, '未知的 action 类型'))
+}
+
+/**
+ * V2.0 P4 待办事项切换
+ * POST /api/chat/todo/toggle
+ * @body { todoId, completed }
+ */
+export async function todoToggleHandler(req: Request, res: Response) {
+  const userId = (req as any).user?.userId
+  if (!userId) {
+    return res.status(401).json(successResponse(null, '未授权'))
+  }
+
+  const { todoId, completed } = req.body
+
+  if (!todoId || typeof completed !== 'boolean') {
+    return res.status(400).json(successResponse(null, '缺少 todoId 或 completed 字段'))
+  }
+
+  // 持久化到数据库（使用 raw SQL / todo service）
+  try {
+    await setTodoCompleted(userId, todoId, completed)
+    return res.json(successResponse({ todoId, completed }, completed ? '待办已标记完成' : '待办已取消'))
+  } catch (error: any) {
+    console.error('[TodoToggle] Error:', error.message)
+    return res.status(500).json(successResponse(null, '操作失败'))
+  }
+}
+
+/**
+ * V2.0 P4 获取待办状态
+ * POST /api/chat/todo/status
+ * @body { todoIds: string[] }
+ */
+export async function todoStatusHandler(req: Request, res: Response) {
+  const userId = (req as any).user?.userId
+  if (!userId) {
+    return res.status(401).json(successResponse(null, '未授权'))
+  }
+
+  const { todoIds } = req.body
+  if (!Array.isArray(todoIds) || todoIds.length === 0) {
+    return res.status(400).json(successResponse(null, '缺少 todoIds 数组'))
+  }
+
+  try {
+    const statusMap = await getTodoStatus(userId, todoIds)
+    return res.json(successResponse(statusMap))
+  } catch (error: any) {
+    console.error('[TodoStatus] Error:', error.message)
+    return res.status(500).json(successResponse(null, '获取失败'))
+  }
 }

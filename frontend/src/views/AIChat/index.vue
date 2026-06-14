@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useChatStore } from '../../stores/chat.js'
 import { useMyCatStore } from '../../stores/myCat.js'
 import { getSuggestedQuestions } from '../../api/chat.js'
@@ -117,11 +117,16 @@ function handleScrollToBottomClick() {
 async function handleSend(content: string) {
   // 发送消息时重置滚动状态，确保滚动到底部
   isUserScrolling.value = false
-  await chatStore.sendMessage({ content, catId: currentCat.value?.id })
-  // 确保发送后滚动到底部
-  nextTick(() => {
-    scrollToBottom(true)
-  })
+  try {
+    await chatStore.sendMessage({ content, catId: currentCat.value?.id })
+    // 确保发送后滚动到底部
+    nextTick(() => {
+      scrollToBottom(true)
+    })
+  } catch (error: any) {
+    console.error('Failed to send message:', error)
+    ElMessage.error(error?.message || '发送失败，请稍后重试')
+  }
 }
 
 // 点击预设问题
@@ -153,9 +158,22 @@ async function handleSelectConversation(id: string) {
 
 // 删除对话
 async function handleDeleteConversation(id: string) {
-  const confirmed = confirm('确定要删除这个对话吗？')
-  if (confirmed) {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这个对话吗？此操作不可恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger',
+      }
+    )
     await chatStore.deleteConversation(id)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Failed to delete conversation:', error)
+    }
   }
 }
 
@@ -295,7 +313,7 @@ const contextualSuggestions = computed(() => {
             <span class="doctor-name">喵喵医生</span>
             <div class="doctor-status">
               <span class="status-dot"></span>
-              <span class="status-text">在线咨询中</span>
+              <span class="status-text">{{ chatStore.useAgentMode ? '智能顾问模式' : '普通模式' }}</span>
             </div>
           </div>
         </div>
@@ -304,6 +322,15 @@ const contextualSuggestions = computed(() => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
+          </button>
+          <!-- Agent 模式切换 -->
+          <button
+            :class="['agent-mode-toggle', chatStore.useAgentMode ? 'active' : '']"
+            @click="chatStore.toggleAgentMode(!chatStore.useAgentMode)"
+            :title="chatStore.useAgentMode ? '智能顾问（工具调用）已开启·点击切换为普通模式' : '普通模式·点击切换为智能顾问（工具调用）模式'"
+          >
+            <span class="agent-mode-icon">{{ chatStore.useAgentMode ? '🧠' : '💬' }}</span>
+            <span class="agent-mode-label">{{ chatStore.useAgentMode ? '智能模式' : '普通模式' }}</span>
           </button>
           <CatSelector />
         </div>
@@ -669,8 +696,7 @@ const contextualSuggestions = computed(() => {
   top: 0;
   bottom: 0;
   width: 4px;
-  /* 奶油色装饰线 */
-  background: linear-gradient(180deg, #FFE5B4 0%, #FFF0DB 100%);
+  background: var(--color-primary);
 }
 
 .chat-header::after {
@@ -681,16 +707,6 @@ const contextualSuggestions = computed(() => {
   right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 228, 181, 0.15) 50%, transparent 100%);
-}
-
-.chat-header::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--color-primary);
 }
 
 .chat-header.mobile {
@@ -829,6 +845,54 @@ const contextualSuggestions = computed(() => {
 .home-button-mobile svg {
   width: 16px;
   height: 16px;
+}
+
+/* Agent 模式切换按钮 - 奶油色系 */
+.agent-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid #FFF5DC;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
+}
+
+.agent-mode-toggle:hover {
+  border-color: #FFE5B4;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.15);
+}
+
+.agent-mode-toggle.active {
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  border-color: #F4A261;
+  color: #5D4E37;
+  box-shadow: 0 4px 14px rgba(244, 162, 97, 0.25);
+}
+
+.agent-mode-toggle.active:hover {
+  background: linear-gradient(135deg, #FFDAB9 0%, #FFCF9D 100%);
+  box-shadow: 0 6px 16px rgba(244, 162, 97, 0.3);
+}
+
+.agent-mode-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.agent-mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* 移动端头部中心区域 */

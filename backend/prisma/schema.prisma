@@ -8,6 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 过敏严重程度（受控词汇，避免脏数据）
+enum AllergySeverity {
+  mild
+  moderate
+  severe
+}
+
+// 过敏记录数据来源（用于审计与回溯）
+enum AllergyRecordSource {
+  agent
+  manual
+  imported
+}
+
 // 成长阶段
 model Stage {
   id          String @id @default(cuid())
@@ -184,15 +198,39 @@ model Cat {
 
   isActive Boolean @default(true)
 
-  records       PetRecord[]
-  vaccines      VaccineRecord[]
-  conversations Conversation[]
+  records        PetRecord[]
+  vaccines       VaccineRecord[]
+  allergyRecords AllergyRecord[]
+  conversations  Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([userId, isActive])
+}
+
+// 过敏记录
+model AllergyRecord {
+  id             String              @id @default(cuid())
+  catId          String
+  cat            Cat                 @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  allergen       String              // 过敏原：鸡肝、鱼粮、跳蚤、花粉等
+  symptoms       String              // 症状描述：皮肤红斑、呕吐、抓挠等
+  severity       AllergySeverity     // 严重程度（枚举约束）
+  occurrenceDate DateTime            // 发作日期/时间
+  treatment      String?             // 处理方式/用药
+  notes          String?             // 额外备注
+
+  // 审计字段
+  createdBy      String              // 写入者 userId
+  source         AllergyRecordSource @default(agent) // 数据来源
+  confirmedAt    DateTime?           // 用户确认写入的时刻（仅 agent 来源）
+  createdAt      DateTime            @default(now())
+
+  @@index([catId, occurrenceDate])
+  @@index([catId, allergen])
 }
 
 // 疫苗接种记录

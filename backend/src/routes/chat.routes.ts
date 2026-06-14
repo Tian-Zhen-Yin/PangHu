@@ -6,7 +6,10 @@ import {
   deleteConversation,
   updateConversationTitle,
   sendMessageHandler,
-  getSuggestedQuestions
+  getSuggestedQuestions,
+  confirmActionHandler,
+  todoToggleHandler,
+  todoStatusHandler,
 } from '../controllers/chat.controller'
 import { authMiddleware } from '../middlewares/auth'
 
@@ -64,5 +67,29 @@ router.post('/messages', sendMessageHandler)
  * @access  Private
  */
 router.get('/suggested-questions', getSuggestedQuestions)
+
+/**
+ * @route   POST /api/chat/confirm
+ * @desc    V2.0 确认写入操作（过敏录入等）
+ * @access  Private
+ * @body    { confirmationId, action: 'confirm' | 'cancel', edits?: {...} }
+ */
+router.post('/confirm', confirmActionHandler)
+
+/**
+ * @route   POST /api/chat/todo/toggle
+ * @desc    V2.0 P4 待办事项切换完成状态
+ * @access  Private
+ * @body    { todoId, completed }
+ */
+router.post('/todo/toggle', todoToggleHandler)
+
+/**
+ * @route   POST /api/chat/todo/status
+ * @desc    V2.0 P4 批量获取待办状态
+ * @access  Private
+ * @body    { todoIds: string[] }
+ */
+router.post('/todo/status', todoStatusHandler)
 
 export default router

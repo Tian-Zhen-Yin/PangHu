@@ -1,0 +1,99 @@
+# ArgoCD Application 配置
+# 路径: k8s/argocd/
+# 说明: ArgoCD GitOps 自动同步配置
+
+---
+# ArgoCD Application: PangHu 全栈
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: panghu-staging
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: panghu
+    environment: staging
+spec:
+  project: default
+
+  # Git 源
+  source:
+    repoURL: https://github.com/your-org/panghu.git
+    targetRevision: main
+    path: k8s
+    helm:
+      valueFiles:
+        - values.staging.yaml
+      parameters:
+        - name: git.commitSha
+          value: "{{ .metadata.annotations.commitSha }}"
+        - name: build.id
+          value: "{{ .metadata.annotations.buildId }}"
+
+  # 目标集群
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: panghu-staging
+
+  # 自动同步策略
+  syncPolicy:
+    automated:
+      prune: true          # 自动删除已移除的资源
+      selfHeal: true       # 自动修复漂移
+      allowEmpty: false
+
+    # 同步选项
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true     # 剪枝最后执行
+
+    # 重试配置
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # 忽略某些字段的差异（不影响实际部署）
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # HPA 控制，忽略 Deployment 的副本数差异
+
+---
+# ArgoCD Application: 生产环境（需手动审批）
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: panghu-production
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: panghu
+    environment: production
+spec:
+  project: production
+
+  source:
+    repoURL: https://github.com/your-org/panghu.git
+    targetRevision: main
+    path: k8s
+    helm:
+      valueFiles:
+        - values.production.yaml
+      parameters:
+        - name: git.commitSha
+          value: "{{ .metadata.annotations.commitSha }}"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: panghu-production
+
+  syncPolicy:
+    # 生产环境禁止自动同步，需手动审批
+    automated:
+      prune: true
+      selfHeal: false
+
+    retry:
+      limit: 3
