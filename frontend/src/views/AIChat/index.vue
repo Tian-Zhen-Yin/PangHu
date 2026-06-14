@@ -18,8 +18,10 @@ const myCatStore = useMyCatStore()
 const { currentCat } = storeToRefs(myCatStore)
 
 // UI状态
-const showConversationList = ref(true)
-const isConversationListHidden = ref(false) // 桌面端对话列表隐藏状态
+// 默认隐藏对话列表：从导航入口（如首页喵喵医生 FAB）进入时直接进入聊天界面，
+// 移动端可通过返回按钮、桌面端可通过侧栏切换按钮重新展开列表
+const showConversationList = ref(false)
+const isConversationListHidden = ref(true) // 桌面端对话列表隐藏状态
 const messagesContainer = ref<HTMLElement | null>(null)
 const suggestedQuestions = ref<string[]>([])
 const isUserScrolling = ref(false) // 跟踪用户是否在手动滚动
@@ -225,6 +227,12 @@ const contextualSuggestions = computed(() => {
   <div class="ai-chat-page">
     <!-- 移动端对话列表 -->
     <div v-if="isMobile && showConversationList" class="conversation-list-panel mobile">
+      <!-- 关闭按钮：返回聊天页 -->
+      <button class="mobile-list-close" @click="showConversationList = false" title="返回对话">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
       <ConversationList
         :conversations="chatStore.conversations"
         :current-id="chatStore.currentConversationId"
@@ -272,10 +280,10 @@ const contextualSuggestions = computed(() => {
     <div class="chat-area" :class="{ 'full-width': isConversationListHidden }">
       <!-- 移动端头部 -->
       <header v-if="isMobile && !showConversationList" class="chat-header mobile">
-        <!-- 返回按钮 -->
-        <button class="back-button" @click="handleBackToList">
+        <!-- 历史会话按钮（打开对话列表） -->
+        <button class="back-button" @click="handleBackToList" title="历史会话">
           <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10"/>
           </svg>
         </button>
 
@@ -657,6 +665,37 @@ const contextualSuggestions = computed(() => {
   bottom: 0;
   z-index: 100;
   width: 100%;
+}
+
+/* 移动端对话列表的关闭按钮（默认隐藏列表后，从聊天页打开列表时需要一个返回入口） */
+.mobile-list-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 16px;
+  z-index: 110;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #FFF5DC;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.18);
+  transition: all 0.2s ease;
+}
+
+.mobile-list-close:hover {
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  transform: scale(1.05);
+}
+
+.mobile-list-close svg {
+  width: 18px;
+  height: 18px;
 }
 
 .chat-area {
