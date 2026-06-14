@@ -32,12 +32,6 @@ interface ChatMessageWithTools extends ChatMessage {
   name?: string
 }
 
-interface PendingToolCall {
-  id: string
-  name: string
-  args: string
-}
-
 export class AgentLoop {
   private readonly maxIterations: number
   private readonly model?: string
@@ -74,10 +68,7 @@ export class AgentLoop {
     while (iteration < this.maxIterations) {
       iteration += 1
 
-      if (ctx.signal?.aborted) {
-        aborted = true
-        break
-      }
+      if (ctx.signal?.aborted) { aborted = true; break }
 
       const pendingCalls = new Map<string, { name: string; args: string }>()
       let finishReason: 'stop' | 'tool_calls' | 'length' | 'error' | null = null
@@ -89,10 +80,7 @@ export class AgentLoop {
         signal: ctx.signal,
         model: this.model,
       })) {
-        if (ctx.signal?.aborted) {
-          aborted = true
-          break
-        }
+        if (ctx.signal?.aborted) { aborted = true; break }
 
         switch (ev.type) {
           case 'content':
@@ -118,13 +106,11 @@ export class AgentLoop {
 
       if (aborted) break
 
-      if (finishReason === 'error') {
-        throw new Error(`LLM error: ${llmError ?? 'unknown'}`)
-      }
+      if (finishReason === 'error') throw new Error(`LLM error: ${llmError ?? 'unknown'}`)
 
       if (pendingCalls.size === 0) break
 
-      const callsInOrder: PendingToolCall[] = Array.from(pendingCalls.entries())
+      const callsInOrder = Array.from(pendingCalls.entries())
         .map(([id, v]) => ({ id, name: v.name, args: v.args }))
 
       messages.push({
@@ -159,9 +145,7 @@ export class AgentLoop {
       if (finishReason !== 'tool_calls') break
     }
 
-    if (iteration >= this.maxIterations && !aborted) {
-      maxIterationsExceeded = true
-    }
+    if (iteration >= this.maxIterations && !aborted) maxIterationsExceeded = true
 
     return {
       content: contentParts.join(''),
