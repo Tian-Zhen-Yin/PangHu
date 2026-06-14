@@ -82,6 +82,26 @@ export const featureFlags: Record<string, FeatureFlag> = {
   },
 
   /**
+   * V3.0 LLM tool-calling loop（替代规则驱动 Planner）
+   * 灰度阶段，仅内部用户开启；flag 开启时 V2.0 工具（过敏录入/健康周报）悄悄降级到旧链路
+   */
+  LLM_TOOL_CALLING_LOOP: {
+    key: 'LLM_TOOL_CALLING_LOOP',
+    enabledByDefault: false,
+    description: '启用 LLM tool-calling loop（ReAct），替代规则驱动 Planner',
+    rollout: {
+      environment: {
+        development: true,
+        staging: true,
+        production: false,
+      },
+      userSegment: 'internal',
+      percentage: 0,
+    },
+    dependencies: ['AGENT_MODE'],
+  },
+
+  /**
    * Agent 流式输出
    * 控制 Agent 响应是否流式输出
    */
