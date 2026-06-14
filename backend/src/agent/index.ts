@@ -9,6 +9,9 @@ import { getKnowledgeContext } from '../services/knowledge.service'
 import { createConfirmation } from '../services/confirmation.service'
 import type { Response } from 'express'
 import { recordAgentPhase, recordPlannerStrategy, recordSseEvent } from './metrics'
+import { AgentLoop } from './core/AgentLoop'
+import { zhipuaiClient } from './llm/zhipuaiClient'
+import { isFeatureEnabled, getDefaultContext } from '../config/featureFlags'
 
 function generateTraceId(): string {
   return 'agent-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9)
@@ -75,6 +78,29 @@ export interface StreamCallbacks {
 }
 
 export class CatAgent {
+  /**
+   * V3.0 LLM tool-calling loop 协调器。
+   * 仅暴露 5 个 readonly 工具,V2.0 写入工具(allergy/health-report)flag 开启时降级到旧链路。
+   */
+  private readonly agentLoop = new AgentLoop(zhipuaiClient, this.getReadOnlyTools(), { maxIterations: 5 })
+
+  /**
+   * 仅返回本次迁移涵盖的 5 个 readonly 工具。
+   * V2.0 新工具(allergy/health-report)flag 开启时走旧链路。
+   */
+  private getReadOnlyTools() {
+    const allowed = new Set(['get_cat_info', 'get_weight_trend', 'check_health', 'check_vaccine', 'rag_search'])
+    return listTools().filter((t) => allowed.has(t.name))
+  }
+
+  /**
+   * 探测用户消息是否属于 V2.0 新工具的意图领域。
+   * 命中 → 即便 flag 开启也降级到旧链路(用户无感)。
+   */
+  private isV2ToolIntent(message: string): boolean {
+    return /过敏|allergy|周报|健康报告|health[_ ]?report/i.test(message)
+  }
+
   /**
    * 执行 Agent 全流程（非流式，返回完整结果）
    */
@@ -182,6 +208,13 @@ export class CatAgent {
     selectedCatId?: string,
     history: ChatMessage[] = []
   ): Promise<AgentStreamResult> {
+    // V3.0 flag 路由:LLM tool-calling loop
+    const flagCtx = getDefaultContext(userId, 'all')
+    const useNewLoop = isFeatureEnabled('LLM_TOOL_CALLING_LOOP', flagCtx)
+    if (useNewLoop && !this.isV2ToolIntent(userMessage)) {
+      return this.handleStreamingViaLoop(userMessage, userId, sessionId, res, selectedCatId, history)
+    }
+
     const abortController = new AbortController()
 
     // 客户端断开 → 取消整个 pipeline
@@ -453,6 +486,104 @@ export class CatAgent {
       // 恢复原 res.write，避免影响后续可能的复用
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(res as any).write = realWrite
+    }
+  }
+
+  /**
+   * V3.0 新链路:用 AgentLoop 跑 ReAct 多轮迭代。
+   * 失败时自动降级到旧 sendMessageStream(RAG fallback)。
+   */
+  private async handleStreamingViaLoop(
+    userMessage: string,
+    userId: string,
+    sessionId: string,
+    res: Response,
+    selectedCatId: string | undefined,
+    history: ChatMessage[]
+  ): Promise<AgentStreamResult> {
+    const abortController = new AbortController()
+    res.on('close', () => {
+      if (res.destroyed || !res.writable) abortController.abort()
+    })
+
+    const ctx: AgentContext = {
+      userId,
+      sessionId,
+      selectedCatId,
+      traceId: generateTraceId(),
+      logger: console,
+      signal: abortController.signal,
+      cache: new Map(),
+    }
+
+    ctx.logger.log(`[AgentLoop] trace=${ctx.traceId} user=${userId} message=${userMessage.substring(0, 50)}`)
+
+    // SSE meta(预先告知 traceId,工具列表后续逐个推 tool 事件)
+    this.writeSse(res, 'meta', { traceId: ctx.traceId, toolsCalled: [], toolCount: 0 })
+
+    const startedAt = Date.now()
+    const toolNamesSeen: string[] = []
+    let llmFailed = false
+    let resultContent = ''
+    let citations: string[] = []
+
+    try {
+      const result = await this.agentLoop.run({
+        userMessage,
+        history,
+        ctx,
+        onContent: (text) => {
+          this.writeSse(res, 'content', { text })
+        },
+        onToolResult: (r) => {
+          toolNamesSeen.push(r.toolName)
+          this.writeSse(res, 'tool', {
+            toolName: r.toolName,
+            status: r.success ? 'success' : 'error',
+            output: r.output,
+          })
+        },
+      })
+
+      resultContent = result.content
+      citations = result.toolResults
+        .filter((r) => r.toolName === 'rag_search' && r.output?.guideTitles)
+        .flatMap((r) => r.output.guideTitles as string[])
+        .slice(0, 5)
+
+      // maxIterations 超限 → RAG fallback
+      if (result.maxIterationsExceeded) {
+        ctx.logger.log('[AgentLoop] maxIterations exceeded, falling back to RAG')
+        llmFailed = true
+      }
+    } catch (err: any) {
+      ctx.logger.log(`[AgentLoop] error: ${err.message}, falling back to RAG`)
+      llmFailed = true
+    }
+
+    if (llmFailed && !abortController.signal.aborted && !res.writableEnded) {
+      try {
+        const { sendMessageStream } = await import('../services/ai.service')
+        await sendMessageStream(userMessage, history, '', res)
+      } catch (e: any) {
+        this.writeSse(res, 'error', { message: e.message || 'RAG fallback 失败' })
+      }
+    }
+
+    if (!res.writableEnded) {
+      this.writeSse(res, 'done', { traceId: ctx.traceId, citations })
+      res.end()
+    }
+
+    ctx.logger.log(
+      `[AgentLoop] traceId=${ctx.traceId} tools=[${toolNamesSeen.join(',')}] latencyMs=${Date.now() - startedAt}`
+    )
+
+    return {
+      content: resultContent,
+      citations,
+      traceId: ctx.traceId,
+      toolNames: toolNamesSeen,
     }
   }
 
