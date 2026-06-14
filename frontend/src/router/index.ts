@@ -61,7 +61,7 @@ const routes: RouteRecordRaw[] = [
     path: '/ai-chat',
     name: 'AIChat',
     component: () => import(/* webpackChunkName: "ai-chat" */ '../views/AIChat/index.vue'),
-    meta: { title: 'AI医师 - 哈吉咪养成计划', requiresAuth: true }
+    meta: { title: '喵喵医生 - 哈吉咪养成计划', requiresAuth: true }
   },
 
   // 我的猫咪模块

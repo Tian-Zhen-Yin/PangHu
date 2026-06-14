@@ -15,7 +15,7 @@ const navItems = computed(() => [
   { name: '首页', path: '/', icon: iconHome, isImage: true },
   { name: '成长记录', path: '/timeline', icon: iconTimeline, isImage: true },
   { name: '养猫指南', path: '/guides', icon: iconGuide, isImage: true },
-  { name: '喵星小顾问', path: '/ai-chat', icon: iconAdvisor, isImage: true, requiresAuth: true },
+  { name: '喵喵医生', path: '/ai-chat', icon: iconAdvisor, isImage: true, requiresAuth: true },
   { name: '我的猫咪', path: '/my-cats', icon: iconMascot, isImage: true, requiresAuth: true }
 ].filter(item => !item.requiresAuth || authStore.isAuthenticated))
 
