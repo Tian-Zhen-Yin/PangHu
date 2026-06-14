@@ -1,4 +1,4 @@
-import type { AgentContext, PlanStep, ToolResult } from '../types/agent'
+import type { AgentContext, PlanStep, Tool, ToolResult } from '../types/agent'
 import { getTool } from '../tools'
 
 /** 工具默认超时（ms），可通过环境变量覆盖 */
@@ -66,13 +66,17 @@ async function callWithTimeout<T>(
 
 /**
  * 执行单个工具（含超时 + 重试）
+ *
+ * @param resolvedTool 可选注入的 tool 实例。若提供，则跳过全局 registry 查找；
+ *                     供 AgentLoop 携带构造时注入的子集 tools 调用。
  */
 export async function executeTool(
   step: PlanStep,
   ctx: AgentContext,
-  onProgress?: (result: ToolResult) => void
+  onProgress?: (result: ToolResult) => void,
+  resolvedTool?: Tool
 ): Promise<ToolResult> {
-  const tool = getTool(step.toolName)
+  const tool = resolvedTool ?? getTool(step.toolName)
 
   if (!tool) {
     return { toolName: step.toolName, success: false, error: `未找到工具: ${step.toolName}`, reason: step.reason }
@@ -217,16 +221,18 @@ export async function executePlan(
  * 单工具调用入口(供 AgentLoop 使用)。
  * 复用 executeTool 的全部能力:Zod 校验、超时、重试、abort、cache。
  *
- * @param toolName 工具名(必须已注册到 toolRegistry)
+ * @param toolName 工具名(必须已注册到 toolRegistry,或通过 resolvedTool 注入)
  * @param parameters 工具参数(将经过 Zod 校验)
  * @param ctx Agent 上下文
  * @param reason 可选的调用理由(由 LLM 提供时传入)
+ * @param resolvedTool 可选注入的 tool 实例(AgentLoop 构造时持有的子集)
  */
 export async function callTool(
   toolName: string,
   parameters: Record<string, unknown>,
   ctx: AgentContext,
-  reason: string = 'LLM tool-calling'
+  reason: string = 'LLM tool-calling',
+  resolvedTool?: Tool
 ): Promise<ToolResult> {
-  return executeTool({ toolName, parameters, reason }, ctx)
+  return executeTool({ toolName, parameters, reason }, ctx, undefined, resolvedTool)
 }

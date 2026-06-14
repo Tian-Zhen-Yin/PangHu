@@ -3,6 +3,7 @@ import type { AgentContext, ChatMessage, Tool, ToolResult } from '../types/agent
 import { toolsToDefinitions } from './toolAdapter'
 import { formatToolOutput } from './toolOutputFormatter'
 import { AGENT_SYSTEM_PROMPT } from '../prompts/systemPrompt'
+import { callTool } from './AgentExecutor'
 
 export interface AgentLoopOptions {
   maxIterations?: number
@@ -122,7 +123,8 @@ export class AgentLoop {
       const execResults = await Promise.all(
         callsInOrder.map(async (c) => {
           const parsedArgs = this.parseToolArgs(c.args)
-          const result = await this.executeTool(c.name, parsedArgs, ctx)
+          const injected = this.toolMap.get(c.name)
+          const result = await callTool(c.name, parsedArgs, ctx, 'LLM tool-calling', injected)
           onToolResult(result)
           toolNames.push(c.name)
           toolResults.push(result)
@@ -162,35 +164,6 @@ export class AgentLoop {
       return rawArgs ? JSON.parse(rawArgs) : {}
     } catch {
       return {}
-    }
-  }
-
-  private async executeTool(
-    toolName: string,
-    parameters: Record<string, unknown>,
-    ctx: AgentContext
-  ): Promise<ToolResult> {
-    const injectedTool = this.toolMap.get(toolName)
-    if (!injectedTool) {
-      const { callTool } = await import('./AgentExecutor')
-      return callTool(toolName, parameters, ctx, 'LLM tool-calling')
-    }
-
-    const validated = injectedTool.schema.safeParse(parameters)
-    if (!validated.success) {
-      const errors = validated.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')
-      return { toolName, success: false, error: `参数校验失败: ${errors}`, reason: 'LLM tool-calling' }
-    }
-
-    if (ctx.signal?.aborted) {
-      return { toolName, success: false, error: '请求已取消', reason: 'LLM tool-calling' }
-    }
-
-    try {
-      const output = await injectedTool.call(validated.data, ctx)
-      return { toolName, success: true, output, reason: 'LLM tool-calling' }
-    } catch (error: any) {
-      return { toolName, success: false, error: error?.message || '工具执行失败', reason: 'LLM tool-calling' }
     }
   }
 }
