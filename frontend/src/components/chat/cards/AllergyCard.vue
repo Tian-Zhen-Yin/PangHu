@@ -7,7 +7,7 @@
  * 后续 P3 可增强为带时间轴的独立大卡片。
  */
 import { computed } from 'vue'
-import type { AllergyToolOutput } from '../../types/chat.js'
+import type { AllergyToolOutput } from '@/types/chat'
 
 const props = defineProps<{
   toolOutput: any
@@ -19,44 +19,80 @@ const SEVERITY_LABEL: Record<string, string> = {
   severe: '严重',
 }
 
-const data = computed<AllergyToolOutput | null>(() => {
+const summary = computed(() => {
   const out = props.toolOutput as AllergyToolOutput | undefined
-  if (!out || !out.success || out.totalRecords === 0) return null
-  return out
-})
+  if (!out) return null
 
-const lastOccurrenceText = computed(() => {
-  if (!data.value?.lastOccurrence) return null
-  const d = new Date(data.value.lastOccurrence)
-  const diffDays = Math.floor((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000))
-  if (diffDays === 0) return '今天'
-  if (diffDays === 1) return '昨天'
-  if (diffDays < 30) return `${diffDays}天前`
-  return `${d.getMonth() + 1}/${d.getDate()}`
+  // 支持无过敏记录或获取失败的情况
+  if (out.success === false && out.message) {
+    return {
+      icon: '🤧',
+      title: '过敏信息',
+      text: out.message,
+      subtext: null,
+      tags: [] as string[],
+    }
+  }
+
+  if (out.totalRecords === 0) {
+    return {
+      icon: '✅',
+      title: '过敏信息：无记录',
+      text: out.message || '暂无过敏记录',
+      subtext: null,
+      tags: [] as string[],
+    }
+  }
+
+  const tags = out.patternAnalysis?.topAllergens || out.allergens || []
+  const recentCount = out.patternAnalysis?.recentCount ?? 0
+  const seasonalPattern = out.patternAnalysis?.seasonalPattern || null
+
+  // 计算最近发作时间
+  let lastOccurrenceText: string | null = null
+  if (out.lastOccurrence) {
+    const d = new Date(out.lastOccurrence)
+    const diffDays = Math.floor((Date.now() - d.getTime()) / (24 * 60 * 60 * 1000))
+    if (diffDays === 0) lastOccurrenceText = '今天'
+    else if (diffDays === 1) lastOccurrenceText = '昨天'
+    else if (diffDays < 30) lastOccurrenceText = `${diffDays}天前`
+    else lastOccurrenceText = `${d.getMonth() + 1}/${d.getDate()}`
+  }
+
+  return {
+    icon: '🤧',
+    title: `过敏信息：${out.totalRecords} 条记录`,
+    text: tags.length > 0 ? `主要过敏原：${tags.slice(0, 3).join('、')}` : out.message || '暂无详细信息',
+    subtext: recentCount > 0 ? `近30天发作 ${recentCount} 次` : '近30天无发作',
+    tags: tags.slice(0, 5),
+    seasonalPattern,
+    lastOccurrenceText,
+  }
 })
 </script>
 
 <template>
-  <div v-if="data" class="agent-summary-card">
-    <span class="agent-summary-icon">🤧</span>
+  <div v-if="summary" class="agent-summary-card">
+    <span class="agent-summary-icon">{{ summary.icon }}</span>
     <div class="agent-summary-body">
       <div class="agent-summary-title">
-        过敏信息：{{ data.totalRecords }} 条记录
-        <span v-if="lastOccurrenceText" class="allergy-last">最近发作 {{ lastOccurrenceText }}</span>
+        {{ summary.title }}
+        <span v-if="summary.lastOccurrenceText" class="allergy-last">最近 {{ summary.lastOccurrenceText }}</span>
       </div>
       <div class="agent-summary-text">
-        <span class="allergy-tags">
+        <span v-if="summary.tags.length > 0" class="allergy-tags">
           <span
-            v-for="allergen in data.patternAnalysis.topAllergens"
+            v-for="allergen in summary.tags"
             :key="allergen"
             class="allergy-tag"
           >{{ allergen }}</span>
         </span>
+        <span v-else>{{ summary.text }}</span>
       </div>
-      <div class="agent-summary-value">
-        近30天发作 {{ data.patternAnalysis.recentCount }} 次
-        <span v-if="data.patternAnalysis.seasonalPattern" class="allergy-seasonal">
-          · {{ data.patternAnalysis.seasonalPattern }}
+      <div v-if="summary.subtext" class="agent-summary-value">
+        {{ summary.subtext }}
+        <span v-if="summary.seasonalPattern" class="allergy-seasonal">
+          · {{ summary.seasonalPattern }}
         </span>
       </div>
     </div>

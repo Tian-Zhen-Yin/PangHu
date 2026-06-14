@@ -230,19 +230,30 @@ async function handleAgentStreamingMessage(
   )
 
   // P0 #2: 持久化 assistant 回复，避免刷新页面丢失
-  if (result.content && result.content.trim().length > 0) {
+  // 即使 content 为空（仅卡片），只要有工具结果也持久化，否则二次进入会话会丢失卡片
+  const hasContent = result.content && result.content.trim().length > 0
+  const hasToolResults = result.toolResults && result.toolResults.length > 0
+  if (hasContent || hasToolResults) {
     try {
+      // 把工具调用结果序列化进 metadata，供前端二次加载会话时还原卡片
+      const toolCallsForPersist = (result.toolResults || []).map((r) => ({
+        name: r.toolName,
+        status: r.success ? 'done' : 'error',
+        output: r.output,
+      }))
       await prisma.message.create({
         data: {
           conversationId: conversation.id,
           role: 'assistant',
-          content: result.content,
-          markdownContent: result.content,
+          content: result.content || '',
+          markdownContent: result.content || '',
           referencedGuides: JSON.stringify(result.citations),
           metadata: JSON.stringify({
             traceId: result.traceId,
             tools: result.toolNames,
             agentMode: true,
+            toolCalls: toolCallsForPersist,
+            citations: result.citations,
           })
         }
       })

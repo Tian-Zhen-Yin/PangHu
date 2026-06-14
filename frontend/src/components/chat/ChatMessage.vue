@@ -317,9 +317,9 @@ const timeDisplay = computed(() => {
 .ai-bubble {
   padding: 18px 22px;
   background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
-  border: none;
+  border: 1px solid rgba(255, 228, 181, 0.3);
   border-radius: 16px 16px 4px 16px;
-  box-shadow: 0 4px 20px rgba(255, 236, 179, 0.06), 0 0 0 1px rgba(255, 236, 179, 0.04);
+  box-shadow: 0 4px 20px rgba(255, 236, 179, 0.08);
   position: relative;
   overflow: hidden;
 }
@@ -340,8 +340,9 @@ const timeDisplay = computed(() => {
 /* ======= Agent 气泡 ======= */
 .agent-bubble {
   background: linear-gradient(135deg, #FFFEF8 0%, #FFF8E7 100%);
+  border: 1px solid rgba(255, 228, 181, 0.35);
   border-radius: 16px 16px 4px 16px;
-  box-shadow: 0 4px 20px rgba(255, 236, 179, 0.08), 0 0 0 1px rgba(255, 228, 181, 0.2);
+  box-shadow: 0 4px 20px rgba(255, 236, 179, 0.1);
   overflow: hidden;
 }
 
@@ -351,8 +352,8 @@ const timeDisplay = computed(() => {
   flex-direction: column;
   gap: 6px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, rgba(255, 236, 179, 0.15) 0%, rgba(255, 248, 231, 0.3) 100%);
-  border-bottom: 1px solid rgba(255, 228, 181, 0.4);
+  background: linear-gradient(135deg, rgba(255, 236, 179, 0.12) 0%, rgba(255, 248, 231, 0.35) 100%);
+  border-bottom: 1px solid rgba(255, 228, 181, 0.3);
 }
 
 .agent-tool-item {
@@ -360,8 +361,8 @@ const timeDisplay = computed(() => {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: rgba(255, 251, 240, 0.6);
-  border: 1px solid rgba(255, 228, 181, 0.35);
+  background: rgba(255, 251, 240, 0.7);
+  border: 1px solid rgba(255, 228, 181, 0.3);
   border-radius: 10px;
   opacity: 0;
   transform: translateX(-8px);
@@ -369,13 +370,13 @@ const timeDisplay = computed(() => {
 }
 
 .agent-tool-item.done {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 248, 231, 0.6) 100%);
-  border-color: rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(255, 248, 231, 0.65) 100%);
+  border-color: rgba(16, 185, 129, 0.25);
 }
 
 .agent-tool-item.error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(255, 248, 231, 0.6) 100%);
-  border-color: rgba(239, 68, 68, 0.25);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(255, 248, 231, 0.65) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 @keyframes toolItemIn {
@@ -426,15 +427,16 @@ const timeDisplay = computed(() => {
 
 /* Agent 文本内容区 */
 .agent-bubble .markdown-content {
-  padding: 18px 22px;
-  font-size: 15px;
+  padding: 16px 20px;
+  font-size: 14.5px;
   color: #5D4E37;
+  line-height: 1.8;
 }
 
 .streaming-indicator {
   display: inline-flex;
   gap: 4px;
-  padding: 4px 6px;
+  padding: 16px 20px;
 }
 
 .streaming-indicator span {
@@ -458,7 +460,7 @@ const timeDisplay = computed(() => {
   padding: 14px 20px;
   background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
   border-radius: 20px 4px 20px 20px;
-  box-shadow: 0 4px 16px rgba(255, 236, 179, 0.12);
+  box-shadow: 0 4px 16px rgba(255, 236, 179, 0.15);
   position: relative;
 }
 
@@ -474,40 +476,43 @@ const timeDisplay = computed(() => {
 }
 
 /* Markdown 内容 */
-.markdown-content { font-size: 15px; color: #5D4E37 }
-.markdown-content :deep(p) { margin: 0 0 10px 0; line-height: 1.7 }
+.markdown-content { font-size: 14.5px; color: #5D4E37; word-break: break-word; overflow-wrap: break-word; }
+.markdown-content :deep(p) { margin: 0 0 10px 0; line-height: 1.8; word-break: break-word; }
 .markdown-content :deep(p:last-child) { margin-bottom: 0 }
 .markdown-content :deep(h1),
 .markdown-content :deep(h2),
 .markdown-content :deep(h3) {
-  margin: 16px 0 10px 0;
+  margin: 14px 0 8px 0;
   font-weight: 700;
   color: #8B4513;
+  line-height: 1.5;
 }
 .markdown-content :deep(h1) { font-size: 17px }
 .markdown-content :deep(h2) { font-size: 16px }
 .markdown-content :deep(h3) { font-size: 15px }
 .markdown-content :deep(ul),
-.markdown-content :deep(ol) { margin: 10px 0; padding-left: 24px }
-.markdown-content :deep(li) { margin: 5px 0 }
+.markdown-content :deep(ol) { margin: 10px 0; padding-left: 22px; line-height: 1.8 }
+.markdown-content :deep(li) { margin: 4px 0 }
 .markdown-content :deep(code) {
   background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 6px;
-  font-size: 13px;
-  font-family: 'Courier New', monospace;
+  font-size: 12.5px;
+  font-family: 'Courier New', 'Menlo', monospace;
   color: #8B7355;
   font-weight: 500;
+  display: inline-block;
+  word-break: break-all;
 }
 .markdown-content :deep(pre) {
   background: #FFFBF0;
-  padding: 14px;
+  padding: 14px 16px;
   border-radius: 10px;
   overflow-x: auto;
   margin: 10px 0;
   border: 1px solid #FFF5DC;
 }
-.markdown-content :deep(pre code) { background: transparent; padding: 0; color: #8B7355 }
+.markdown-content :deep(pre code) { background: transparent; padding: 0; color: #5D4E37; display: block; font-size: 12.5px; line-height: 1.6; }
 .markdown-content :deep(blockquote) {
   border-left: 3px solid #D4A574;
   padding-left: 14px;
@@ -516,11 +521,33 @@ const timeDisplay = computed(() => {
   font-style: italic;
 }
 .markdown-content :deep(strong) { font-weight: 700; color: #A67B5B }
+.markdown-content :deep(em) { font-style: italic; color: #8B7355 }
+.markdown-content :deep(a) { color: #D2691E; text-decoration: underline; word-break: break-all }
+.markdown-content :deep(a:hover) { color: #8B4513 }
+.markdown-content :deep(hr) { border: none; border-top: 1px solid rgba(212, 165, 116, 0.3); margin: 16px 0 }
+.markdown-content :deep(br) { display: block; content: ''; margin: 4px 0 }
+.markdown-content :deep(table) {
+  border-collapse: collapse;
+  margin: 10px 0;
+  width: 100%;
+  font-size: 13px;
+}
+.markdown-content :deep(th),
+.markdown-content :deep(td) {
+  border: 1px solid #FFE5B4;
+  padding: 6px 10px;
+  text-align: left;
+}
+.markdown-content :deep(th) {
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
+  color: #8B4513;
+  font-weight: 600;
+}
 
 .plain-content {
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 15px;
+  font-size: 14.5px;
   color: #5D4E37;
   line-height: 1.7;
 }

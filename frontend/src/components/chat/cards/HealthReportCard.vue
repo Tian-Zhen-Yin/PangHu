@@ -8,7 +8,7 @@
  * 活动量维度显示"暂未接入"（数据源未就绪）
  */
 import { computed, ref } from 'vue'
-import type { HealthWeeklyReport } from '../../types/chat.js'
+import type { HealthWeeklyReport } from '@/types/chat'
 
 const props = defineProps<{
   toolOutput: any

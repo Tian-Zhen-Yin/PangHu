@@ -29,6 +29,49 @@ function getToolLabel(name: string): { label: string; icon: string } {
   return found ?? { label: '正在处理', icon: '🧠' }
 }
 
+/**
+ * 从持久化的 message.metadata（JSON 字符串）还原 agentMeta，
+ * 保证二次进入会话时仍能渲染工具卡片（如健康周报）。
+ */
+function restoreAgentMetaFromMetadata(message: Message): Message {
+  if (message.role !== 'assistant') return message
+  if (message.agentMeta) return message
+  const raw = message.metadata
+  if (!raw || typeof raw !== 'string') return message
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || !parsed.agentMode) return message
+
+    const toolCalls: ToolCallInfo[] = Array.isArray(parsed.toolCalls)
+      ? parsed.toolCalls.map((t: any) => {
+          const info = getToolLabel(t.name)
+          return {
+            name: t.name,
+            label: info.label,
+            status: (t.status === 'error' ? 'error' : 'done') as 'done' | 'error',
+            output: t.output,
+          }
+        })
+      : []
+
+    const toolsCalled: string[] = Array.isArray(parsed.tools)
+      ? parsed.tools
+      : toolCalls.map((t) => t.name)
+
+    message.agentMeta = {
+      traceId: parsed.traceId || 'restored-' + Date.now(),
+      toolsCalled,
+      toolCalls,
+      citations: Array.isArray(parsed.citations) ? parsed.citations : [],
+      confidence: parsed.confidence ?? 0.85,
+      totalTimeMs: parsed.totalTimeMs ?? 0,
+    }
+  } catch {
+    // metadata 解析失败时保持原状
+  }
+  return message
+}
+
 export const useChatStore = defineStore('chat', () => {
   const conversations = ref<Conversation[]>([])
   const currentConversation = ref<Conversation | null>(null)
@@ -63,7 +106,9 @@ export const useChatStore = defineStore('chat', () => {
       const response = await getConversationById(id)
       if (response.success) {
         currentConversation.value = response.data
-        messages.value = response.data.messages || []
+        const rawMessages: Message[] = response.data.messages || []
+        // 从 metadata 还原 agentMeta，保证二次进入会话时卡片不丢失
+        messages.value = rawMessages.map((m) => restoreAgentMetaFromMetadata({ ...m }))
       }
     } catch (err: any) {
       error.value = err.message || '获取对话详情失败'
@@ -214,17 +259,18 @@ export const useChatStore = defineStore('chat', () => {
 
           const existing: AgentMeta = messageRef.agentMeta || { ...initialAgentMeta }
           if (meta.traceId) existing.traceId = meta.traceId
-          if (meta.toolsCalled) existing.toolsCalled = meta.toolsCalled
-          if (meta.toolCount != null) {
-            if (!existing.toolCalls) existing.toolCalls = []
-            if (!existing.toolsCalled) existing.toolsCalled = []
-            if (existing.toolCalls.length === 0 && existing.toolsCalled.length > 0) {
-              existing.toolCalls = existing.toolsCalled.map((name) => {
-                const { label } = getToolLabel(name)
-                const tool: ToolCallInfo = { name, label, status: 'running', startTime: Date.now() }
-                return tool
-              })
-            }
+          if (meta.toolsCalled && Array.isArray(meta.toolsCalled)) {
+            existing.toolsCalled = meta.toolsCalled
+            // 预创建工具调用项，标记为 running 状态，用于显示进度条
+            existing.toolCalls = meta.toolsCalled.map((name: string) => {
+              const info = getToolLabel(name)
+              return {
+                name,
+                label: info.label,
+                status: 'running' as const,
+                startTime: Date.now(),
+              }
+            })
           }
           messageRef.agentMeta = { ...existing }
         },
@@ -240,6 +286,7 @@ export const useChatStore = defineStore('chat', () => {
         },
         /**
          * tool 事件：某个工具完成调用，附带结构化结果
+         * 后端 status 为 'success' | 'error'，前端统一为 'done' | 'error'
          */
         onTool: (toolData: any) => {
           const messageRef = messages.value[aiMessageIndex]
@@ -250,6 +297,8 @@ export const useChatStore = defineStore('chat', () => {
               toolsCalled: [],
               toolCalls: [],
               citations: [],
+              confidence: 0,
+              totalTimeMs: 0,
             }
           }
           const meta = messageRef.agentMeta
@@ -260,31 +309,36 @@ export const useChatStore = defineStore('chat', () => {
           const { label } = getToolLabel(toolName)
           const existingIdx = meta.toolCalls.findIndex((t) => t.name === toolName)
           const endTime = Date.now()
-          const costMs = endTime - startAt
+
+          // 规范化状态：'success' -> 'done'，其他错误 -> 'error'
+          const finalStatus: 'done' | 'error' = toolData.status === 'error' ? 'error' : 'done'
+          const rawOutput = toolData.output ?? toolData.result
 
           if (existingIdx >= 0) {
             const existing = meta.toolCalls[existingIdx]
             if (existing) {
-              existing.status = toolData.status === 'error' ? 'error' : 'done'
-              existing.output = toolData.output || toolData.result
+              existing.status = finalStatus
+              existing.output = rawOutput
               existing.endTime = endTime
               existing.costMs = existing.startTime ? endTime - existing.startTime : undefined
             }
           } else {
+            // 工具未在 meta 事件中预创建，直接插入
             const tool: ToolCallInfo = {
               name: toolName,
               label,
-              status: toolData.status === 'error' ? 'error' : 'done',
-              output: toolData.output || toolData.result,
-              startTime: startAt,
+              status: finalStatus,
+              output: rawOutput,
+              startTime: Date.now(), // 使用当前时间作为开始时间
               endTime,
-              costMs,
+              costMs: 0, // 无法计算准确耗时
             }
             meta.toolCalls.push(tool)
             if (!meta.toolsCalled.includes(toolName)) {
               meta.toolsCalled.push(toolName)
             }
           }
+          // 触发响应式更新
           messageRef.agentMeta = { ...meta }
         },
         /**

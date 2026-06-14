@@ -203,14 +203,24 @@ function formatResult(result: ToolResult): string {
 
 export function generateReport(state: AgentState, results: ToolResult[]): string {
   const bodyParts = results
+    .filter((r) => r.toolName !== 'GENERATE_health_report')
     .map((r) => formatResult(r))
     .filter((text) => text && text.trim().length > 0)
 
   const body = bodyParts.join('\n\n')
   const closing = '\n\n希望这些信息对你有帮助～如果还有其他问题，随时可以问我！'
 
-  if (bodyParts.length === 0) {
+  // 检查是否只调用了健康周报工具（没有其他工具结果）
+  const hasHealthReport = results.some((r) => r.toolName === 'GENERATE_health_report' && r.success)
+  const hasOtherResults = bodyParts.length > 0
+
+  if (!hasOtherResults && !hasHealthReport) {
     return '你好！我是喵喵医生 🐾\n\n关于你的问题，我暂时没有找到足够的数据来回答。你可以：\n• 先去添加猫咪档案\n• 换一种方式描述你的问题\n\n或者直接问我关于养猫的一般性问题～'
+  }
+
+  // 如果只有健康周报工具调用，不生成文本回复（前端会渲染卡片）
+  if (!hasOtherResults && hasHealthReport) {
+    return ''
   }
 
   const greeting = state.userMessage.length > 0 ? '让我来为你整理一下信息 🐾\n\n' : ''

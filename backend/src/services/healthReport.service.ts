@@ -14,7 +14,23 @@ import { analyzeWeight } from './weightStandard.service'
 import { getVaccinesByCat } from './vaccine.service'
 import { getAllergyRecords, analyzeAllergyPatterns } from './allergy.service'
 
-// ==================== 类型定义 ====================
+function calculateCatAge(birthDateStr: string | null): string {
+  if (!birthDateStr) return '未知'
+  const birthDate = new Date(birthDateStr)
+  const now = new Date()
+  let age = now.getFullYear() - birthDate.getFullYear()
+  const monthDiff = now.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) {
+    age--
+  }
+  if (age < 0) return '幼猫'
+  if (age === 0) {
+    const monthAge = Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+    return monthAge <= 0 ? '刚出生' : `${monthAge}个月`
+  }
+  const months = monthDiff < 0 ? 12 + monthDiff : monthDiff
+  return months > 0 ? `${age}岁${months}个月` : `${age}岁`
+}
 
 export interface WeightTrendData {
   currentWeight: number
@@ -525,7 +541,7 @@ export async function generateHealthReport(
       id: cat.id,
       name: cat.name,
       breed: cat.breed,
-      age: `${cat.birthDate}`,
+      age: calculateCatAge(cat.birthDate),
       gender: cat.gender === 'male' ? '公猫' : cat.gender === 'female' ? '母猫' : '未知',
     },
     weightTrend,

@@ -23,6 +23,7 @@ export interface AgentStreamResult {
   citations: string[]     // RAG 引用（guide titles）
   traceId: string
   toolNames: string[]     // 实际执行的工具名列表
+  toolResults?: ToolResult[] // 完整工具执行结果（供持久化卡片渲染数据）
 }
 
 /**
@@ -236,6 +237,7 @@ export class CatAgent {
 
     let toolNames: string[] = []
     let citations: string[] = []
+    let finalToolResults: ToolResult[] = []
 
     try {
       // === 阶段 1: Router ===
@@ -373,8 +375,14 @@ export class CatAgent {
         this.writeSse(res, 'trace', { step: reportTraceStep })
         recordSseEvent({ eventType: 'trace', environment: process.env.NODE_ENV || 'development' })
 
-        const needsLLM = toolResults.length > 0 && report.length < 2000
-        if (needsLLM) {
+        // 当 reporter 主动返回空字符串（例如只调用了健康周报工具，前端会渲染卡片），
+        // 直接跳过 LLM 调用，避免重复内容
+        const reportIsEmpty = report.trim().length === 0
+        const needsLLM = !reportIsEmpty && toolResults.length > 0 && report.length < 2000
+        if (reportIsEmpty) {
+          // 只渲染卡片，不发送任何 content 事件
+          recordAgentPhase({ phase: 'reporter', intentType: intentResult.intent, durationMs: Date.now() - reportStart, environment: process.env.NODE_ENV || 'development' })
+        } else if (needsLLM) {
           // 使用真实 LLM 流式输出，逐 token 推送
           const knowledgeContext = await getKnowledgeContext(userMessage)
           const finalPrompt =
@@ -414,6 +422,7 @@ export class CatAgent {
           .filter((r) => r.toolName === 'rag_search' && r.output?.guideTitles)
           .flatMap((r) => r.output.guideTitles as string[])
           .slice(0, 5)
+        finalToolResults = toolResults
         this.writeSse(res, 'done', { traceId: ctx.traceId, citations })
         recordSseEvent({ eventType: 'done', environment: process.env.NODE_ENV || 'development' })
         res.end()
@@ -424,6 +433,7 @@ export class CatAgent {
         citations,
         traceId: ctx.traceId,
         toolNames,
+        toolResults: finalToolResults,
       }
     } catch (error: any) {
       ctx.logger.log(`[Agent] Error: ${error.message}`)
@@ -437,6 +447,7 @@ export class CatAgent {
         citations: [],
         traceId: ctx.traceId,
         toolNames,
+        toolResults: finalToolResults,
       }
     } finally {
       // 恢复原 res.write，避免影响后续可能的复用
