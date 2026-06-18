@@ -8,6 +8,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 过敏严重程度（受控词汇，避免脏数据）
+enum AllergySeverity {
+  mild
+  moderate
+  severe
+}
+
+// 过敏记录数据来源（用于审计与回溯）
+enum AllergyRecordSource {
+  agent
+  manual
+  imported
+}
+
+// 陪玩反馈数据来源（用于审计；agent = Tool 写入，user = 用户直接 REST 提交）
+enum PlayFeedbackSource {
+  agent
+  user
+}
+
 // 成长阶段
 model Stage {
   id          String @id @default(cuid())
@@ -182,17 +202,75 @@ model Cat {
   weightGoalTarget Float? // 目标体重 (kg)
   weightGoalDate   DateTime? // 目标日期
 
+  // 陪玩档案（PRD §3.1 / 技术设计 §3.1）
+  personality    String? // 'active' | 'curious' | 'clingy' | 'aloof'
+  energyBaseline Int? // 1-5
+  healthTags     String? // JSON 数组：'overweight' | 'senior' | 'post_op' | 'kitten'
+
   isActive Boolean @default(true)
 
-  records       PetRecord[]
-  vaccines      VaccineRecord[]
-  conversations Conversation[]
+  records        PetRecord[]
+  vaccines       VaccineRecord[]
+  allergyRecords AllergyRecord[]
+  playFeedbacks  PlayFeedback[]
+  conversations  Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([userId, isActive])
+}
+
+// 过敏记录
+model AllergyRecord {
+  id             String              @id @default(cuid())
+  catId          String
+  cat            Cat                 @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  allergen       String              // 过敏原：鸡肝、鱼粮、跳蚤、花粉等
+  symptoms       String              // 症状描述：皮肤红斑、呕吐、抓挠等
+  severity       AllergySeverity     // 严重程度（枚举约束）
+  occurrenceDate DateTime            // 发作日期/时间
+  treatment      String?             // 处理方式/用药
+  notes          String?             // 额外备注
+
+  // 审计字段
+  createdBy      String              // 写入者 userId
+  source         AllergyRecordSource @default(agent) // 数据来源
+  confirmedAt    DateTime?           // 用户确认写入的时刻（仅 agent 来源）
+  createdAt      DateTime            @default(now())
+
+  @@index([catId, occurrenceDate])
+  @@index([catId, allergen])
+}
+
+// 陪玩反馈记录（用于偏好聚合与回看）
+model PlayFeedback {
+  id    String @id @default(cuid())
+  catId String
+  cat   Cat    @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  userId         String // 冗余字段：来自 cat.userId，便于按用户聚合
+  gameId         String // 游戏 id（来自 src/data/playGames）
+  score          Int // 1-5
+  completion     Boolean
+  actualDuration Int // 分钟
+  playedAt       DateTime
+  notes          String?
+
+  // 审计字段（与 AllergyRecord 对齐）
+  createdBy   String // 写入者 userId
+  source      PlayFeedbackSource @default(agent)
+  confirmedAt DateTime? // 用户确认写入的时刻
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([catId, gameId, playedAt])
+  @@index([catId, playedAt])
+  @@index([userId, playedAt])
+  @@index([catId, gameId])
 }
 
 // 疫苗接种记录

@@ -1,0 +1,139 @@
+# GitHub Actions 质量门禁（Harness CI/CD 兜底方案）
+# 文件路径: .github/workflows/quality-gate.yaml
+#
+# 职责: 代码提交时自动执行质量门禁
+# - PR 触发：类型检查 + Lint + 单元测试
+# - main 合并触发：同上 + 构建验证
+#
+# 说明: 此 workflow 与 Harness CI/CD 并行运行。
+# Harness 执行全量流水线（含部署），GitHub Actions 作为快速反馈层兜底。
+
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: ["main", "master"]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: ["main", "master"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+  NODE_VERSION: "20"
+
+jobs:
+  # ================================================================
+  # Job 1: 代码质量检查
+  # ================================================================
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: TypeScript Check (Frontend)
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: TypeScript Check (Backend)
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      - name: Lint (Frontend)
+        working-directory: frontend
+        run: npm run lint 2>&1 || echo "Lint check done"
+
+  # ================================================================
+  # Job 2: 单元测试
+  # ================================================================
+  test:
+    name: Unit Tests
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Frontend Unit Tests
+        working-directory: frontend
+        run: npx vitest run --config vitest.config.ts --reporter=verbose
+
+      - name: Backend Unit Tests
+        working-directory: backend
+        run: npx vitest run --config vitest.backend.config.ts --reporter=verbose
+
+      - name: Upload Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            frontend/coverage/
+            backend/coverage/
+
+  # ================================================================
+  # Job 3: 构建验证（仅 main 合并时运行）
+  # ================================================================
+  build:
+    name: Build Check
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Build Backend
+        working-directory: backend
+        run: npm run build

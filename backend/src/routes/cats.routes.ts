@@ -13,6 +13,7 @@ import {
   uploadCatAvatarHandler,
   uploadCatAvatarBase64Handler
 } from '../controllers/cats.controller'
+import { updatePlayProfileHandler } from '../controllers/catPlayProfile.controller'
 
 const router = Router()
 router.use(authMiddleware)
@@ -22,6 +23,7 @@ router.get('/:id', getCat)
 router.get('/:id/weight-history', getWeightHistory)
 router.get('/:id/weight/export', exportWeightCSV)
 router.put('/:id/weight-goal', updateWeightGoal)
+router.put('/:id/play-profile', updatePlayProfileHandler)
 router.post('/', createCatHandler)
 router.put('/:id', updateCatHandler)
 router.delete('/:id', deleteCatHandler)

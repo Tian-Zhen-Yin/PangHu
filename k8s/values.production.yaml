@@ -1,0 +1,63 @@
+# Helm Values 配置文件
+# 路径: k8s/values.production.yaml
+# 说明: 生产环境部署配置
+
+environment: production
+
+# ====== 镜像配置 ======
+image:
+  repository: registry.example.com/panghu
+  tag: latest  # 由 CI 流水线自动注入 build ID
+
+# ====== Git 信息 ======
+git:
+  commitSha: ""
+  branch: ""
+
+# ====== CI/CD 信息 ======
+build:
+  id: ""
+  pipelineId: ""
+
+# ====== 后端配置 ======
+backend:
+  replicas: 3
+  logLevel: info
+  llmModel: glm-4-flash
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+# ====== 前端配置 ======
+frontend:
+  replicas: 3
+  apiBaseUrl: https://api.panghu.example.com
+  wsBaseUrl: wss://api.panghu.example.com
+
+# ====== Agent 配置 ======
+agent:
+  defaultMode: true
+  streamingEnabled: true
+  toolTimeoutMs: 10000
+  maxToolsPerRequest: 5
+
+# ====== RAG 配置 ======
+rag:
+  topK: 3
+  minSimilarity: 0.75
+
+# ====== 可观测性 ======
+monitoring:
+  enabled: true
+  metricsPort: 3000
+  prometheusScrapeInterval: 15s
+
+# ====== 密钥（通过 SealedSecret 或 External Secrets Operator 注入）======
+secrets:
+  databaseUrl: ""
+  jwtSecret: ""
+  zhipuaiApiKey: ""

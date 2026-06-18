@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useChatStore } from '../../stores/chat.js'
 import { useMyCatStore } from '../../stores/myCat.js'
 import { getSuggestedQuestions } from '../../api/chat.js'
@@ -18,8 +18,10 @@ const myCatStore = useMyCatStore()
 const { currentCat } = storeToRefs(myCatStore)
 
 // UI状态
-const showConversationList = ref(true)
-const isConversationListHidden = ref(false) // 桌面端对话列表隐藏状态
+// 默认隐藏对话列表：从导航入口（如首页喵喵医生 FAB）进入时直接进入聊天界面，
+// 移动端可通过返回按钮、桌面端可通过侧栏切换按钮重新展开列表
+const showConversationList = ref(false)
+const isConversationListHidden = ref(true) // 桌面端对话列表隐藏状态
 const messagesContainer = ref<HTMLElement | null>(null)
 const suggestedQuestions = ref<string[]>([])
 const isUserScrolling = ref(false) // 跟踪用户是否在手动滚动
@@ -117,11 +119,16 @@ function handleScrollToBottomClick() {
 async function handleSend(content: string) {
   // 发送消息时重置滚动状态，确保滚动到底部
   isUserScrolling.value = false
-  await chatStore.sendMessage({ content, catId: currentCat.value?.id })
-  // 确保发送后滚动到底部
-  nextTick(() => {
-    scrollToBottom(true)
-  })
+  try {
+    await chatStore.sendMessage({ content, catId: currentCat.value?.id })
+    // 确保发送后滚动到底部
+    nextTick(() => {
+      scrollToBottom(true)
+    })
+  } catch (error: any) {
+    console.error('Failed to send message:', error)
+    ElMessage.error(error?.message || '发送失败，请稍后重试')
+  }
 }
 
 // 点击预设问题
@@ -153,9 +160,22 @@ async function handleSelectConversation(id: string) {
 
 // 删除对话
 async function handleDeleteConversation(id: string) {
-  const confirmed = confirm('确定要删除这个对话吗？')
-  if (confirmed) {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这个对话吗？此操作不可恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger',
+      }
+    )
     await chatStore.deleteConversation(id)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Failed to delete conversation:', error)
+    }
   }
 }
 
@@ -207,6 +227,12 @@ const contextualSuggestions = computed(() => {
   <div class="ai-chat-page">
     <!-- 移动端对话列表 -->
     <div v-if="isMobile && showConversationList" class="conversation-list-panel mobile">
+      <!-- 关闭按钮：返回聊天页 -->
+      <button class="mobile-list-close" @click="showConversationList = false" title="返回对话">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
       <ConversationList
         :conversations="chatStore.conversations"
         :current-id="chatStore.currentConversationId"
@@ -254,10 +280,10 @@ const contextualSuggestions = computed(() => {
     <div class="chat-area" :class="{ 'full-width': isConversationListHidden }">
       <!-- 移动端头部 -->
       <header v-if="isMobile && !showConversationList" class="chat-header mobile">
-        <!-- 返回按钮 -->
-        <button class="back-button" @click="handleBackToList">
+        <!-- 历史会话按钮（打开对话列表） -->
+        <button class="back-button" @click="handleBackToList" title="历史会话">
           <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10"/>
           </svg>
         </button>
 
@@ -295,7 +321,7 @@ const contextualSuggestions = computed(() => {
             <span class="doctor-name">喵喵医生</span>
             <div class="doctor-status">
               <span class="status-dot"></span>
-              <span class="status-text">在线咨询中</span>
+              <span class="status-text">{{ chatStore.useAgentMode ? '智能顾问模式' : '普通模式' }}</span>
             </div>
           </div>
         </div>
@@ -304,6 +330,15 @@ const contextualSuggestions = computed(() => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
+          </button>
+          <!-- Agent 模式切换 -->
+          <button
+            :class="['agent-mode-toggle', chatStore.useAgentMode ? 'active' : '']"
+            @click="chatStore.toggleAgentMode(!chatStore.useAgentMode)"
+            :title="chatStore.useAgentMode ? '智能顾问（工具调用）已开启·点击切换为普通模式' : '普通模式·点击切换为智能顾问（工具调用）模式'"
+          >
+            <span class="agent-mode-icon">{{ chatStore.useAgentMode ? '🧠' : '💬' }}</span>
+            <span class="agent-mode-label">{{ chatStore.useAgentMode ? '智能模式' : '普通模式' }}</span>
           </button>
           <CatSelector />
         </div>
@@ -632,6 +667,37 @@ const contextualSuggestions = computed(() => {
   width: 100%;
 }
 
+/* 移动端对话列表的关闭按钮（默认隐藏列表后，从聊天页打开列表时需要一个返回入口） */
+.mobile-list-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: 16px;
+  z-index: 110;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #FFF5DC;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.18);
+  transition: all 0.2s ease;
+}
+
+.mobile-list-close:hover {
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  transform: scale(1.05);
+}
+
+.mobile-list-close svg {
+  width: 18px;
+  height: 18px;
+}
+
 .chat-area {
   min-width: 0;
   /* Grid布局下占据第二列，全高 */
@@ -669,8 +735,7 @@ const contextualSuggestions = computed(() => {
   top: 0;
   bottom: 0;
   width: 4px;
-  /* 奶油色装饰线 */
-  background: linear-gradient(180deg, #FFE5B4 0%, #FFF0DB 100%);
+  background: var(--color-primary);
 }
 
 .chat-header::after {
@@ -681,16 +746,6 @@ const contextualSuggestions = computed(() => {
   right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent 0%, rgba(255, 228, 181, 0.15) 50%, transparent 100%);
-}
-
-.chat-header::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--color-primary);
 }
 
 .chat-header.mobile {
@@ -829,6 +884,54 @@ const contextualSuggestions = computed(() => {
 .home-button-mobile svg {
   width: 16px;
   height: 16px;
+}
+
+/* Agent 模式切换按钮 - 奶油色系 */
+.agent-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid #FFF5DC;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+  color: #8B7355;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.08);
+}
+
+.agent-mode-toggle:hover {
+  border-color: #FFE5B4;
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
+  color: #BC8F6F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.15);
+}
+
+.agent-mode-toggle.active {
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  border-color: #F4A261;
+  color: #5D4E37;
+  box-shadow: 0 4px 14px rgba(244, 162, 97, 0.25);
+}
+
+.agent-mode-toggle.active:hover {
+  background: linear-gradient(135deg, #FFDAB9 0%, #FFCF9D 100%);
+  box-shadow: 0 6px 16px rgba(244, 162, 97, 0.3);
+}
+
+.agent-mode-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.agent-mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* 移动端头部中心区域 */

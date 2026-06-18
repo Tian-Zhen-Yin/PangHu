@@ -16,6 +16,7 @@ import { getAgeText } from '../utils/formatters.js'
 import { getImageUrl } from '../../../utils/format.js'
 import type { DashboardCatCard, DashboardReminder, DashboardRecentRecord } from '../types/index.js'
 import type { Cat } from '../../../types/cat.js'
+import TodayPlayCard from '../../../components/home/TodayPlayCard.vue'
 
 const MAX_RECENT_RECORDS = 6
 
@@ -233,6 +234,9 @@ onMounted(async () => {
             </div>
           </div>
         </section>
+
+        <!-- Today Play Card -->
+        <TodayPlayCard v-if="catStore.currentCat" class="mb-4" />
 
         <!-- 2. Data Grid (extracted from hero) -->
         <section class="data-grid-section">

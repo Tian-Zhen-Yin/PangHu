@@ -85,8 +85,11 @@ defineExpose({
         :class="['send-button', { disabled: !content.trim() || disabled }]"
         :disabled="!content.trim() || disabled"
         @click="handleSend"
+        aria-label="发送"
       >
-        <span class="icon">➤</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="send-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -94,15 +97,16 @@ defineExpose({
 
 <style scoped>
 .chat-input {
-  background-color: #fff;
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
   border-radius: 20px;
-  border: none;
+  border: 2px solid #FFF5DC;
   transition: all 0.2s;
-  box-shadow: 0 2px 12px rgba(90, 74, 66, 0.08);
+  box-shadow: 0 2px 12px rgba(188, 143, 111, 0.08);
 }
 
 .chat-input.focused {
-  box-shadow: 0 4px 20px rgba(255, 138, 76, 0.15);
+  border-color: #FFE5B4;
+  box-shadow: 0 4px 20px rgba(255, 228, 181, 0.18);
 }
 
 .chat-input.disabled {
@@ -124,7 +128,7 @@ defineExpose({
   resize: none;
   font-size: 14px;
   line-height: 1.6;
-  color: #303133;
+  color: var(--color-text-primary, #303133);
   background: transparent;
   font-family: inherit;
   min-height: 28px;
@@ -167,8 +171,8 @@ defineExpose({
   box-shadow: none;
 }
 
-.send-button .icon {
-  font-size: 16px;
-  transform: translateX(1px);
+.send-button .send-icon {
+  width: 18px;
+  height: 18px;
 }
 </style>

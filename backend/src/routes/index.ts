@@ -13,6 +13,7 @@ import weightStandardRoutes from './weightStandards.routes'
 import notificationRoutes from './notifications.routes'
 import proactiveRoutes from './proactive.routes'
 import adminRoutes from './admin.routes'
+import playRoutes from './play.routes'
 
 const router = Router()
 
@@ -33,6 +34,7 @@ router.use('/weight-standards', weightStandardRoutes)
 router.use('/notifications', notificationRoutes)
 router.use('/proactive', proactiveRoutes)
 router.use('/admin', adminRoutes)
+router.use('/play', playRoutes)
 
 // 健康检查
 router.get('/health', (_req, res) => {

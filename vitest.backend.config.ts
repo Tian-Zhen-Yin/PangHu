@@ -18,6 +18,9 @@ export default defineConfig({
       'backend/src/__tests__/performance/**',
       'backend/src/__tests__/middlewares/**',
       'backend/src/__tests__/utils/sanitize.test.ts'
+    ],
+    setupFiles: [
+      './backend/src/__tests__/_setup.ts'
     ]
   },
   resolve: {
@@ -26,3 +29,4 @@ export default defineConfig({
     }
   }
 })
+

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>喵喵医生 · Agent 架构设计图</title>
+<style>
+  :root {
+    --bg-1: #FFF8F0;
+    --bg-2: #F4E4C1;
+    --primary: #D2691E;
+    --primary-light: #FFE5B4;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
+    --info: #3B82F6;
+    --text-1: #5D4E37;
+    --text-2: #8B7355;
+    --text-3: #BC8F6F;
+    --card-bg: #FFFFFF;
+    --card-border: #FFE5B4;
+    --code-bg: #2A2A2A;
+    --code-text: #FFD89B;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    color: var(--text-1);
+    min-height: 100vh;
+  }
+
+  h1 {
+    text-align: center;
+    color: var(--primary);
+    font-size: 28px;
+    margin: 8px 0 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text-2);
+    margin: 0 0 24px;
+    font-size: 14px;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ===== 概览图 ===== */
+  .overview {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid var(--card-border);
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.08);
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0 0 16px;
+    padding-left: 12px;
+    border-left: 4px solid var(--primary);
+  }
+
+  /* ===== 数据流图 ===== */
+  .flow-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .layer {
+    background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .layer-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .component {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  .component:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.15);
+  }
+
+  .component-name {
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .component-desc {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 2px;
+  }
+
+  .arrow {
+    font-size: 32px;
+    color: var(--primary);
+    font-weight: 300;
+    text-align: center;
+  }
+
+  /* ===== 详细架构图 ===== */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .detail-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.08);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .card-icon {
+    font-size: 24px;
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+  }
+
+  .card-body {
+    background: #FFFBF0;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .phase-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--primary);
+  }
+
+  .step-num {
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-name {
+    font-weight: 600;
+    color: var(--text-1);
+    font-size: 13px;
+  }
+
+  .step-desc {
+    font-size: 11px;
+    color: var(--text-2);
+  }
+
+  /* ===== Pipeline 时间线 ===== */
+  .pipeline {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid var(--card-border);
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.08);
+  }
+
+  .timeline {
+    position: relative;
+    padding: 20px 0;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-light), var(--primary), var(--primary-light));
+    transform: translateY(-50%);
+  }
+
+  .timeline-steps {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    position: relative;
+  }
+
+  .tl-step {
+    text-align: center;
+    position: relative;
+  }
+
+  .tl-circle {
+    width: 56px;
+    height: 56px;
+    background: var(--card-bg);
+    border: 3px solid var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    font-size: 20px;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s;
+  }
+
+  .tl-circle:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .tl-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-1);
+    margin-bottom: 4px;
+  }
+
+  .tl-desc {
+    font-size: 11px;
+    color: var(--text-2);
+    line-height: 1.4;
+  }
+
+  /* ===== 代码块 ===== */
+  .code-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid var(--card-border);
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.08);
+  }
+
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .code-comment { color: #7C7C7C; }
+  .code-keyword { color: #FF79C6; }
+  .code-string { color: #F1FA8C; }
+  .code-function { color: #50FA7B; }
+  .code-type { color: #8BE9FD; }
+
+  /* ===== 工具网格 ===== */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .tool-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .tool-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(210, 105, 30, 0.15);
+  }
+
+  .tool-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .tool-icon {
+    font-size: 20px;
+  }
+
+  .tool-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-1);
+    font-family: 'Consolas', monospace;
+  }
+
+  .tool-desc {
+    font-size: 11px;
+    color: var(--text-2);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .tool-meta {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .tool-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+
+  .tag-read { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+  .tag-write { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+  .tag-v3 { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+  .tag-v2 { background: rgba(210, 105, 30, 0.15); color: var(--primary); }
+
+  /* ===== 状态机 ===== */
+  .state-machine {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid var(--card-border);
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(210, 105, 30, 0.08);
+  }
+
+  .state-flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .state {
+    background: linear-gradient(135deg, #FFE5B4 0%, #FFD89B 100%);
+    border: 2px solid var(--primary);
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-width: 110px;
+    text-align: center;
+    position: relative;
+    flex: 1;
+  }
+
+  .state-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
+  .state-desc {
+    font-size: 10px;
+    color: var(--text-2);
+    margin-top: 4px;
+  }
+
+  .state-arrow {
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: 300;
+  }
+
+  /* ===== 关键指标 ===== */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: linear-gradient(135deg, #FFFBF0 0%, #FFE5B4 100%);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1.5px solid var(--card-border);
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text-2);
+    margin-top: 4px;
+  }
+
+  /* ===== 文件树 ===== */
+  .file-tree {
+    background: #FAFAFA;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .tree-dir { color: var(--primary); font-weight: 700; }
+  .tree-file { color: var(--text-1); }
+  .tree-comment { color: var(--text-3); font-style: italic; }
+
+  @media (max-width: 768px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .flow-diagram { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); }
+    .timeline-steps { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .timeline::before { display: none; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🐾 喵喵医生 · Agent 架构设计图</h1>
+  <p class="subtitle">MiaoMiao Doctor · Agent Framework v3.0</p>
+
+  <!-- 1. 全局数据流 -->
+  <div class="overview">
+    <h2 class="section-title">一、全局数据流（请求 → 响应）</h2>
+    <div class="flow-diagram">
+      <!-- 前端层 -->
+      <div class="layer">
+        <div class="layer-title">📱 前端层 (Vue3)</div>
+        <div class="component">
+          <div class="component-name">AIChat/index.vue</div>
+          <div class="component-desc">全屏聊天页，承载对话 UI</div>
+        </div>
+        <div class="component">
+          <div class="component-name">ChatInput.vue</div>
+          <div class="component-desc">用户输入框</div>
+        </div>
+        <div class="component">
+          <div class="component-name">AgentCardRenderer.vue</div>
+          <div class="component-desc">根据 toolName 动态派发卡片</div>
+        </div>
+        <div class="component">
+          <div class="component-name">SSE 客户端</div>
+          <div class="component-desc">EventSource 接收流式事件</div>
+        </div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <!-- 后端层 -->
+      <div class="layer">
+        <div class="layer-title">⚙️ 后端层 (Express)</div>
+        <div class="component">
+          <div class="component-name">chat.controller.ts</div>
+          <div class="component-desc">SSE 端点 + 消息持久化</div>
+        </div>
+        <div class="component">
+          <div class="component-name">CatAgent.handleStreaming</div>
+          <div class="component-desc">Agent 入口，调度 5 阶段</div>
+        </div>
+        <div class="component">
+          <div class="component-name">AgentPipeline</div>
+          <div class="component-desc">Router → Planner → Executor → Reporter</div>
+        </div>
+        <div class="component">
+          <div class="component-name">Tool Registry</div>
+          <div class="component-desc">8 个工具注册表</div>
+        </div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <!-- 数据 + AI 层 -->
+      <div class="layer">
+        <div class="layer-title">🤖 AI & 数据层</div>
+        <div class="component">
+          <div class="component-name">ZhipuAI Client</div>
+          <div class="component-desc">智谱 GLM-4 大模型</div>
+        </div>
+        <div class="component">
+          <div class="component-name">RAG Service</div>
+          <div class="component-desc">知识库检索增强</div>
+        </div>
+        <div class="component">
+          <div class="component-name">Prisma ORM</div>
+          <div class="component-desc">SQLite 数据访问</div>
+        </div>
+        <div class="component">
+          <div class="component-name">Embedding Service</div>
+          <div class="component-desc">向量嵌入</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Pipeline 6 阶段时间线 -->
+  <div class="pipeline">
+    <h2 class="section-title">二、Pipeline 六阶段时间线</h2>
+    <div class="timeline">
+      <div class="timeline-steps">
+        <div class="tl-step">
+          <div class="tl-circle">1️⃣</div>
+          <div class="tl-name">Router</div>
+          <div class="tl-desc">意图分类，命中关键词模式匹配</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">2️⃣</div>
+          <div class="tl-name">Planner</div>
+          <div class="tl-desc">构建 PlanStep[] 工具计划</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">3️⃣</div>
+          <div class="tl-name">Loop</div>
+          <div class="tl-desc">LLM tool-calling 循环（V3.0）</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">4️⃣</div>
+          <div class="tl-name">Executor</div>
+          <div class="tl-desc">工具执行 + 超时 + 重试</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">5️⃣</div>
+          <div class="tl-name">Reporter</div>
+          <div class="tl-desc">生成自然语言报告</div>
+        </div>
+        <div class="tl-step">
+          <div class="tl-circle">6️⃣</div>
+          <div class="tl-name">Stream</div>
+          <div class="tl-desc">SSE 推送到前端</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 阶段细节 -->
+  <div class="detail-grid">
+    <!-- 阶段 1 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">🎯</span>
+        <h3 class="card-title">阶段 1 · 意图路由 (AgentRouter)</h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">正则关键词匹配</div>
+            <div class="step-desc">10+ 组关键词字典：greeting / cat_info / health / vaccine / weight / allergy / report</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">密度评分</div>
+            <div class="step-desc">matchChars / message.length 算 confidence</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">返回 IntentResult</div>
+            <div class="step-desc">{ intent, confidence }</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 2 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">📋</span>
+        <h3 class="card-title">阶段 2 · 计划构建 (AgentPlanner)</h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">基于意图选工具</div>
+            <div class="step-desc">switch(intent) → 添加对应 PlanStep</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">动态扩展</div>
+            <div class="step-desc">根据消息关键词（疫苗/趋势）追加步骤</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">策略类型</div>
+            <div class="step-desc">noop / single_tool / multi_tool / rag_fallback</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 3 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">🔄</span>
+        <h3 class="card-title">阶段 3 · LLM 循环 (AgentLoop) <span class="tool-tag tag-v3">V3</span></h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">注入工具定义</div>
+            <div class="step-desc">5 个 readonly 工具的 JSON Schema</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">LLM 决定调用</div>
+            <div class="step-desc">模型自主选择工具 + 参数</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">多轮迭代</div>
+            <div class="step-desc">maxIterations=5，防止死循环</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 4 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">⚡</span>
+        <h3 class="card-title">阶段 4 · 工具执行 (AgentExecutor)</h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">超时控制</div>
+            <div class="step-desc">AGENT_TOOL_TIMEOUT_MS=5000</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">错误重试</div>
+            <div class="step-desc">MAX_RETRIES=2，识别瞬时故障</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">执行追踪</div>
+            <div class="step-desc">ExecutionTracer 记录每步结果</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 5 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">📝</span>
+        <h3 class="card-title">阶段 5 · 报告生成 (AgentReporter)</h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">工具结果汇总</div>
+            <div class="step-desc">遍历 ToolResult[] → 模板化输出</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">特殊工具过滤</div>
+            <div class="step-desc">health_report 卡片优先，文字为空</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">LLM 复述（可选）</div>
+            <div class="step-desc">report.length&lt;2000 时调 LLM 自然化</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 阶段 6 -->
+    <div class="detail-card">
+      <div class="card-header">
+        <span class="card-icon">📡</span>
+        <h3 class="card-title">阶段 6 · SSE 流式推送</h3>
+      </div>
+      <div class="card-body">
+        <div class="phase-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-name">事件类型</div>
+            <div class="step-desc">meta / content / tool / trace / done / error</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-name">实时推送</div>
+            <div class="step-desc">res.write() 流式输出 token</div>
+          </div>
+        </div>
+        <div class="phase-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-name">持久化</div>
+            <div class="step-desc">metadata 存 toolCalls 含 output</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 状态机 -->
+  <div class="state-machine">
+    <h2 class="section-title">三、消息状态机</h2>
+    <div class="state-flow">
+      <div class="state">
+        <div class="state-name">pending</div>
+        <div class="state-desc">用户已发送</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state">
+        <div class="state-name">streaming</div>
+        <div class="state-desc">SSE 进行中</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state">
+        <div class="state-name">tool-running</div>
+        <div class="state-desc">工具执行中</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state">
+        <div class="state-name">tool-done</div>
+        <div class="state-desc">工具完成</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state">
+        <div class="state-name">completed</div>
+        <div class="state-desc">流式结束</div>
+      </div>
+      <div class="state-arrow">|</div>
+      <div class="state" style="background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%);">
+        <div class="state-name">error</div>
+        <div class="state-desc">异常中断</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 工具网格 -->
+  <div class="code-section">
+    <h2 class="section-title">四、工具注册表 (8 个 Tools)</h2>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">🐱</span>
+          <span class="tool-name">get_cat_info</span>
+        </div>
+        <div class="tool-desc">获取猫咪基础档案</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v3">V3</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">⚖️</span>
+          <span class="tool-name">get_weight_trend</span>
+        </div>
+        <div class="tool-desc">体重变化趋势分析</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v3">V3</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">💚</span>
+          <span class="tool-name">check_health</span>
+        </div>
+        <div class="tool-desc">综合健康检查评分</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v3">V3</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">💉</span>
+          <span class="tool-name">check_vaccine</span>
+        </div>
+        <div class="tool-desc">疫苗接种状态检查</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v3">V3</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">📚</span>
+          <span class="tool-name">rag_search</span>
+        </div>
+        <div class="tool-desc">知识库 RAG 检索</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v3">V3</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">🌿</span>
+          <span class="tool-name">query_allergy</span>
+        </div>
+        <div class="tool-desc">查询过敏记录</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v2">V2</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">📊</span>
+          <span class="tool-name">GENERATE_health_report</span>
+        </div>
+        <div class="tool-desc">生成健康周报（卡片）</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-read">READ</span>
+          <span class="tool-tag tag-v2">V2</span>
+        </div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <span class="tool-icon">✏️</span>
+          <span class="tool-name">record_allergy</span>
+        </div>
+        <div class="tool-desc">记录/更新过敏信息</div>
+        <div class="tool-meta">
+          <span class="tool-tag tag-write">WRITE</span>
+          <span class="tool-tag tag-v2">V2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. SSE 协议 -->
+  <div class="code-section">
+    <h2 class="section-title">五、SSE 事件协议</h2>
+    <div class="code-block"><span class="code-comment">// 服务端推送事件类型</span>
+event: <span class="code-string">meta</span>
+data: <span class="code-string">{ "traceId": "agent-xxx", "toolNames": ["get_cat_info"] }</span>
+
+event: <span class="code-string">tool</span>
+data: <span class="code-string">{ "toolName": "get_cat_info", "status": "running" }</span>
+
+event: <span class="code-string">tool</span>
+data: <span class="code-string">{ "toolName": "get_cat_info", "status": "done", "output": {...} }</span>
+
+event: <span class="code-string">content</span>
+data: <span class="code-string">{ "text": "奶糖是..." }</span>
+
+event: <span class="code-string">trace</span>
+data: <span class="code-string">{ "phase": "planner", "strategy": "single_tool" }</span>
+
+event: <span class="code-string">done</span>
+data: <span class="code-string">{ "traceId": "agent-xxx" }</span></div>
+  </div>
+
+  <!-- 7. 关键指标 -->
+  <div class="code-section">
+    <h2 class="section-title">六、关键指标</h2>
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-value">8</div>
+        <div class="metric-label">已注册工具</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">6</div>
+        <div class="metric-label">Pipeline 阶段</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">5</div>
+        <div class="metric-label">只读工具数</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">5s</div>
+        <div class="metric-label">工具超时阈值</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. 文件结构 -->
+  <div class="code-section">
+    <h2 class="section-title">七、关键文件结构</h2>
+    <div class="file-tree">
+<span class="tree-dir">backend/src/agent/</span>
+├── <span class="tree-dir">core/</span>
+│   ├── <span class="tree-file">AgentRouter.ts</span>     <span class="tree-comment"># 意图分类（10+ 关键词）</span>
+│   ├── <span class="tree-file">AgentPlanner.ts</span>    <span class="tree-comment"># 计划构建（switch by intent）</span>
+│   ├── <span class="tree-file">AgentLoop.ts</span>      <span class="tree-comment"># V3.0 LLM tool-calling 循环</span>
+│   ├── <span class="tree-file">AgentExecutor.ts</span>  <span class="tree-comment"># 工具执行（超时+重试）</span>
+│   ├── <span class="tree-file">AgentReporter.ts</span>  <span class="tree-comment"># 报告生成（卡片优先）</span>
+│   └── <span class="tree-file">AgentExecutionTracer.ts</span>
+├── <span class="tree-dir">tools/</span>
+│   ├── <span class="tree-file">index.ts</span>            <span class="tree-comment"># 工具注册表</span>
+│   ├── <span class="tree-file">catInfo.tool.ts</span>
+│   ├── <span class="tree-file">weightTrend.tool.ts</span>
+│   ├── <span class="tree-file">healthCheck.tool.ts</span>
+│   ├── <span class="tree-file">vaccineCheck.tool.ts</span>
+│   ├── <span class="tree-file">ragSearch.tool.ts</span>
+│   ├── <span class="tree-file">allergyQuery.tool.ts</span>
+│   ├── <span class="tree-file">allergyRecord.tool.ts</span>
+│   └── <span class="tree-file">healthReport.tool.ts</span>
+├── <span class="tree-dir">llm/</span>
+│   ├── <span class="tree-file">LLMClient.ts</span>       <span class="tree-comment"># LLM 抽象接口</span>
+│   └── <span class="tree-file">zhipuaiClient.ts</span>   <span class="tree-comment"># 智谱 GLM 实现</span>
+└── <span class="tree-file">index.ts</span>            <span class="tree-comment"># CatAgent 入口</span>
+</div>
+  </div>
+
+</div>
+</body>
+</html>

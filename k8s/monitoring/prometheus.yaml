@@ -1,0 +1,142 @@
+# Prometheus 监控配置（Prometheus Operator CRDs）
+# 文件路径: k8s/monitoring/prometheus.yaml
+#
+# 说明: 定义 ServiceMonitor 采集 Agent 指标 + PrometheusRule 告警规则
+# 前置条件: 集群中已安装 Prometheus Operator（kube-prometheus-stack）
+#
+# 部署方式:
+#   kubectl apply -f k8s/monitoring/prometheus.yaml -n monitoring
+
+---
+# ====== 1. ServiceMonitor: 自动发现后端指标端点 ======
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: panghu-backend
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: panghu-backend
+    app.kubernetes.io/part-of: panghu
+    release: kube-prometheus-stack  # 与 Prometheus Operator 的 serviceMonitorSelector 匹配
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: panghu-backend
+  namespaceSelector:
+    matchNames:
+      - panghu
+  endpoints:
+    - port: http-metrics
+      path: /api/metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      # Histogram 聚合规则（适配客户端预计算指标）
+      relabelings:
+        - sourceLabels: [__name__]
+          regex: "panghu_agent_(.*)_(p50|p90|p99|avg)"
+          action: keep
+
+---
+# ====== 2. PrometheusRule: Agent 系统告警规则 ======
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: panghu-agent-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: panghu-agent
+    app.kubernetes.io/part-of: panghu
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: panghu-agent
+      interval: 30s
+      rules:
+        # ---- 工具调用成功率 ----
+        - alert: AgentToolFailureRate
+          expr: |
+            sum(rate(panghu_agent_tool_calls_total{status="error"}[5m]))
+            /
+            sum(rate(panghu_agent_tool_calls_total[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Agent 工具调用失败率超过 10%（当前: {{ $value | humanizePercentage }}）"
+            description: "工具调用失败率过高，可能影响用户体验。请检查 LLM 连接和工具执行状态。"
+
+        # ---- 响应延迟 ----
+        - alert: AgentHighLatency
+          expr: |
+            panghu_agent_request_duration_seconds_p99 > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "Agent P99 响应时间超过 5 秒"
+            description: "请求处理延迟过高（当前: {{ $value }}s），建议检查 LLM 响应速度或增加实例数。"
+
+        # ---- 规划生成超时 ----
+        - alert: AgentPlanningTimeout
+          expr: |
+            panghu_agent_planning_duration_seconds_p99 > 1
+          for: 3m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "Agent 规划生成耗时超过 1 秒"
+            description: "工具规划器耗时过高（当前: {{ $value }}s），建议检查 Planner 性能。"
+
+        # ---- 意图分类置信度 ----
+        - alert: AgentLowIntentConfidence
+          expr: |
+            panghu_agent_intent_confidence < 50
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "意图分类置信度低于 50%"
+            description: "意图识别置信度偏低（当前: {{ $value }}%），建议检查分类模型或训练数据。"
+
+        # ---- 首 Token 延迟 ----
+        - alert: AgentFirstTokenSlow
+          expr: |
+            panghu_agent_first_token_latency_seconds_p99 > 3
+          for: 3m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "首 Token 响应时间超过 3 秒"
+            description: "流式输出首 Token 延迟过高（当前: {{ $value }}s），影响用户感知体验。"
+
+        # ---- 工具超时 ----
+        - alert: AgentToolTimeoutRate
+          expr: |
+            rate(panghu_agent_tool_timeout_total[5m]) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "工具调用超时频率异常"
+            description: "每分钟工具超时次数超过 0.5 次，建议检查工具执行超时配置。"
+
+    - name: panghu-agent-deadman
+      interval: 5m
+      rules:
+        # ---- 死寂检测：指标完全消失 → Prometheus 采集异常 ----
+        - alert: AgentMetricsAbsent
+          expr: |
+            absent(panghu_agent_requests_total)
+          for: 10m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Agent 指标完全消失"
+            description: "Prometheus 超过 10 分钟未采集到 Agent 指标，服务可能已宕机。"

@@ -1,0 +1,95 @@
+# Grafana Dashboard 配置
+# 文件路径: k8s/monitoring/grafana.yaml
+#
+# 说明: 定义 Agent 系统监控面板和 Grafana 数据源
+# 需要 Grafana Operator 或 Grafana Sidecar 自动加载
+#
+# 部署方式:
+#   kubectl apply -f k8s/monitoring/grafana.yaml -n monitoring
+
+---
+# ====== 1. Grafana 数据源（Prometheus） ======
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-panghu
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"  # Grafana Sidecar 自动发现标签
+    app.kubernetes.io/name: panghu-monitoring
+spec:
+  datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-operated.monitoring.svc:9090
+      isDefault: true
+      editable: false
+
+---
+# ====== 2. Grafana Dashboard: Agent 总览 ======
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-panghu-overview
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"  # Grafana Sidecar 自动发现标签
+    app.kubernetes.io/name: panghu-monitoring
+data:
+  panghu-overview.json: |
+    {
+      "title": "PangHu Agent Overview",
+      "description": "哈吉咪 Agent 系统总览面板",
+      "tags": ["panghu", "agent"],
+      "timezone": "browser",
+      "panels": [
+        {
+          "title": "请求速率",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "sum(rate(panghu_agent_requests_total[5m]))",
+              "legendFormat": "总请求量"
+            },
+            {
+              "expr": "sum(rate(panghu_agent_requests_total{status=\"error\"}[5m]))",
+              "legendFormat": "错误请求"
+            }
+          ]
+        },
+        {
+          "title": "响应时间 (P99)",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "panghu_agent_request_duration_seconds_p99",
+              "legendFormat": "P99"
+            },
+            {
+              "expr": "panghu_agent_request_duration_seconds_p50",
+              "legendFormat": "P50"
+            }
+          ]
+        },
+        {
+          "title": "工具调用成功率",
+          "type": "singlestat",
+          "targets": [
+            {
+              "expr": "sum(rate(panghu_agent_tool_calls_total{status=\"success\"}[5m])) / sum(rate(panghu_agent_tool_calls_total[5m])) * 100"
+            }
+          ]
+        },
+        {
+          "title": "Token 消耗",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "sum(rate(panghu_llm_tokens_used_total[5m]))",
+              "legendFormat": "tokens/s"
+            }
+          ]
+        }
+      ]
+    }

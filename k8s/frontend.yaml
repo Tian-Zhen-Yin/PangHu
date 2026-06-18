@@ -1,0 +1,125 @@
+# GitOps 前端部署配置
+# 目录路径: k8s/frontend/
+# 配合 Vercel / Nginx Ingress 使用
+
+---
+# Frontend ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: panghu-frontend-config
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-frontend
+    app.kubernetes.io/component: web
+data:
+  # Vite 环境变量（构建时注入）
+  VITE_APP_TITLE: "哈吉咪养成计划"
+  VITE_APP_VERSION: {{ .Values.image.tag | default "latest" | quote }}
+  VITE_API_BASE_URL: {{ .Values.frontend.apiBaseUrl | default "https://api.panghu.example.com" | quote }}
+  VITE_WS_BASE_URL: {{ .Values.frontend.wsBaseUrl | default "wss://api.panghu.example.com" | quote }}
+
+---
+# Frontend Deployment (Nginx 静态资源服务)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: panghu-frontend
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-frontend
+    app.kubernetes.io/component: web
+    version: {{ .Values.image.tag | default "latest" }}
+spec:
+  replicas: {{ .Values.frontend.replicas | default 2 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: panghu-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: panghu-frontend
+        app.kubernetes.io/component: web
+        version: {{ .Values.image.tag | default "latest" }}
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.image.repository }}/panghu-frontend:{{ .Values.image.tag | default "latest" }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: panghu-frontend-svc
+  namespace: panghu
+  labels:
+    app.kubernetes.io/name: panghu-frontend
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app.kubernetes.io/name: panghu-frontend
+
+---
+# Frontend Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: panghu-web-ingress
+  namespace: panghu
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # 静态资源缓存策略
+    nginx.ingress.kubernetes.io/proxy-cache-bypass: "$http_upgrade"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+      }
+spec:
+  rules:
+    - host: www.panghu.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: panghu-frontend-svc
+                port:
+                  number: 80
