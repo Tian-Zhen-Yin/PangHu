@@ -24,5 +24,5 @@ export function updatePlayProfile(
   catId: string,
   payload: PlayProfilePayload,
 ): Promise<ApiResponse<unknown>> {
-  return api.put(`/cats/${catId}/play-profile`, payload)
+  return api.put(`/my-cats/${catId}/play-profile`, payload)
 }
