@@ -34,6 +34,7 @@ export interface DashboardRecentRecord {
   originalType?: string     // 原始 API 类型
   title: string
   date: string
+  rawDate?: string          // 原始日期（用于时间分组）
   icon: string
   weight?: number           // 体重值
   weightChange?: {          // 体重变化

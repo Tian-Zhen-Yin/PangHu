@@ -448,6 +448,21 @@ model UserNotificationPreference {
   updatedAt DateTime @updatedAt
 }
 
+// 健康周报待办完成状态（独立表，不挂 User 外键）
+// snake_case 列名为兼容历史 raw SQL（backend/prisma/sql/todo_toggles.sql）
+model TodoToggle {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id") @db.VarChar(64)
+  todoId    String   @map("todo_id") @db.VarChar(128)
+  completed Boolean  @default(false)
+  toggledAt DateTime @default(now()) @map("toggled_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, todoId])
+  @@index([userId])
+  @@map("todo_toggles")
+}
+
 // 管理员表
 model Admin {
   id          String    @id @default(cuid())

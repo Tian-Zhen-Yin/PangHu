@@ -4,11 +4,11 @@ import { computed } from 'vue'
 
 const route = useRoute()
 
-// 底部导航：5 项，第 3 项（喵喵医生）为中央凸起 FAB
+// 底部导航：5 项，第 3 项（喵喵）为中央凸起 FAB
 const tabItems = computed(() => [
   { name: '首页', path: '/', key: 'home' },
   { name: '记录', path: '/timeline', key: 'record' },
-  { name: '喵喵医生', path: '/ai-chat', key: 'agent', highlight: true },
+  { name: '喵喵', path: '/ai-chat', key: 'agent', highlight: true },
   { name: '指南', path: '/guides', key: 'guide' },
   { name: '我的', path: '/my-cats', key: 'me' }
 ])
@@ -124,6 +124,9 @@ function isActive(path: string): boolean {
   z-index: 100;
   /* 给凸起 FAB 留出溢出空间 */
   overflow: visible;
+  /* iOS 安全区：底部 home indicator 不遮挡 tab 内容 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: content-box;
 }
 
 @media (min-width: 480px) {

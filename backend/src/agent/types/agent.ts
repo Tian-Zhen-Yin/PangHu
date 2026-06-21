@@ -50,6 +50,7 @@ export interface AgentState {
   userMessage: string
   selectedCatId?: string
   history: ChatMessage[]
+  attachments?: string[]
   plan: PlanStep[]
   toolResults: ToolResult[]
   finalAnswer?: string
@@ -71,6 +72,11 @@ export type IntentType =
   | 'allergy_query'
   | 'allergy_record'
   | 'health_report_request'
+  | 'play_recommendation'
+  | 'growth_record'
+  | 'growth_query'
+  | 'vaccine_record'
+  | 'weight_record'
   | 'general_knowledge'
   | 'mixed'
   | 'unknown'

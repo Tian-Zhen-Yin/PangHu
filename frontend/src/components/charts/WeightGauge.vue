@@ -1,15 +1,31 @@
 <template>
-  <div ref="chartRef" class="weight-gauge-chart"></div>
+  <div class="weight-range">
+    <div class="wr-head">
+      <span class="wr-value" :style="{ color: statusColor }">{{ displayValue }}</span>
+      <span class="wr-unit">kg</span>
+      <span class="wr-status" :style="{ color: statusColor, background: statusBg }">{{ statusLabel }}</span>
+    </div>
+
+    <div class="wr-track">
+      <div class="wr-seg thin" :style="{ flexBasis: thinPercent + '%' }"></div>
+      <div class="wr-seg normal" :style="{ flexBasis: normalPercent + '%' }"></div>
+      <div class="wr-seg over" :style="{ flexBasis: overPercent + '%' }"></div>
+
+      <div class="wr-marker" :style="{ left: markerPercent + '%' }">
+        <span class="wr-dot" :style="{ borderColor: statusColor }"></span>
+      </div>
+    </div>
+
+    <div class="wr-scale">
+      <span class="wr-scale-min">{{ rangeMin.toFixed(1) }}</span>
+      <span class="wr-scale-std">标准 {{ standardMinValue.toFixed(2) }}–{{ standardMaxValue.toFixed(2) }}</span>
+      <span class="wr-scale-max">{{ rangeMax.toFixed(1) }}</span>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
-import * as echarts from 'echarts/core'
-import { GaugeChart } from 'echarts/charts'
-import { CanvasRenderer } from 'echarts/renderers'
-import type { EChartsOption } from 'echarts'
-
-echarts.use([GaugeChart, CanvasRenderer])
+import { computed } from 'vue'
 
 const props = defineProps<{
   value: number
@@ -19,138 +35,148 @@ const props = defineProps<{
   standardMax?: number
 }>()
 
-const chartRef = ref<HTMLElement>()
-let chart: echarts.ECharts | null = null
+const standardMinValue = computed(() => props.standardMin ?? 2.5)
+const standardMaxValue = computed(() => props.standardMax ?? 4.0)
 
-const initChart = () => {
-  if (!chartRef.value) return
+const rangeMin = computed(() => props.min ?? 1.5)
+const rangeMax = computed(() => props.max ?? 5.0)
 
-  chart = echarts.init(chartRef.value)
-  updateChart()
+const span = computed(() => Math.max(rangeMax.value - rangeMin.value, 0.0001))
+
+function ratio(v: number): number {
+  return ((v - rangeMin.value) / span.value) * 100
 }
 
-const updateChart = () => {
-  if (!chart) return
-
-  const min = props.min || 1.5
-  const max = props.max || 5.0
-  const standardMin = props.standardMin || 2.5
-  const standardMax = props.standardMax || 4.0
-
-  // 计算标准区间在总范围的百分比位置
-  const standardStartRatio = (standardMin - min) / (max - min)
-  const standardEndRatio = (standardMax - min) / (max - min)
-
-  // 当前值对应的状态颜色
-  const valueRatio = (props.value - min) / (max - min)
-  let valueColor = '#10b981' // 正常绿
-  if (valueRatio < standardStartRatio) valueColor = '#f59e0b' // 偏瘦黄
-  else if (valueRatio > standardEndRatio) valueColor = 'var(--color-danger)' // 超重红
-
-  const option: EChartsOption = {
-    series: [
-      {
-        type: 'gauge',
-        startAngle: 180,
-        endAngle: 0,
-        min,
-        max,
-        splitNumber: 4,
-        radius: '90%',
-        center: ['50%', '70%'],
-        axisLine: {
-          lineStyle: {
-            width: 18,
-            color: [
-              [standardStartRatio, '#fbbf24'], // 偏瘦区 (黄)
-              [standardEndRatio, '#10b981'], // 正常区 (绿)
-              [1, 'var(--color-danger)'] // 超重区 (红)
-            ]
-          }
-        },
-        pointer: {
-          icon: 'path://M0,0 L10,5 L0,10 L-10,5 Z',
-          length: '60%',
-          width: 10,
-          offsetCenter: [0, '-15%'],
-          itemStyle: {
-            color: 'var(--color-text-primary)'
-          }
-        },
-        axisTick: {
-          show: true,
-          distance: -22,
-          length: 4,
-          lineStyle: {
-            color: 'var(--color-text-placeholder)',
-            width: 1
-          }
-        },
-        splitLine: {
-          show: true,
-          distance: -24,
-          length: 10,
-          lineStyle: {
-            color: 'var(--color-text-regular)',
-            width: 1.5
-          }
-        },
-        axisLabel: {
-          show: true,
-          distance: -32,
-          fontSize: 10,
-          color: 'var(--color-text-regular)',
-          fontWeight: 500,
-          formatter: (value: number) => value.toFixed(1)
-        },
-        detail: {
-          valueAnimation: true,
-          formatter: '{value}',
-          color: valueColor,
-          fontSize: 26,
-          fontWeight: 'bold',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "DIN Alternate", sans-serif',
-          offsetCenter: [0, '15%'],
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          borderRadius: 10,
-          padding: [6, 16],
-          shadowColor: 'rgba(0, 0, 0, 0.06)',
-          shadowBlur: 8,
-          shadowOffsetY: 2
-        },
-        data: [
-          {
-            value: parseFloat(props.value.toFixed(1))
-          }
-        ],
-        title: {
-          show: false
-        }
-      }
-    ]
-  }
-
-  chart.setOption(option)
+function clampPercent(p: number): number {
+  return Math.min(100, Math.max(0, p))
 }
 
-onMounted(() => {
-  initChart()
-  window.addEventListener('resize', () => chart?.resize())
+const thinPercent = computed(() => clampPercent(ratio(standardMinValue.value)))
+const overPercent = computed(() => clampPercent(100 - ratio(standardMaxValue.value)))
+const normalPercent = computed(() => clampPercent(100 - thinPercent.value - overPercent.value))
+
+const markerPercent = computed(() => clampPercent(ratio(props.value)))
+
+const status = computed<'thin' | 'normal' | 'over'>(() => {
+  if (props.value < standardMinValue.value) return 'thin'
+  if (props.value > standardMaxValue.value) return 'over'
+  return 'normal'
 })
 
-onUnmounted(() => {
-  chart?.dispose()
+const statusLabel = computed(() => {
+  if (status.value === 'thin') return '偏瘦'
+  if (status.value === 'over') return '偏重'
+  return '正常'
 })
 
-watch(() => [props.value, props.min, props.max, props.standardMin, props.standardMax], () => {
-  updateChart()
+const statusColor = computed(() => {
+  if (status.value === 'thin') return '#F59E0B'
+  if (status.value === 'over') return '#EF4444'
+  return '#10B981'
 })
+
+const statusBg = computed(() => {
+  if (status.value === 'thin') return 'rgba(245, 158, 11, 0.12)'
+  if (status.value === 'over') return 'rgba(239, 68, 68, 0.12)'
+  return 'rgba(16, 185, 129, 0.12)'
+})
+
+const displayValue = computed(() => Number(props.value || 0).toFixed(1))
 </script>
 
 <style scoped>
-.weight-gauge-chart {
+.weight-range {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 2px;
+}
+
+.wr-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.wr-value {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'DIN Alternate', sans-serif;
+}
+
+.wr-unit {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.wr-status {
+  margin-left: auto;
+  align-self: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full, 999px);
+}
+
+.wr-track {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  overflow: visible;
+}
+
+.wr-seg {
   height: 100%;
-  min-height: 160px;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.wr-seg.thin {
+  background: #FBBF24;
+  border-radius: 999px 0 0 999px;
+}
+
+.wr-seg.normal {
+  background: #10B981;
+}
+
+.wr-seg.over {
+  background: #EF4444;
+  border-radius: 0 999px 999px 0;
+}
+
+.wr-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.wr-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #10b981;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.wr-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-placeholder);
+  font-weight: 500;
+}
+
+.wr-scale-std {
+  color: var(--color-text-secondary);
 }
 </style>

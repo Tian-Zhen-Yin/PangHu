@@ -122,6 +122,7 @@ async function loadCatData(cat: Cat) {
           type: visualType, originalType: r.type,
           title: r.weight ? `体重: ${r.weight}kg` : '记录',
           date: new Date(r.recordDate).toLocaleDateString('zh-CN'),
+          rawDate: r.recordDate,
           weight: r.weight ? parseFloat(Number(r.weight).toFixed(2)) : undefined,
           weightChange, notes: r.notes, photos,
           isAdoptionDay: r.isAdoptionDay,
@@ -140,6 +141,45 @@ function viewAllRecords() { router.push('/timeline') }
 function viewRecordDetail(record: DashboardRecentRecord) { router.push(`/timeline?record=${record.id}`) }
 
 const limitedRecentRecords = computed(() => recentRecords.value.slice(0, MAX_RECENT_RECORDS))
+
+const timelineStats = computed(() => {
+  const records = recentRecords.value
+  const weightRecords = records.filter(r => typeof r.weight === 'number')
+  const latestWeight = weightRecords[0]?.weight
+  const latestChange = weightRecords[0]?.weightChange
+  return {
+    total: records.length,
+    latestWeight,
+    latestChange,
+  }
+})
+
+function groupLabelFor(rawDate?: string): string {
+  if (!rawDate) return '更早'
+  const d = new Date(rawDate)
+  if (Number.isNaN(d.getTime())) return '更早'
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffDays = Math.floor((startOfToday.getTime() - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / 86400000)
+  if (diffDays <= 0) return '今天'
+  if (diffDays <= 7) return '本周'
+  if (now.getFullYear() === d.getFullYear() && now.getMonth() === d.getMonth()) return '本月'
+  return '更早'
+}
+
+const groupedRecords = computed(() => {
+  const groups: { label: string; items: DashboardRecentRecord[] }[] = []
+  for (const record of limitedRecentRecords.value) {
+    const label = groupLabelFor(record.rawDate)
+    let group = groups.find(g => g.label === label)
+    if (!group) {
+      group = { label, items: [] }
+      groups.push(group)
+    }
+    group.items.push(record)
+  }
+  return groups
+})
 
 onMounted(async () => {
   if (!authStore.isAuthenticated) return
@@ -242,15 +282,12 @@ onMounted(async () => {
         <section class="data-grid-section">
           <div class="data-grid">
             <div class="data-item gauge-card">
-              <div class="gauge-header">
-                <span class="data-label">当前体重</span>
-                <span v-if="weightAnalysis" class="standard-range">标准: {{ weightAnalysis.min }}-{{ weightAnalysis.max }}kg</span>
-              </div>
+              <span class="data-label">当前体重</span>
               <div class="gauge-container">
                 <WeightGauge
                   :value="catStore.currentCat.weight || 0"
-                  :min="weightAnalysis?.min || 1.5"
-                  :max="weightAnalysis?.max || 5.0"
+                  :min="weightAnalysis ? weightAnalysis.min - (weightAnalysis.max - weightAnalysis.min) * 0.5 : 1.5"
+                  :max="weightAnalysis ? weightAnalysis.max + (weightAnalysis.max - weightAnalysis.min) * 0.5 : 5.0"
                   :standard-min="weightAnalysis?.min || 2.5"
                   :standard-max="weightAnalysis?.max || 4.0"
                 />
@@ -311,15 +348,46 @@ onMounted(async () => {
         <!-- 4. Timeline -->
         <section v-if="limitedRecentRecords.length > 0" class="timeline-section">
           <SectionHeader title="成长足迹" action-label="查看全部" @action="viewAllRecords" />
+
+          <div class="timeline-stats">
+            <div class="stat-cell">
+              <span class="stat-num">{{ timelineStats.total }}</span>
+              <span class="stat-label">条记录</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-cell">
+              <span class="stat-num">
+                {{ timelineStats.latestWeight != null ? timelineStats.latestWeight : '--' }}<span class="stat-unit">kg</span>
+              </span>
+              <span class="stat-label">最新体重</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-cell">
+              <span
+                class="stat-num"
+                :class="timelineStats.latestChange ? `change-${timelineStats.latestChange.direction}` : ''"
+              >
+                <template v-if="timelineStats.latestChange">
+                  {{ timelineStats.latestChange.direction === 'up' ? '+' : '-' }}{{ timelineStats.latestChange.value }}<span class="stat-unit">kg</span>
+                </template>
+                <template v-else>—</template>
+              </span>
+              <span class="stat-label">较上次</span>
+            </div>
+          </div>
+
           <div class="timeline-vertical">
-            <TimelineItem
-              v-for="(record, index) in limitedRecentRecords"
-              :key="record.id"
-              :record="record"
-              :is-first="index === 0"
-              :is-last="index === limitedRecentRecords.length - 1"
-              @click="viewRecordDetail(record)"
-            />
+            <template v-for="group in groupedRecords" :key="group.label">
+              <div class="group-label">{{ group.label }}</div>
+              <TimelineItem
+                v-for="record in group.items"
+                :key="record.id"
+                :record="record"
+                :is-first="record.id === limitedRecentRecords[0]?.id"
+                :is-last="record.id === limitedRecentRecords[limitedRecentRecords.length - 1]?.id"
+                @click="viewRecordDetail(record)"
+              />
+            </template>
           </div>
         </section>
       </template>
@@ -331,7 +399,6 @@ onMounted(async () => {
 .dashboard-page {
   width: 100%;
   position: relative;
-  padding-bottom: 80px;
   background: var(--color-bg-page);
   min-height: 100vh;
 }
@@ -606,29 +673,11 @@ onMounted(async () => {
 
 .gauge-card { min-height: auto; }
 
-.gauge-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-xs);
-}
-
-.standard-range {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  background: var(--color-bg-card);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border-light);
-  font-weight: var(--font-medium);
-}
-
 .gauge-container {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 160px;
+  width: 100%;
 }
 
 .todos-card { min-height: auto; }
@@ -801,25 +850,74 @@ onMounted(async () => {
 /* Timeline */
 .timeline-section { margin-top: var(--space-xl); }
 
-.timeline-vertical {
-  position: relative;
-  padding-left: var(--space-lg);
+.timeline-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  margin: var(--space-sm) 0 var(--space-md);
+  box-shadow: var(--shadow-card-normal);
 }
 
-.timeline-vertical::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-border-light) 100%);
-  border-radius: 1px;
+.stat-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-num {
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+  line-height: 1.1;
+  font-family: -apple-system, BlinkMacSystemFont, 'DIN Alternate', sans-serif;
+}
+
+.stat-num.change-up { color: var(--color-primary); }
+.stat-num.change-down { color: var(--color-success); }
+
+.stat-unit {
+  font-size: var(--text-xs);
+  font-weight: var(--font-normal);
+  color: var(--color-text-regular);
+  margin-left: 1px;
+}
+
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-placeholder);
+}
+
+.stat-divider {
+  width: 1px;
+  height: 26px;
+  background: var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.group-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  margin: 2px 0 8px;
+  padding-left: 2px;
+}
+
+.group-label:not(:first-child) {
+  margin-top: 6px;
+}
+
+.timeline-vertical {
+  position: relative;
 }
 
 @media (min-width: 768px) {
-  .timeline-vertical { padding-left: var(--space-2xl); }
-  .timeline-vertical::before { left: 9px; }
+  .timeline-vertical { padding-left: 0; }
 }
 
 @media (max-width: 767px) {
@@ -842,8 +940,6 @@ onMounted(async () => {
   .hero-action-btn { max-width: none; padding: 9px var(--space-lg); border-radius: var(--radius-md); }
   .data-grid { grid-template-columns: 1fr; gap: var(--space-sm); }
   .data-item { padding: var(--space-md); }
-  /* 单列布局下，gauge 不需要桌面端那么高，减少周围留白 */
-  .gauge-container { min-height: 120px; }
 }
 
 @media (max-width: 640px) {

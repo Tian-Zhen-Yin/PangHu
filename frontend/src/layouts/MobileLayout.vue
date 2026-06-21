@@ -32,7 +32,8 @@ const isAdminRoute = computed(() => route.meta.admin === true)
 .main-content {
   padding: 1rem;
   padding-top: calc(56px + 1rem);
-  padding-bottom: 80px;
+  /* tabbar 高 64px + 中央 FAB 向上凸起约 28px + iOS 安全区 */
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   min-height: calc(100vh - 56px - 64px);
 }
 

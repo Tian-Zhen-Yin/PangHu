@@ -89,7 +89,7 @@ export class CatAgent {
    * V2.0 新工具(allergy/health-report)flag 开启时走旧链路。
    */
   private getReadOnlyTools() {
-    const allowed = new Set(['get_cat_info', 'get_weight_trend', 'check_health', 'check_vaccine', 'rag_search'])
+    const allowed = new Set(['get_cat_info', 'get_weight_trend', 'check_health', 'check_vaccine', 'rag_search', 'RECOMMEND_play'])
     return listTools().filter((t) => allowed.has(t.name))
   }
 
@@ -97,8 +97,22 @@ export class CatAgent {
    * 探测用户消息是否属于 V2.0 新工具的意图领域。
    * 命中 → 即便 flag 开启也降级到旧链路(用户无感)。
    */
+  private buildConfirmGuideText(plan: { toolName: string }[]): string {
+    const toolName = plan.find((p) => p.toolName.startsWith('ADD_'))?.toolName
+    switch (toolName) {
+      case 'ADD_growth_record':
+        return '收到～我整理好了下面这条成长记录，请确认后我就帮你保存 🐾'
+      case 'ADD_vaccine_record':
+        return '收到～请确认下面的疫苗接种信息，确认后我会登记到健康档案 💉'
+      case 'ADD_weight_record':
+        return '收到～请确认下面的体重数据，确认后我会记录到体重曲线 ⚖️'
+      default:
+        return '收到～请确认下面的信息后我再保存 🐾'
+    }
+  }
+
   private isV2ToolIntent(message: string): boolean {
-    return /过敏|allergy|周报|健康报告|health[_ ]?report/i.test(message)
+    return /过敏|allergy|周报|健康报告|health[_ ]?report|记录一下|记一笔|记一下|成长记录|成长日记|写日记|记录体重|称重|记录疫苗|打了疫苗|登记疫苗|添加记录|新增记录/i.test(message)
   }
 
   /**
@@ -210,12 +224,14 @@ export class CatAgent {
     res: Response,
     selectedCatId?: string,
     history: ChatMessage[] = [],
-    userSegment: UserSegment = 'all'
+    userSegment: UserSegment = 'all',
+    attachments: string[] = []
   ): Promise<AgentStreamResult> {
     // V3.0 flag 路由:LLM tool-calling loop
     const flagCtx = getDefaultContext(userId, userSegment)
     const useNewLoop = isFeatureEnabled('LLM_TOOL_CALLING_LOOP', flagCtx)
-    if (useNewLoop && !this.isV2ToolIntent(userMessage)) {
+    // 携带图片附件或命中写操作意图 → 必须走 V2 旧链路（含确认机制）
+    if (useNewLoop && !this.isV2ToolIntent(userMessage) && attachments.length === 0) {
       return this.handleStreamingViaLoop(userMessage, userId, sessionId, res, selectedCatId, history)
     }
 
@@ -248,6 +264,7 @@ export class CatAgent {
       userMessage,
       selectedCatId,
       history,
+      attachments,
       plan: [],
       toolResults: [],
       traceId: ctx.traceId,
@@ -331,6 +348,7 @@ export class CatAgent {
 
       // === 阶段 3: Executor（带进度回调：每完成一个工具就推送 SSE） ===
       const execStart = Date.now()
+      let confirmationPending = false
       let toolResults: ToolResult[] = await executePlan(plan, ctx, (result) => {
         // V2.0 执行轨迹：推送工具执行步骤（在 tool 事件之前）
         const execStep = tracer.recordExecute(
@@ -343,6 +361,7 @@ export class CatAgent {
         recordSseEvent({ eventType: 'trace', environment: process.env.NODE_ENV || 'development' })
         // V2.0 写入工具确认检测
         if (result.requiresConfirmation) {
+          confirmationPending = true
           const confirmationId = createConfirmation(
             ctx.userId,
             ctx.selectedCatId || '',
@@ -369,6 +388,24 @@ export class CatAgent {
       })
       state.toolResults = toolResults
       recordAgentPhase({ phase: 'executor', intentType: intentResult.intent, durationMs: Date.now() - execStart, environment: process.env.NODE_ENV || 'development', toolCount: toolResults.length })
+
+      // 写入工具待确认：已推送 pending_confirmation，跳过后续报告，等待用户确认
+      if (confirmationPending) {
+        const guideText = this.buildConfirmGuideText(plan)
+        if (guideText) {
+          this.writeSse(res, 'content', { text: guideText })
+        }
+        this.writeSse(res, 'done', { traceId: ctx.traceId })
+        recordSseEvent({ eventType: 'done', environment: process.env.NODE_ENV || 'development' })
+        res.end()
+        return {
+          content: guideText || '',
+          citations: [],
+          traceId: ctx.traceId,
+          toolNames,
+          toolResults,
+        }
+      }
 
       // 动态分支
       if (!abortController.signal.aborted) {

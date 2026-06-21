@@ -173,6 +173,7 @@ export interface Message {
   citations?: Citation[]    // RAG 检索到的引用来源
   metadata?: string          // 向后兼容
   agentMeta?: AgentMeta      // agent 调用信息
+  attachments?: string[]     // 用户上传的图片 URL
   isStreaming?: boolean
   createdAt: string
 }
@@ -214,6 +215,7 @@ export interface SendMessageParams {
   conversationId?: string
   content: string
   catId?: string
+  attachments?: string[]
 }
 
 /**

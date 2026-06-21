@@ -9,6 +9,10 @@ import { HealthReportTool } from './healthReport.tool'
 import { AllergyRecordTool } from './allergyRecord.tool'
 import { RecommendPlayTool } from './recommendPlay.tool'
 import { SubmitPlayFeedbackTool } from './submitPlayFeedback.tool'
+import { GrowthRecordTool } from './growthRecord.tool'
+import { VaccineRecordTool } from './vaccineRecord.tool'
+import { WeightRecordTool } from './weightRecord.tool'
+import { GrowthRecordsQueryTool } from './growthRecordsQuery.tool'
 
 export const tools: Tool[] = [
   CatInfoTool,
@@ -21,6 +25,10 @@ export const tools: Tool[] = [
   AllergyRecordTool,
   RecommendPlayTool,
   SubmitPlayFeedbackTool,
+  GrowthRecordTool,
+  VaccineRecordTool,
+  WeightRecordTool,
+  GrowthRecordsQueryTool,
 ]
 
 export const toolRegistry = new Map<string, Tool>()

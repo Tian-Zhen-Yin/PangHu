@@ -196,14 +196,31 @@ function formatResult(result: ToolResult): string {
       return formatRagSearch(result)
     case 'GENERATE_health_report':
       return formatHealthReport(result)
+    case 'RECOMMEND_play':
+      // 推荐结果由前端卡片渲染，正文不重复罗列明细
+      return ''
+    case 'ADD_growth_record':
+    case 'ADD_vaccine_record':
+    case 'ADD_weight_record':
+    case 'get_growth_records':
+      // 写入/查询结果由前端卡片渲染，正文不重复罗列
+      return ''
     default:
       return JSON.stringify(result.output, null, 2)
   }
 }
 
 export function generateReport(state: AgentState, results: ToolResult[]): string {
+  const cardOnlyTools = new Set([
+    'GENERATE_health_report',
+    'RECOMMEND_play',
+    'ADD_growth_record',
+    'ADD_vaccine_record',
+    'ADD_weight_record',
+    'get_growth_records',
+  ])
   const bodyParts = results
-    .filter((r) => r.toolName !== 'GENERATE_health_report')
+    .filter((r) => !cardOnlyTools.has(r.toolName))
     .map((r) => formatResult(r))
     .filter((text) => text && text.trim().length > 0)
 
@@ -213,6 +230,36 @@ export function generateReport(state: AgentState, results: ToolResult[]): string
   // 检查是否只调用了健康周报工具（没有其他工具结果）
   const hasHealthReport = results.some((r) => r.toolName === 'GENERATE_health_report' && r.success)
   const hasOtherResults = bodyParts.length > 0
+
+  // 写入类工具：成功且无其他正文时，用一句确认话术引出卡片
+  const writeResult = results.find(
+    (r) =>
+      ['ADD_growth_record', 'ADD_vaccine_record', 'ADD_weight_record'].includes(r.toolName) &&
+      r.success &&
+      r.output?.success !== false
+  )
+  if (!hasOtherResults && writeResult) {
+    return (writeResult.output?.message || '已为你记录好啦') + ' 🐾'
+  }
+
+  // 查询成长记录：成功且无其他正文时
+  const growthQuery = results.find(
+    (r) => r.toolName === 'get_growth_records' && r.success && r.output?.success !== false
+  )
+  if (!hasOtherResults && growthQuery) {
+    const total = growthQuery.output?.total || 0
+    return total > 0 ? `为你找到 ${total} 条成长记录 🐾` : '还没有成长记录哦，快上传照片记录一下吧～'
+  }
+
+  // 陪玩推荐：成功且无其他正文时，用一句温暖的话引出卡片
+  const playResult = results.find((r) => r.toolName === 'RECOMMEND_play' && r.success)
+  const playSucceeded = playResult && playResult.output?.success !== false
+  if (!hasOtherResults && playSucceeded) {
+    const name = playResult?.output?.suggestions?.length
+      ? '我挑了几款适合现在玩的游戏 🎾'
+      : '我来帮你看看适合的陪玩游戏 🎾'
+    return name + '，点开卡片就能开始陪它玩啦～'
+  }
 
   if (!hasOtherResults && !hasHealthReport) {
     return '你好！我是喵喵医生 🐾\n\n关于你的问题，我暂时没有找到足够的数据来回答。你可以：\n• 先去添加猫咪档案\n• 换一种方式描述你的问题\n\n或者直接问我关于养猫的一般性问题～'

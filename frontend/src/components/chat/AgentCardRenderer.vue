@@ -103,6 +103,11 @@ function onCardEvent(event: string, payload: any) {
   animation: cardSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* 陪玩推荐为信息密集复合卡，跨满整行避免被双列网格压窄 */
+.agent-summary-cards :deep(.play-card) {
+  grid-column: 1 / -1;
+}
+
 @keyframes cardSlideIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }

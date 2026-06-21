@@ -10,6 +10,9 @@ import { catAgent } from '../agent'
 import { resolveUserSegment } from '../config/featureFlags'
 import { consumeConfirmation, cancelConfirmation } from '../services/confirmation.service'
 import { AllergyRecordTool } from '../agent/tools/allergyRecord.tool'
+import { GrowthRecordTool } from '../agent/tools/growthRecord.tool'
+import { VaccineRecordTool } from '../agent/tools/vaccineRecord.tool'
+import { WeightRecordTool } from '../agent/tools/weightRecord.tool'
 import type { AgentContext } from '../agent/types/agent'
 import { getTodoStatus, setTodoCompleted } from '../services/todo.service'
 
@@ -140,7 +143,7 @@ export async function updateConversationTitle(req: Request, res: Response) {
  * 发送消息（流式响应）— 支持 Agent 框架
  */
 export async function sendMessageHandler(req: Request, res: Response) {
-  const { conversationId, content, catId, useAgent } = req.body
+  const { conversationId, content, catId, useAgent, attachments } = req.body
   const userId = (req as any).user?.userId
 
   if (!content || content.trim().length === 0) {
@@ -148,9 +151,12 @@ export async function sendMessageHandler(req: Request, res: Response) {
   }
 
   const agentEnabled = useAgent !== false
+  const safeAttachments: string[] = Array.isArray(attachments)
+    ? attachments.filter((a: unknown) => typeof a === 'string')
+    : []
 
   if (agentEnabled && isSSERequest(req.headers.accept)) {
-    return handleAgentStreamingMessage(conversationId, content, userId, catId, res)
+    return handleAgentStreamingMessage(conversationId, content, userId, catId, res, safeAttachments)
   }
 
   if (isSSERequest(req.headers.accept)) {
@@ -174,7 +180,8 @@ async function handleAgentStreamingMessage(
   content: string,
   userId: string,
   catId: string | undefined,
-  res: Response
+  res: Response,
+  attachments: string[] = []
 ) {
   let conversation: any
 
@@ -197,7 +204,12 @@ async function handleAgentStreamingMessage(
 
   // 保存用户消息（在拉取历史之前，确保历史不含当前消息）
   const userMessage = await prisma.message.create({
-    data: { conversationId: conversation.id, role: 'user', content }
+    data: {
+      conversationId: conversation.id,
+      role: 'user',
+      content,
+      metadata: attachments.length > 0 ? JSON.stringify({ attachments }) : null,
+    }
   })
 
   // P0 #1: 拉取对话历史（最多 20 条），传入 Agent
@@ -230,6 +242,7 @@ async function handleAgentStreamingMessage(
     effectiveCatId,
     chatHistory,
     resolveUserSegment(userId),
+    attachments,
   )
 
   // P0 #2: 持久化 assistant 回复，避免刷新页面丢失
@@ -464,27 +477,103 @@ export async function confirmActionHandler(req: Request, res: Response) {
       },
     }
 
-    // 合并用户编辑的数据
-    const input = {
-      catId: session.catId,
-      allergen: edits?.allergen || '',
-      symptoms: edits?.symptoms || '',
-      severity: edits?.severity || 'moderate',
-      occurrenceDate: edits?.occurrenceDate,
-      treatment: edits?.treatment,
-      notes: edits?.notes,
+    // 合并草稿数据与用户编辑（edits 优先覆盖）
+    const draft = (session.draft || {}) as Record<string, any>
+    const merged = { ...draft, ...(edits || {}) }
+
+    let result
+    switch (session.toolName) {
+      case 'ADD_growth_record': {
+        const input = {
+          catId: session.catId || undefined,
+          type: merged.type,
+          notes: merged.notes || '',
+          photos: Array.isArray(merged.photos) ? merged.photos : [],
+          weight: merged.weight,
+          isAdoptionDay: merged.isAdoptionDay,
+          recordDate: merged.recordDate,
+        }
+        if (!input.notes && input.photos.length === 0) {
+          return res.status(400).json(successResponse(null, '成长记录内容不能为空'))
+        }
+        result = await GrowthRecordTool.call(input, ctx)
+        break
+      }
+      case 'ADD_vaccine_record': {
+        const input = {
+          catId: session.catId || undefined,
+          vaccineName: merged.vaccineName || '',
+          vaccineType: merged.vaccineType,
+          vaccinatedAt: merged.vaccinatedAt,
+          nextDueDate: merged.nextDueDate,
+          manufacturer: merged.manufacturer,
+          veterinarian: merged.veterinarian,
+          clinic: merged.clinic,
+          notes: merged.notes,
+        }
+        if (!input.vaccineName) {
+          return res.status(400).json(successResponse(null, '疫苗名称不能为空'))
+        }
+        result = await VaccineRecordTool.call(input, ctx)
+        break
+      }
+      case 'ADD_weight_record': {
+        const input = {
+          catId: session.catId || undefined,
+          weight: typeof merged.weight === 'number' ? merged.weight : parseFloat(merged.weight),
+          notes: merged.notes,
+          recordDate: merged.recordDate,
+        }
+        if (!input.weight || Number.isNaN(input.weight)) {
+          return res.status(400).json(successResponse(null, '体重数值不能为空'))
+        }
+        result = await WeightRecordTool.call(input, ctx)
+        break
+      }
+      case 'ADD_allergy_record':
+      default: {
+        const input = {
+          catId: session.catId,
+          allergen: merged.allergen || '',
+          symptoms: merged.symptoms || '',
+          severity: merged.severity || 'moderate',
+          occurrenceDate: merged.occurrenceDate,
+          treatment: merged.treatment,
+          notes: merged.notes,
+        }
+        if (!input.allergen) {
+          return res.status(400).json(successResponse(null, '过敏原不能为空'))
+        }
+        result = await AllergyRecordTool.call(input, ctx)
+      }
     }
 
-    if (!input.allergen) {
-      return res.status(400).json(successResponse(null, '过敏原不能为空'))
-    }
-
-    const result = await AllergyRecordTool.call(input, ctx)
     return res.json(successResponse(result, result.message))
   }
 
   return res.status(400).json(successResponse(null, '未知的 action 类型'))
 }
+
+/**
+ * 对话框图片上传
+ * POST /api/chat/upload  (multipart, field: photos, 最多 9 张)
+ * 返回图片 URL 数组，供前端随消息一起作为 attachments 发送
+ */
+export async function uploadChatImagesHandler(req: Request, res: Response) {
+  const userId = (req as any).user?.userId
+  if (!userId) {
+    return res.status(401).json(successResponse(null, '未授权'))
+  }
+
+  const files = (req as any).files as Express.Multer.File[] | undefined
+  if (!files || files.length === 0) {
+    return res.status(400).json(successResponse(null, '未检测到上传的图片'))
+  }
+
+  const urls = files.map((f) => `/uploads/pets/${f.filename}`)
+  return res.json(successResponse({ urls }, '上传成功'))
+}
+
 
 /**
  * V2.0 P4 待办事项切换

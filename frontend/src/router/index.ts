@@ -61,15 +61,14 @@ const routes: RouteRecordRaw[] = [
     path: '/ai-chat',
     name: 'AIChat',
     component: () => import(/* webpackChunkName: "ai-chat" */ '../views/AIChat/index.vue'),
-    meta: { title: '喵喵医生 - 哈吉咪养成计划', requiresAuth: true }
+    meta: { title: '喵喵 - 哈吉咪养成计划', requiresAuth: true }
   },
 
-  // 陪玩推荐
+  // 陪玩推荐（已合入喵喵对话，保留旧入口重定向到陪玩模式）
   {
     path: '/play',
     name: 'Play',
-    component: () => import(/* webpackChunkName: "play" */ '../views/Play/index.vue'),
-    meta: { title: '陪玩推荐 - 哈吉咪养成计划', requiresAuth: true }
+    redirect: { name: 'AIChat', query: { mode: 'play' } }
   },
 
   // 我的猫咪模块

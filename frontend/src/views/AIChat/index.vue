@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useChatStore } from '../../stores/chat.js'
 import { useMyCatStore } from '../../stores/myCat.js'
@@ -10,15 +10,19 @@ import ChatInput from '../../components/chat/ChatInput.vue'
 import ConversationList from '../../components/chat/ConversationList.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
+import PlayProfileSetup from '../../components/play/PlayProfileSetup.vue'
+import { CATEGORY_LABEL, ENERGY_LEVELS, type GameCategory } from '../../types/play.js'
+import { track } from '../../utils/track.js'
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const route = useRoute()
 const chatStore = useChatStore()
 const myCatStore = useMyCatStore()
 const { currentCat } = storeToRefs(myCatStore)
 
 // UI状态
-// 默认隐藏对话列表：从导航入口（如首页喵喵医生 FAB）进入时直接进入聊天界面，
+// 默认隐藏对话列表：从导航入口（如首页喵喵 FAB）进入时直接进入聊天界面，
 // 移动端可通过返回按钮、桌面端可通过侧栏切换按钮重新展开列表
 const showConversationList = ref(false)
 const isConversationListHidden = ref(true) // 桌面端对话列表隐藏状态
@@ -26,6 +30,67 @@ const messagesContainer = ref<HTMLElement | null>(null)
 const suggestedQuestions = ref<string[]>([])
 const isUserScrolling = ref(false) // 跟踪用户是否在手动滚动
 const showScrollToBottom = ref(false) // 是否显示滚动到底部按钮
+
+// ===== 陪玩模式（方案B：模式切换 + 陪玩抽屉）=====
+type AssistantMode = 'chat' | 'play'
+const mode = ref<AssistantMode>('chat')
+// 抽屉配置：时长 / 精力 / 类别（对齐 RECOMMEND_play 入参）
+const playTime = ref<number | null>(null)
+const playEnergy = ref<number | null>(null)
+const playCategory = ref<GameCategory | null>(null)
+const TIME_PRESETS = [5, 10, 15] as const
+const CATEGORY_ENTRIES = Object.entries(CATEGORY_LABEL) as [GameCategory, string][]
+
+function switchMode(m: AssistantMode) {
+  mode.value = m
+}
+
+// 性格设置弹层
+const showProfileSetup = ref(false)
+function openProfileSetup() {
+  if (!currentCat.value) {
+    ElMessage.warning('请先选择猫咪')
+    return
+  }
+  showProfileSetup.value = true
+}
+function onProfileCompleted() {
+  showProfileSetup.value = false
+}
+
+// 把抽屉配置拼成自然语言 prompt，复用 Agent 流式管线触发 RECOMMEND_play
+function buildPlayPrompt(): string {
+  const name = currentCat.value?.name || '猫咪'
+  const parts: string[] = [`陪${name}玩什么`]
+  if (playTime.value != null) parts.push(`我只有 ${playTime.value} 分钟`)
+  if (playEnergy.value != null) {
+    const lvl = ENERGY_LEVELS.find(e => e.value === playEnergy.value)
+    parts.push(`${name}现在精力${lvl?.label || ''}`)
+  }
+  if (playCategory.value != null) parts.push(`想玩${CATEGORY_LABEL[playCategory.value]}类`)
+  return parts.join('，')
+}
+
+async function generatePlay() {
+  if (!currentCat.value) {
+    ElMessage.warning('请先选择猫咪')
+    return
+  }
+  if (chatStore.isStreaming) return
+  // 陪玩推荐依赖工具调用，确保处于 Agent 模式
+  if (!chatStore.useAgentMode) chatStore.toggleAgentMode(true)
+  const content = buildPlayPrompt()
+  track('recommendation_view', {
+    catId: currentCat.value.id,
+    source: 'scenario',
+    availableTime: playTime.value,
+    currentEnergy: playEnergy.value,
+    preferredCategory: playCategory.value,
+  })
+  await handleSend(content)
+  // 生成后回到对话模式，结果卡片落在对话流
+  mode.value = 'chat'
+}
 
 // 检查是否为移动端
 const isMobile = ref(window.innerWidth < 768)
@@ -47,6 +112,11 @@ watch(() => chatStore.error, (newError) => {
 
 // 初始化
 onMounted(async () => {
+  // 从 /play 重定向或带 ?mode=play 进入时，默认切到陪玩模式
+  if (route.query.mode === 'play') {
+    mode.value = 'play'
+  }
+
   await Promise.all([
     chatStore.fetchConversations(),
     myCatStore.fetchCats()
@@ -116,11 +186,11 @@ function handleScrollToBottomClick() {
 }
 
 // 发送消息
-async function handleSend(content: string) {
+async function handleSend(content: string, attachments: string[] = []) {
   // 发送消息时重置滚动状态，确保滚动到底部
   isUserScrolling.value = false
   try {
-    await chatStore.sendMessage({ content, catId: currentCat.value?.id })
+    await chatStore.sendMessage({ content, catId: currentCat.value?.id, attachments })
     // 确保发送后滚动到底部
     nextTick(() => {
       scrollToBottom(true)
@@ -294,8 +364,8 @@ const contextualSuggestions = computed(() => {
               <MascotCharacter expression="focused" size="tiny" :animated="false" />
             </div>
             <div class="info-text">
-              <span class="doctor-name">喵喵医生</span>
-              <span class="doctor-role">宠物健康助手</span>
+              <span class="doctor-name">喵喵</span>
+              <span class="doctor-role">健康 & 陪玩助手</span>
             </div>
           </div>
         </div>
@@ -318,7 +388,7 @@ const contextualSuggestions = computed(() => {
         <div class="doctor-header">
           <MascotCharacter expression="focused" size="small" :animated="false" />
           <div class="doctor-info">
-            <span class="doctor-name">喵喵医生</span>
+            <span class="doctor-name">喵喵</span>
             <div class="doctor-status">
               <span class="status-dot"></span>
               <span class="status-text">{{ chatStore.useAgentMode ? '智能顾问模式' : '普通模式' }}</span>
@@ -362,8 +432,8 @@ const contextualSuggestions = computed(() => {
               />
               <div class="doctor-badge">专业顾问</div>
             </div>
-            <h2 class="empty-title">你好，我是喵喵医生</h2>
-            <p class="empty-description">我是 {{ currentCat?.name || '小猫咪' }} 的专属健康顾问</p>
+            <h2 class="empty-title">你好，我是喵喵</h2>
+            <p class="empty-description">我是 {{ currentCat?.name || '小猫咪' }} 的专属健康 & 陪玩助手</p>
           </div>
 
           <!-- 快速入口问题 -->
@@ -428,8 +498,59 @@ const contextualSuggestions = computed(() => {
 
       <!-- 输入区域 -->
       <div class="input-area">
-        <!-- 智能建议芯片 -->
-        <div v-if="chatStore.currentConversation && chatStore.messages.length > 0 && !chatStore.isStreaming" class="smart-suggestions">
+        <!-- 模式切换：问诊 / 陪玩 -->
+        <div class="mode-switch">
+          <button :class="['mode-btn', mode === 'chat' ? 'active' : '']" @click="switchMode('chat')">
+            💬 问诊
+          </button>
+          <button :class="['mode-btn', mode === 'play' ? 'active' : '']" @click="switchMode('play')">
+            🎾 陪玩
+          </button>
+        </div>
+
+        <!-- 陪玩抽屉：时长 / 精力 / 类别 -->
+        <div v-if="mode === 'play'" class="play-drawer">
+          <div class="drawer-row">
+            <span class="drawer-label">时长</span>
+            <div class="drawer-opts">
+              <button
+                v-for="t in TIME_PRESETS"
+                :key="t"
+                :class="['drawer-chip', playTime === t ? 'on' : '']"
+                @click="playTime = playTime === t ? null : t"
+              >{{ t }} 分钟</button>
+            </div>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">精力</span>
+            <div class="drawer-opts">
+              <button
+                v-for="e in ENERGY_LEVELS"
+                :key="e.value"
+                :class="['drawer-chip', playEnergy === e.value ? 'on' : '']"
+                @click="playEnergy = playEnergy === e.value ? null : e.value"
+              >{{ e.label }}</button>
+            </div>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-label">类别</span>
+            <div class="drawer-opts">
+              <button
+                v-for="[val, label] in CATEGORY_ENTRIES"
+                :key="val"
+                :class="['drawer-chip', playCategory === val ? 'on' : '']"
+                @click="playCategory = playCategory === val ? null : val"
+              >{{ label }}</button>
+            </div>
+          </div>
+          <button class="drawer-generate" :disabled="chatStore.isStreaming" @click="generatePlay">
+            为 {{ currentCat?.name || '猫咪' }} 生成陪玩推荐
+          </button>
+          <button class="drawer-profile" @click="openProfileSetup">⚙️ 设置 {{ currentCat?.name || '猫咪' }} 的性格画像</button>
+        </div>
+
+        <!-- 智能建议芯片（仅问诊模式） -->
+        <div v-if="mode === 'chat' && chatStore.currentConversation && chatStore.messages.length > 0 && !chatStore.isStreaming" class="smart-suggestions">
           <button
             v-for="(suggestion, index) in contextualSuggestions"
             :key="index"
@@ -440,6 +561,7 @@ const contextualSuggestions = computed(() => {
           </button>
         </div>
         <ChatInput
+          v-if="mode === 'chat'"
           :disabled="chatStore.isStreaming"
           :placeholder="chatStore.messages.length > 0 ? '继续提问…' : '输入您的问题…'"
           @send="handleSend"
@@ -448,10 +570,25 @@ const contextualSuggestions = computed(() => {
           <svg class="disclaimer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
-          喵喵医生的建议仅供参考，严重问题请及时就医
+          喵喵的建议仅供参考，严重问题请及时就医
         </p>
       </div>
     </div>
+
+    <!-- 性格画像设置弹层 -->
+    <el-dialog
+      v-model="showProfileSetup"
+      title="设置猫咪性格画像"
+      width="92%"
+      :style="{ maxWidth: '520px' }"
+      align-center
+    >
+      <PlayProfileSetup
+        v-if="currentCat"
+        :cat-id="currentCat.id"
+        :on-completed="onProfileCompleted"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -1427,6 +1564,130 @@ const contextualSuggestions = computed(() => {
   /* 奶油色渐变 */
   background: linear-gradient(90deg, transparent 0%, #FFE5B4 50%, transparent 100%);
   border-radius: 0 0 3px 3px;
+}
+
+/* ===== 模式切换：问诊 / 陪玩 ===== */
+.mode-switch {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 var(--space-sm) 0;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: 1.5px solid #FFF5DC;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  color: #8B7355;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  border-color: #F4A261;
+  color: #5D4E37;
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.22);
+}
+
+/* ===== 陪玩抽屉 ===== */
+.play-drawer {
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  box-shadow: 0 2px 10px rgba(255, 236, 179, 0.1);
+  animation: drawerSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes drawerSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.drawer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.drawer-label {
+  flex-shrink: 0;
+  width: 36px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #BC8F6F;
+}
+
+.drawer-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.drawer-chip {
+  padding: 5px 12px;
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-full);
+  background: #fff;
+  color: #8B7355;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-chip.on {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.drawer-generate {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #FFA065 0%, #FF7A3E 100%);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 138, 76, 0.25);
+  transition: all 0.2s ease;
+}
+
+.drawer-generate:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.drawer-generate:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(255, 138, 76, 0.3);
+}
+
+.drawer-profile {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 0;
+  border: 1px dashed #FFE5B4;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: #BC8F6F;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-profile:hover {
+  background: #FFFBF0;
+  color: #8B5A2B;
 }
 
 /* 智能建议芯片 - 奶油色卡片风格 */

@@ -30,7 +30,7 @@ const vaccineReminder = ref({
 const weightReminder = ref({
   type: 'weight' as const,
   title: '体重变化提醒',
-  message: '咦？奶糖这周瘦了 0.2kg，是胃口不好吗？要不要问问喵喵医生原因？',
+  message: '咦？奶糖这周瘦了 0.2kg，是胃口不好吗？要不要问问喵喵原因？',
   expression: 'confused' as const,
   priority: 'high' as const,
   trend: {
@@ -40,7 +40,7 @@ const weightReminder = ref({
   } as TrendData,
   actions: [
     {
-      label: '咨询喵喵医生',
+      label: '咨询喵喵',
       type: 'primary' as const,
       handler: () => console.log('咨询医生'),
       icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'

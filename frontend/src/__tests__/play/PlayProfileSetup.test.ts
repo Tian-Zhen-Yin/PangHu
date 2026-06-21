@@ -5,7 +5,7 @@ vi.mock('@/api/play', () => ({
   updatePlayProfile: vi.fn(),
 }))
 import { updatePlayProfile } from '@/api/play'
-import PlayProfileSetup from '@/views/Play/components/PlayProfileSetup.vue'
+import PlayProfileSetup from '@/components/play/PlayProfileSetup.vue'
 
 describe('PlayProfileSetup', () => {
   beforeEach(() => { vi.clearAllMocks() })

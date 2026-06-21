@@ -61,7 +61,7 @@ function getPreview(conversation: Conversation): string {
   if (lastMessage.role === 'user') {
     return `您: ${content.substring(0, 30)}${content.length > 30 ? '...' : ''}`
   } else {
-    return `喵喵医生: ${content.substring(0, 30)}${content.length > 30 ? '...' : ''}`
+    return `喵喵: ${content.substring(0, 30)}${content.length > 30 ? '...' : ''}`
   }
 }
 

@@ -44,6 +44,43 @@ const REPORT_TIME_KEYWORDS = ['这周', '本周', '最近一周', '上周', '近
 const REPORT_HEALTH_KEYWORDS = ['健康', '健康状况', '健康总结', '健康报告', '整体健康']
 const REPORT_EXPLICIT_KEYWORDS = ['健康周报', '健康报告', '健康状况总结', '健康周总结']
 
+// 陪玩意图关键词：陪玩、游戏、互动、运动等。
+// 命中即优先判定为 play_recommendation（早于健康/通用知识），
+// 避免"陪它玩什么""玩点什么"被健康关键词"什么/运动"误吞。
+const PLAY_KEYWORDS = [
+  '陪玩', '陪它玩', '陪他玩', '陪她玩', '玩什么', '玩点什么', '玩点啥',
+  '玩游戏', '推荐游戏', '什么游戏', '今天玩', '互动游戏', '逗猫',
+  '陪玩推荐', '消耗精力', '解闷', '玩具推荐',
+]
+
+// 成长记录意图关键词：记录/日记/成长档案相关
+const GROWTH_RECORD_ACTION_KEYWORDS = [
+  '记录一下', '记一笔', '记一下', '记录下', '帮我记', '帮它记', '帮他记', '帮她记',
+  '添加记录', '新增记录', '写日记', '记成长', '成长记录', '成长日记', '记下来',
+  '上传照片', '传张照片', '存下来', '保存记录',
+]
+const GROWTH_QUERY_KEYWORDS = [
+  '成长记录', '成长日记', '历史记录', '看看记录', '最近记了', '记录列表',
+  '之前的记录', '查看记录', '我的记录',
+]
+
+// 体重录入关键词（需包含"体重"关键字，避免与通用记录混淆）
+const WEIGHT_RECORD_KEYWORDS = [
+  '记录体重', '称重了', '体重记录', '记一下体重', '添加体重', '记录一下体重',
+  '体重是', '称了', '体重', '体重为', '今日体重',
+]
+
+// 疫苗录入关键词（需包含"疫苗"或常见疫苗名）
+const VACCINE_RECORD_KEYWORDS = [
+  '记录疫苗', '打了疫苗', '登记疫苗', '添加疫苗', '接种了', '记一下疫苗', '疫苗记录',
+  '妙三多', '狂犬', '猫三联', '疫苗本', '接种记录', '疫苗', '打了针',
+]
+
+// 驱虫录入关键词
+const DEWORM_RECORD_KEYWORDS = [
+  '驱虫', '体内驱虫', '体外驱虫', '打虫', '驱虫药', '记录驱虫',
+]
+
 function containsAny(message: string, patterns: string[]): boolean {
   const lower = message.toLowerCase()
   return patterns.some((p) => lower.includes(p.toLowerCase()))
@@ -76,6 +113,40 @@ export function classifyIntent(state: AgentState): IntentResult {
   if (isGreeting && !dataQueryPatterns) {
     const density = matchDensity(message, GREETING_PATTERNS)
     return { intent: 'greeting', confidence: Math.min(0.7 + density * 0.3, 1.0) }
+  }
+
+  // 携带图片附件 → 强判定为成长记录录入（用户上传照片+描述）
+  if (state.attachments && state.attachments.length > 0) {
+    return { intent: 'growth_record', confidence: 0.95 }
+  }
+
+  // 体重录入（优先于通用健康，含明确录入动作）
+  if (containsAny(message, WEIGHT_RECORD_KEYWORDS)) {
+    return { intent: 'weight_record', confidence: 0.9 }
+  }
+
+  // 疫苗录入（优先于疫苗查询）
+  if (containsAny(message, VACCINE_RECORD_KEYWORDS)) {
+    return { intent: 'vaccine_record', confidence: 0.9 }
+  }
+
+  // 成长记录：先判录入动作，再判查询
+  const hasGrowthAction = containsAny(message, GROWTH_RECORD_ACTION_KEYWORDS)
+  const hasGrowthQuery = containsAny(message, GROWTH_QUERY_KEYWORDS)
+  if (hasGrowthAction || hasGrowthQuery) {
+    const QUERY_VERBS = ['看看', '查看', '列表', '之前', '历史', '最近记了', '我的记录']
+    const isQuery = !hasGrowthAction || containsAny(message, QUERY_VERBS)
+    if (isQuery && hasGrowthQuery) {
+      return { intent: 'growth_query', confidence: 0.85 }
+    }
+    return { intent: 'growth_record', confidence: 0.86 }
+  }
+
+  // 陪玩意图检测（高优先级）：命中陪玩本体词即判定，
+  // 早于健康/通用，避免"玩什么"被健康关键词误吞。
+  if (containsAny(message, PLAY_KEYWORDS)) {
+    const density = matchDensity(message, PLAY_KEYWORDS)
+    return { intent: 'play_recommendation', confidence: Math.min(0.82 + density * 0.15, 0.97) }
   }
 
   // V2.0 过敏意图检测（优先于其他数据查询）

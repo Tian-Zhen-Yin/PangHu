@@ -48,22 +48,22 @@ onMounted(() => {
 onBeforeUnmount(() => observer?.disconnect())
 
 function go() {
-  router.push('/play')
+  router.push({ path: '/ai-chat', query: { mode: 'play' } })
 }
 </script>
 
 <template>
   <div ref="root" class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-4 cursor-pointer" @click="go">
-    <div class="flex items-center justify-between">
-      <div>
+    <div class="flex items-center justify-between gap-3">
+      <div class="min-w-0 flex-1">
         <div class="text-sm text-gray-500">今日陪玩</div>
-        <div class="text-base font-semibold mt-0.5">
+        <div class="text-base font-semibold mt-0.5 truncate">
           <template v-if="needsSetup">点击设置陪玩档案</template>
           <template v-else-if="top">{{ top.game.name }} · {{ top.reasons[0] }}</template>
           <template v-else>为 {{ myCatStore.currentCat?.name || '猫咪' }} 推荐合适的小游戏</template>
         </div>
       </div>
-      <div class="text-orange-500 text-lg">→</div>
+      <div class="text-orange-500 text-lg flex-shrink-0">→</div>
     </div>
   </div>
 </template>

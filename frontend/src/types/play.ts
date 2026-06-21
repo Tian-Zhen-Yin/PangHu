@@ -2,6 +2,19 @@ export type GameCategory = 'chase' | 'hunting' | 'puzzle' | 'interaction' | 'cli
 export type Personality = 'active' | 'curious' | 'clingy' | 'aloof'
 export type HealthTag = 'overweight' | 'senior' | 'post_op' | 'kitten'
 
+export interface PlayStep {
+  title: string
+  detail: string
+  durationSec?: number
+}
+
+export interface PlayGuide {
+  goal: string
+  steps: PlayStep[]
+  cautions: string[]
+  successSignal: string
+}
+
 export interface PlayGame {
   id: string
   name: string
@@ -15,6 +28,7 @@ export interface PlayGame {
   contraindications: HealthTag[]
   description: string
   tips: string
+  guide?: PlayGuide
 }
 
 export interface ScoreBreakdown {

@@ -25,6 +25,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: ['kitten'], // senior/post_op 由 seed 按 energyCost 展开
     description: '用激光点引导猫咪奔跑、跳跃。',
     tips: '结束时务必让激光落在零食或玩具上，避免猫咪因永远抓不到光点而焦虑。',
+    guide: {
+      goal: '通过追光释放爆发力，并以真实捕获感收尾',
+      steps: [
+        { title: '预热吸引', detail: '在地面慢速移动光点，让猫咪注意到并进入狩猎专注状态', durationSec: 30 },
+        { title: '引导奔跑', detail: '加快光点、制造转向与急停，引导猫咪追逐、扑跳', durationSec: 300 },
+        { title: '降速收尾', detail: '逐渐放慢光点，把它引向一个实体玩具或一小撮零食', durationSec: 60 },
+        { title: '真实捕获', detail: '让光点停在零食上后关灯，让猫咪扑到并吃掉，完成狩猎闭环', durationSec: 30 },
+      ],
+      cautions: ['绝不可将激光直射猫咪眼睛', '不要让猫咪长时间扑空，易引发焦虑与挫败'],
+      successSignal: '猫咪成功扑到零食并主动舔毛或趴下，说明已获得满足',
+    },
   },
   {
     id: 'feather-fishing',
@@ -39,6 +50,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '用羽毛模拟鸟类飞行轨迹，让猫咪追扑。',
     tips: '动作时快时慢，模拟真实猎物。结束时让猫咪成功捕获以获得满足感。',
+    guide: {
+      goal: '模拟空中猎物，激发跳扑与狩猎本能',
+      steps: [
+        { title: '试探挑逗', detail: '在猫咪视线边缘轻抖羽毛，模拟受惊鸟类的细碎抖动', durationSec: 30 },
+        { title: '空中飞行', detail: '让羽毛划出忽高忽低的弧线，引导猫咪起跳拍击', durationSec: 240 },
+        { title: '落地潜行', detail: '把羽毛贴地缓慢拖行藏到家具后，激发匍匐潜近', durationSec: 60 },
+        { title: '成功捕获', detail: '让猫咪一次扑准抓住羽毛，停顿几秒让它「咬住战利品」', durationSec: 20 },
+      ],
+      cautions: ['逗猫棒收起后单独存放，避免猫咪误吞羽毛或细绳', '高龄或肥胖猫减少高空跳跃次数'],
+      successSignal: '猫咪抓住羽毛后呼吸略急促、瞳孔放大并主动抱咬，即为尽兴',
+    },
   },
   {
     id: 'food-puzzle',
@@ -53,6 +75,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '把零食藏入漏食球，让猫咪通过推、滚获取食物。',
     tips: '初次使用先示范几次，避免猫咪放弃。',
+    guide: {
+      goal: '用进食动机锻炼大脑，延缓进食、缓解无聊',
+      steps: [
+        { title: '低难度起步', detail: '把漏食球开口调到最大，放入高诱惑零食并示范滚动', durationSec: 60 },
+        { title: '引导尝试', detail: '轻推漏食球让零食掉出一两颗，让猫咪建立「推→有食物」的联系', durationSec: 120 },
+        { title: '自主探索', detail: '退到一旁，让猫咪独立推滚获取，不干预', durationSec: 600 },
+        { title: '逐步加难', detail: '熟练后调小开口或换更复杂的款式，维持新鲜感', durationSec: 60 },
+      ],
+      cautions: ['漏食零食计入当日热量，避免过量', '若猫咪超过两分钟仍无进展应降低难度，防止挫败放弃'],
+      successSignal: '猫咪能独立推滚取食、并在结束后舔净嘴边，说明已投入且满足',
+    },
   },
   {
     id: 'hide-seek',
@@ -67,6 +100,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '主人躲藏，呼唤猫咪名字让它寻找。',
     tips: '找到后给予零食或抚摸奖励。',
+    guide: {
+      goal: '通过寻找与重逢增进信任，缓解黏人猫的分离焦虑',
+      steps: [
+        { title: '建立信号', detail: '当着猫咪的面躲到近处，用轻快语气呼唤它的名字', durationSec: 20 },
+        { title: '近距寻找', detail: '从沙发后、门边等近处开始，让它轻松找到你', durationSec: 60 },
+        { title: '拉开距离', detail: '熟悉后躲到更远或更隐蔽处，延长寻找时间', durationSec: 120 },
+        { title: '重逢奖励', detail: '每次被找到立刻给予零食、抚摸和夸奖，强化正反馈', durationSec: 20 },
+      ],
+      cautions: ['不要躲得太久或太隐蔽，避免猫咪焦虑放弃', '幼猫与老年猫躲藏距离要短'],
+      successSignal: '猫咪主动小跑寻找、找到后蹭你或发出愉悦叫声，即达成情感联结',
+    },
   },
   {
     id: 'tunnel-explore',
@@ -81,6 +125,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '在隧道两端用玩具引导穿越。',
     tips: '可在隧道里塞响纸增加趣味。',
+    guide: {
+      goal: '满足钻洞探索本能，结合追逐做适度运动',
+      steps: [
+        { title: '熟悉隧道', detail: '把隧道放在猫咪常待区域，让它先自由嗅闻、进出适应', durationSec: 60 },
+        { title: '端口引诱', detail: '在一端晃动逗猫棒或玩具，引导猫咪钻入追逐', durationSec: 180 },
+        { title: '两端穿梭', detail: '玩具在两个端口交替出现，让猫咪来回穿越奔跑', durationSec: 180 },
+        { title: '埋伏惊喜', detail: '在隧道中段塞入响纸球，让穿越中触发声响增加趣味', durationSec: 30 },
+      ],
+      cautions: ['确认隧道骨架无外露金属丝，避免刮伤', '多猫家庭注意隧道两端留出逃生口，防止争抢受困'],
+      successSignal: '猫咪主动反复钻入、在隧道内外灵活穿梭，说明探索欲被满足',
+    },
   },
   {
     id: 'mouse-toy',
@@ -95,6 +150,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '拖动玩具鼠让猫咪追扑。',
     tips: '玩具鼠可以藏在沙发底/纸箱后增加难度。',
+    guide: {
+      goal: '模拟地面猎物，激发匍匐潜近与扑咬',
+      steps: [
+        { title: '引起注意', detail: '在猫咪面前轻轻抖动玩具鼠，模拟小动物的细微动作', durationSec: 30 },
+        { title: '地面逃窜', detail: '快速拖动玩具鼠贴地逃跑，并制造急转弯', durationSec: 180 },
+        { title: '藏匿潜伏', detail: '把玩具鼠拖到沙发底或纸箱后只露半截，引导猫咪匍匐潜近', durationSec: 90 },
+        { title: '扑咬收尾', detail: '让猫咪一击扑中并叼住，停顿几秒给予「猎物到手」的成就感', durationSec: 20 },
+      ],
+      cautions: ['检查玩具鼠的塑料眼睛、尾巴是否牢固，松动件易被吞食', '玩耍后收好，避免猫咪长期独自啃咬磨损'],
+      successSignal: '猫咪叼住玩具鼠走动炫耀或满足地趴下，说明狩猎欲被释放',
+    },
   },
   {
     id: 'high-perch',
@@ -109,6 +175,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: ['senior', 'post_op'], // 也由 seed 按 energyCost 加 post_op，这里补显式 senior 防漏
     description: '引导猫咪爬到高处观察环境。',
     tips: '老年猫优先选择平台间距小的爬架。',
+    guide: {
+      goal: '满足登高俯视的领地本能，增强环境掌控感与安全感',
+      steps: [
+        { title: '布置路径', detail: '在爬架/书架各层平台放置零食或玩具，规划由低到高的攀爬路线', durationSec: 60 },
+        { title: '低层引导', detail: '从最低一层开始引诱，让猫咪轻松登上建立信心', durationSec: 120 },
+        { title: '逐层向上', detail: '随它适应逐层上移诱饵，引导抵达最高瞭望位', durationSec: 180 },
+        { title: '安心驻留', detail: '到达高处后安静陪伴，让它从容俯视观察环境', durationSec: 120 },
+      ],
+      cautions: ['确认爬架稳固不晃动，高层下方铺软垫防跌落', '老年猫与术后猫选间距小的平台，避免大跨度跳跃'],
+      successSignal: '猫咪自主登上高处、放松地卧下俯视环境，说明领地感被满足',
+    },
   },
   {
     id: 'crinkle-chase',
@@ -123,6 +200,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '揉响纸吸引注意力后投掷让其追逐。',
     tips: '响纸不可被吞食，结束后及时收好。',
+    guide: {
+      goal: '用声音刺激快速吸引注意，做短时碎片化运动',
+      steps: [
+        { title: '揉纸引注', detail: '在猫咪附近揉搓响纸球发出声响，吸引它的注意', durationSec: 20 },
+        { title: '抛投追逐', detail: '把响纸球抛向远处地面，让猫咪奔跑扑抓', durationSec: 120 },
+        { title: '变向加趣', detail: '弹墙反弹或贴地滑行，制造不规则轨迹增加追逐乐趣', durationSec: 90 },
+        { title: '回收收尾', detail: '在猫咪兴趣下降前主动结束，把响纸球收好', durationSec: 10 },
+      ],
+      cautions: ['响纸球务必收纳，防止猫咪啃咬误吞导致肠梗阻', '高强度短玩，避免在临睡前过度兴奋'],
+      successSignal: '猫咪追到响纸球后用爪拨弄、叼着不放，说明已被充分调动',
+    },
   },
   {
     id: 'training-handshake',
@@ -137,6 +225,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: [],
     description: '用零食奖励逐步训练猫咪伸出爪子。',
     tips: '一次训练不超过 5 分钟，避免猫咪厌倦。',
+    guide: {
+      goal: '通过正向训练建立信任与默契，锻炼专注力',
+      steps: [
+        { title: '捕捉动作', detail: '手持零食靠近猫爪，当它抬爪触碰时立即给零食', durationSec: 60 },
+        { title: '加入口令', detail: '在它抬爪的瞬间说「握手」，把动作与口令关联', durationSec: 90 },
+        { title: '稳定复现', detail: '只在听到口令并抬爪时奖励，逐步固化行为', durationSec: 90 },
+        { title: '撤减零食', detail: '熟练后改为间歇奖励 + 口头夸奖，避免过度依赖零食', durationSec: 60 },
+      ],
+      cautions: ['单次不超过 5 分钟，猫咪走神就立即结束', '不可强行抓握猫爪，全程以诱导为主'],
+      successSignal: '听到口令能主动抬爪配合，即建立了稳定的训练默契',
+    },
   },
   {
     id: 'catnip-toy',
@@ -151,6 +250,17 @@ const RAW_GAMES: PlayGame[] = [
     contraindications: ['kitten'], // < 6 个月神经未发育完全
     description: '让猫咪自行与猫薄荷玩具互动。',
     tips: '一周不超过 2-3 次，避免脱敏。',
+    guide: {
+      goal: '借猫薄荷释放情绪、提供独处时的自娱',
+      steps: [
+        { title: '激活气味', detail: '轻揉玩具唤醒猫薄荷气味，放到猫咪面前', durationSec: 20 },
+        { title: '自由互动', detail: '退开不干预，让猫咪自行蹭、踢、抱咬，进入兴奋期', durationSec: 300 },
+        { title: '观察降温', detail: '兴奋通常持续 5-15 分钟，观察它逐渐平静下来', durationSec: 180 },
+        { title: '收纳玩具', detail: '猫咪失去兴趣后把玩具密封收好，保持气味与新鲜感', durationSec: 10 },
+      ],
+      cautions: ['每周不超过 2-3 次，过频会导致脱敏失效', '幼猫（<6月）神经未发育完全，不建议使用', '少数猫薄荷会引发短暂亢奋攻击，期间不要强行抚摸'],
+      successSignal: '猫咪经历兴奋蹭咬后自然平静、舔毛放松，即完成一次情绪释放',
+    },
   },
 ]
 

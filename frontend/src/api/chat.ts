@@ -36,6 +36,18 @@ export function deleteConversation(id: string): Promise<ApiResponse<null>> {
 }
 
 /**
+ * 上传对话框图片（multipart，字段 photos，最多 9 张）
+ * 返回图片 URL 数组，随消息一起作为 attachments 发送
+ */
+export function uploadChatImages(files: File[]): Promise<ApiResponse<{ urls: string[] }>> {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('photos', file))
+  return api.post('/chat/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+/**
  * 更新对话标题
  */
 export function updateConversationTitle(id: string, title: string): Promise<ApiResponse<{ title: string }>> {

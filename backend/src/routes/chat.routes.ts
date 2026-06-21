@@ -8,10 +8,12 @@ import {
   sendMessageHandler,
   getSuggestedQuestions,
   confirmActionHandler,
+  uploadChatImagesHandler,
   todoToggleHandler,
   todoStatusHandler,
 } from '../controllers/chat.controller'
 import { authMiddleware } from '../middlewares/auth'
+import { uploadPetPhotos } from '../utils/upload'
 
 const router = Router()
 
@@ -75,6 +77,13 @@ router.get('/suggested-questions', getSuggestedQuestions)
  * @body    { confirmationId, action: 'confirm' | 'cancel', edits?: {...} }
  */
 router.post('/confirm', confirmActionHandler)
+
+/**
+ * @route   POST /api/chat/upload
+ * @desc    对话框图片上传（multipart，字段 photos，最多 9 张）
+ * @access  Private
+ */
+router.post('/upload', uploadPetPhotos, uploadChatImagesHandler)
 
 /**
  * @route   POST /api/chat/todo/toggle

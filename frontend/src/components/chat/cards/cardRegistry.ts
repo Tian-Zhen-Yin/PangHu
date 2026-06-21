@@ -17,6 +17,8 @@ import WeightTrendCard from './WeightTrendCard.vue'
 import VaccineStatusCard from './VaccineStatusCard.vue'
 import AllergyCard from './AllergyCard.vue'
 import HealthReportCard from './HealthReportCard.vue'
+import PlaySuggestionsCard from './PlaySuggestionsCard.vue'
+import GrowthRecordCard from './GrowthRecordCard.vue'
 
 export interface CardComponentProps {
   toolOutput: any
@@ -29,6 +31,8 @@ export const cardRegistry: Record<string, Component> = {
   check_vaccine: VaccineStatusCard,
   GET_allergy_records: AllergyCard,
   GENERATE_health_report: HealthReportCard,
+  RECOMMEND_play: PlaySuggestionsCard,
+  get_growth_records: GrowthRecordCard,
 }
 
 /**

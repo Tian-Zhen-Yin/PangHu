@@ -50,7 +50,7 @@ export default function CatConsultation() {
     {
       id: '1',
       role: 'assistant',
-      content: '你好！我是喵喵医生，专业的猫咪医疗顾问。请问有什么可以帮助您的？',
+      content: '你好！我是喵喵，专业的猫咪医疗顾问。请问有什么可以帮助您的？',
       timestamp: new Date(),
     },
   ])
@@ -223,7 +223,7 @@ export default function CatConsultation() {
               <span className="text-2xl">🐱</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-800">喵喵医生</h1>
+              <h1 className="text-xl font-bold text-gray-800">喵喵</h1>
               <p className="text-sm text-gray-500">专业猫咪医疗顾问</p>
             </div>
           </div>
@@ -319,7 +319,7 @@ export default function CatConsultation() {
                     <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
                     <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" />
                   </div>
-                  <span className="text-sm">喵喵医生思考中...</span>
+                  <span className="text-sm">喵喵思考中...</span>
                 </motion.div>
               )}
 

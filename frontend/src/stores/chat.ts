@@ -21,6 +21,7 @@ const TOOL_LABELS: Record<string, { label: string; icon: string }> = {
   GET_allergy_records: { label: '过敏信息', icon: '🤧' },
   GENERATE_health_report: { label: '健康周报', icon: '📊' },
   ADD_allergy_record: { label: '记录过敏', icon: '📝' },
+  RECOMMEND_play: { label: '陪玩推荐', icon: '🎾' },
   default: { label: '正在处理', icon: '🧠' },
 }
 
@@ -34,6 +35,20 @@ function getToolLabel(name: string): { label: string; icon: string } {
  * 保证二次进入会话时仍能渲染工具卡片（如健康周报）。
  */
 function restoreAgentMetaFromMetadata(message: Message): Message {
+  // 用户消息：从 metadata 还原上传的图片附件
+  if (message.role === 'user') {
+    if (!message.attachments && typeof message.metadata === 'string') {
+      try {
+        const parsed = JSON.parse(message.metadata)
+        if (parsed && Array.isArray(parsed.attachments)) {
+          message.attachments = parsed.attachments
+        }
+      } catch {
+        // 忽略解析失败
+      }
+    }
+    return message
+  }
   if (message.role !== 'assistant') return message
   if (message.agentMeta) return message
   const raw = message.metadata
@@ -211,6 +226,7 @@ export const useChatStore = defineStore('chat', () => {
       conversationId,
       role: 'user',
       content: params.content,
+      attachments: params.attachments,
       createdAt: new Date().toISOString(),
     }
     messages.value.push(userMessage)
@@ -244,6 +260,7 @@ export const useChatStore = defineStore('chat', () => {
         conversationId: params.conversationId || currentConversation.value?.id,
         content: params.content,
         catId: params.catId,
+        attachments: params.attachments,
       },
       {
         onConnected: () => {
@@ -550,6 +567,50 @@ export const useChatStore = defineStore('chat', () => {
   const currentConversationId = computed(() => currentConversation.value?.id || null)
   const messageCount = computed(() => messages.value.length)
 
+  /**
+   * 录入工具确认成功后，向对话流追加一条 agent 成功反馈消息
+   * @param toolName 工具名（ADD_growth_record / ADD_vaccine_record / ADD_weight_record）
+   * @param text 反馈文案
+   * @param record 写入返回的记录数据（成长记录会渲染卡片）
+   */
+  function appendRecordSuccessMessage(toolName: string, text: string, record?: any) {
+    const conversationId = currentConversation.value?.id || ''
+    const msg: Message = {
+      id: 'record-' + Date.now(),
+      conversationId,
+      role: 'assistant',
+      content: text,
+      createdAt: new Date().toISOString(),
+    }
+    // 成长记录：附带卡片渲染（复用 get_growth_records 卡片）
+    if (toolName === 'ADD_growth_record' && record) {
+      msg.agentMeta = {
+        toolCalls: [
+          {
+            toolName: 'get_growth_records',
+            status: 'done',
+            output: {
+              success: true,
+              total: 1,
+              records: [
+                {
+                  id: record.id,
+                  type: record.type || 'daily',
+                  notes: record.notes || '',
+                  photos: record.photos || [],
+                  weight: record.weight ?? null,
+                  isAdoptionDay: record.isAdoptionDay || false,
+                  recordDate: record.recordDate || new Date().toISOString(),
+                },
+              ],
+            },
+          },
+        ],
+      }
+    }
+    messages.value.push(msg)
+  }
+
   return {
     // 状态
     conversations,
@@ -574,6 +635,7 @@ export const useChatStore = defineStore('chat', () => {
     updateConversationTitle,
     sendMessage,
     sendAgentMessage,
+    appendRecordSuccessMessage,
     stopStreaming,
     switchConversation,
     clearCurrentConversation,

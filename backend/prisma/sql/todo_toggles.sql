@@ -1,6 +1,6 @@
--- ⚠️ 技术债（A3 决策）：本文件是 raw SQL，未补正式 prisma migration。
---    详见 docs/02-开发/PangHu-AI协作工作流设计.md 附录 B.1。
---    下次涉及 todo 数据模型变更时，必须把它补成 `prisma migrate dev --name add_todo_toggles`。
+-- ✅ 已补正式 migration：prisma/migrations/20260616000002_add_todo_toggles/
+--    本文件 + todo.service.ts 的 ensureTable() 保留作"手工/运行时兜底"用。
+--    schema 真相源为 prisma/schema.prisma 的 model TodoToggle（@@map("todo_toggles")）。
 --
 -- todo_toggles 表创建脚本
 -- 用于持久化健康周报待办完成状态

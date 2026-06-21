@@ -1,6 +1,90 @@
 import type { AgentState, PlanStep, IntentResult, ToolResult } from '../types/agent'
 
 /**
+ * 从用户消息解析陪玩推荐参数。
+ *
+ * 覆盖陪玩抽屉拼出的自然语言（"我只有 10 分钟""现在精力中等""想玩益智类"）
+ * 以及用户手输的常见说法。catId 不在此解析，由 RECOMMEND_play 工具用
+ * ctx.selectedCatId 兜底。
+ */
+function parsePlayParams(message: string): Record<string, unknown> {
+  const params: Record<string, unknown> = {}
+
+  // 时长：匹配"N 分钟"
+  const timeMatch = message.match(/(\d+)\s*分钟/)
+  if (timeMatch) {
+    const t = parseInt(timeMatch[1], 10)
+    if (t >= 1 && t <= 120) params.availableTime = t
+  }
+
+  // 精力档位：文案标签 + 自然语言
+  const energyMap: Array<[RegExp, number]> = [
+    [/极高|非常旺盛|精力爆棚|停不下来/, 5],
+    [/偏高|很旺盛|比较旺盛/, 4],
+    [/旺盛/, 5],
+    [/中等|一般|正常/, 3],
+    [/偏低|有点累|有些累|不太想动/, 2],
+    [/极低|很累|没精神|没力气|嗜睡/, 1],
+  ]
+  for (const [re, val] of energyMap) {
+    if (re.test(message)) { params.currentEnergyOverride = val; break }
+  }
+
+  // 偏好类别：CATEGORY_LABEL 文案 + 英文枚举
+  const categoryMap: Array<[RegExp, string]> = [
+    [/追逐|追跑|奔跑|chase/i, 'chase'],
+    [/狩猎|捕猎|扑咬|hunting/i, 'hunting'],
+    [/益智|解谜|动脑|puzzle/i, 'puzzle'],
+    [/互动|陪伴|interaction/i, 'interaction'],
+    [/攀爬|爬高|跳跃|climbing/i, 'climbing'],
+    [/独自|自己玩|solo/i, 'solo'],
+  ]
+  for (const [re, val] of categoryMap) {
+    if (re.test(message)) { params.preferredCategory = val; break }
+  }
+
+  return params
+}
+
+/**
+ * 解析成长记录类型
+ */
+function parseGrowthType(message: string): Record<string, unknown> {
+  const params: Record<string, unknown> = {}
+  if (/体检|检查/.test(message)) params.type = 'healthCheck'
+  else if (/驱虫/.test(message)) params.type = 'deworm'
+  else if (/领养|纪念日|接回家|到家/.test(message)) params.isAdoptionDay = true
+  const weightMatch = message.match(/(\d+(?:\.\d+)?)\s*(kg|公斤|千克)/i)
+  if (weightMatch) params.weight = parseFloat(weightMatch[1])
+  return params
+}
+
+/**
+ * 解析疫苗录入参数
+ */
+function parseVaccineParams(message: string): Record<string, unknown> {
+  const params: Record<string, unknown> = {}
+  const nameMatch = message.match(/(妙三多|妙双方|猫三联|狂犬疫苗|狂犬|猫五联|英特威|辉瑞)/)
+  if (nameMatch) params.vaccineName = nameMatch[1]
+  return params
+}
+
+/**
+ * 解析体重录入参数
+ */
+function parseWeightParams(message: string): Record<string, unknown> {
+  const params: Record<string, unknown> = {}
+  const kgMatch = message.match(/(\d+(?:\.\d+)?)\s*(kg|公斤|千克)/i)
+  if (kgMatch) {
+    params.weight = parseFloat(kgMatch[1])
+  } else {
+    const jinMatch = message.match(/(\d+(?:\.\d+)?)\s*斤/)
+    if (jinMatch) params.weight = parseFloat(jinMatch[1]) / 2
+  }
+  return params
+}
+
+/**
  * 根据意图和置信度确定策略类型
  */
 function getStrategyType(intent: string, confidence: number, toolCount: number): string {
@@ -124,6 +208,60 @@ export function buildPlan(state: AgentState, intentResult: IntentResult): { plan
         toolName: 'GENERATE_health_report',
         reason: '生成健康周报（聚合多维度健康数据）',
         parameters: {},
+      })
+      break
+    }
+
+    case 'play_recommendation': {
+      // 从用户消息解析陪玩参数（catId 由 RECOMMEND_play 工具用 ctx.selectedCatId 兜底）
+      plan.push({
+        toolName: 'RECOMMEND_play',
+        reason: '用户想给猫咪安排陪玩，调用推荐引擎生成个性化游戏推荐',
+        parameters: parsePlayParams(message),
+      })
+      break
+    }
+
+    case 'growth_record': {
+      // 成长记录写入：携带文字描述 + 图片附件，需用户确认
+      plan.push({
+        toolName: 'ADD_growth_record',
+        reason: '用户想记录猫咪成长（含文字/图片），创建成长记录（需用户确认）',
+        parameters: {
+          notes: message,
+          photos: state.attachments || [],
+          ...parseGrowthType(message),
+        },
+        requiresConfirmation: true,
+      })
+      break
+    }
+
+    case 'growth_query': {
+      plan.push({
+        toolName: 'get_growth_records',
+        reason: '用户想查看成长记录历史',
+        parameters: {},
+      })
+      break
+    }
+
+    case 'vaccine_record': {
+      plan.push({
+        toolName: 'ADD_vaccine_record',
+        reason: '用户想登记疫苗接种记录（需用户确认）',
+        parameters: { ...parseVaccineParams(message) },
+        requiresConfirmation: true,
+      })
+      break
+    }
+
+    case 'weight_record': {
+      plan.push({
+        toolName: 'ADD_weight_record',
+        reason: '用户想登记体重记录（需用户确认）',
+        parameters: { ...parseWeightParams(message) },
+        requiresConfirmation: true,
       })
       break
     }

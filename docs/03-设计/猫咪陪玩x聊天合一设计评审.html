@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>猫咪陪玩 × AI 聊天 · 交互合一评审与设计方案</title>
+<style>
+  :root{
+    --primary:#FF8A4C; --primary-dark:#E06A30; --primary-soft:rgba(255,138,76,.1);
+    --cream:#FFFBF0; --cream-2:#FFF5DC; --ink:#2D2926; --ink-2:#5D4E37; --muted:#8B7355;
+    --line:rgba(255,228,181,.55); --ok:#10B981; --warn:#F59E0B; --bad:#EF4444;
+    --card:#FFFEF8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 8%, rgba(255,228,181,.35) 0%, transparent 45%),
+      radial-gradient(circle at 88% 92%, rgba(255,218,185,.3) 0%, transparent 45%),
+      linear-gradient(135deg,#FFFBF0 0%,#FFF8E7 50%,#FFF5DC 100%);
+    min-height:100vh; line-height:1.6; padding:0 0 80px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  /* hero */
+  .hero{padding:64px 0 40px;text-align:center;position:relative}
+  .hero .kicker{display:inline-block;font-size:13px;letter-spacing:3px;color:var(--primary-dark);
+    background:#fff;border:1px solid var(--line);padding:6px 16px;border-radius:999px;margin-bottom:20px;font-weight:600}
+  .hero h1{font-size:42px;line-height:1.2;font-weight:800;letter-spacing:-1px}
+  .hero h1 em{font-style:normal;background:linear-gradient(135deg,#FFA065,#FF7A3E);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{margin-top:14px;color:var(--muted);font-size:16px}
+  .hero .paw{font-size:30px;opacity:.35;animation:float 3s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  /* section */
+  section{margin-top:56px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .sec-head .no{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#FFE5B4,#FFDAB9);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);font-size:18px}
+  .sec-head h2{font-size:26px;font-weight:800}
+  .sec-head .sub{color:var(--muted);font-size:14px;margin-left:4px}
+  /* cards */
+  .grid{display:grid;gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 24px;
+    box-shadow:0 4px 18px rgba(255,236,179,.18)}
+  .card h3{font-size:17px;margin-bottom:8px;color:var(--ink)}
+  .card p{font-size:14px;color:var(--ink-2)}
+  /* review pills */
+  .issue{border-left:4px solid var(--primary);background:#fff;border-radius:0 14px 14px 0;padding:16px 20px;margin-bottom:12px}
+  .issue .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;margin-right:8px;color:#fff}
+  .tag.high{background:var(--bad)} .tag.mid{background:var(--warn)} .tag.low{background:var(--ok)}
+  .issue h4{font-size:15px;display:inline}
+  .issue .desc{font-size:13.5px;color:var(--ink-2);margin-top:8px}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border-radius:14px;overflow:hidden}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:linear-gradient(135deg,#FFF5DC,#FFECC8);color:var(--muted);font-weight:700}
+  tr:last-child td{border-bottom:none}
+  .score-bar{display:inline-block;height:8px;border-radius:4px;background:linear-gradient(90deg,#FFA065,#FF7A3E);vertical-align:middle;margin-right:8px}
+  /* proposal */
+  .prop{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:30px;
+    box-shadow:0 6px 24px rgba(255,236,179,.2)}
+  .prop-top{padding:24px 28px;background:linear-gradient(135deg,#FFFBF0,#FFF8E7);border-bottom:1px solid var(--line);
+    display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .prop-top .lead{flex:1;min-width:280px}
+  .prop-top .badge{font-size:12px;font-weight:700;color:var(--primary-dark);background:#fff;padding:4px 12px;border-radius:999px;border:1px solid var(--line)}
+  .prop-top h3{font-size:22px;margin:10px 0 6px}
+  .prop-top .one-liner{color:var(--muted);font-size:14px}
+  .total{text-align:center;flex-shrink:0}
+  .total .num{font-size:40px;font-weight:800;color:var(--primary-dark);line-height:1}
+  .total .lab{font-size:12px;color:var(--muted)}
+  .prop-body{padding:24px 28px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:760px){.prop-body{grid-template-columns:1fr}.prop-body table{font-size:12px}}
+  .prop-body h5{font-size:13px;color:var(--primary-dark);font-weight:800;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase}
+  .prop-body ul{list-style:none;font-size:13.5px;color:var(--ink-2)}
+  .prop-body ul li{padding:5px 0 5px 20px;position:relative}
+  .prop-body ul li:before{content:"▸";position:absolute;left:0;color:var(--primary)}
+  .con li:before{content:"△";color:var(--warn)}
+  /* prototype frame */
+  .proto-area{padding:0 28px 28px}
+  .proto-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .proto-toolbar button{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;color:var(--muted);
+    padding:7px 16px;border-radius:999px;cursor:pointer;transition:.2s;font-weight:600}
+  .proto-toolbar button.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(255,138,76,.3)}
+  .phone{width:380px;max-width:100%;margin:0 auto;background:#fff;border:10px solid #2D2926;border-radius:38px;
+    overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.18);height:720px;display:flex;flex-direction:column}
+  .phone-screen{flex:1;overflow-y:auto;background:linear-gradient(180deg,#FFFBF0,#FFF8E7)}
+  .phone-screen::-webkit-scrollbar{width:5px}.phone-screen::-webkit-scrollbar-thumb{background:#FFE5B4;border-radius:3px}
+  /* chat bubbles (shared) */
+  .topbar{display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(255,251,240,.95);
+    border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)}
+  .topbar .ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FFE5B4,#FFDAB9);
+    display:flex;align-items:center;justify-content:center;font-size:18px}
+  .topbar .tt{font-size:14px;font-weight:700}.topbar .st{font-size:11px;color:var(--ok)}
+  .topbar .seg{margin-left:auto;display:flex;background:#FFF5DC;border-radius:999px;padding:3px}
+  .topbar .seg span{font-size:11px;padding:4px 10px;border-radius:999px;color:var(--muted);cursor:pointer}
+  .topbar .seg span.on{background:#fff;color:var(--primary-dark);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .chatlog{padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:82%;font-size:13.5px;line-height:1.55;padding:11px 14px;border-radius:16px}
+  .msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px;color:var(--ink-2)}
+  .msg.me{align-self:flex-end;background:linear-gradient(135deg,#FFA065,#FF7A3E);color:#fff;border-bottom-right-radius:5px}
+  .msg .mini{font-size:11px;opacity:.7;display:block;margin-bottom:3px}
+  /* play card inside chat */
+  .pcard{align-self:flex-start;width:90%;background:linear-gradient(135deg,#FFFEF8,#FFFBF0);border:1px solid var(--line);
+    border-radius:16px;padding:14px;animation:slideIn .5s cubic-bezier(.175,.885,.32,1.275)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .pcard .ph{display:flex;justify-content:space-between;align-items:flex-start}
+  .pcard h6{font-size:15px}
+  .pcard .meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:7px;flex-wrap:wrap}
+  .pcard .meta span{background:#FFF5DC;padding:1px 7px;border-radius:6px}
+  .pcard .sc{font-size:22px;font-weight:800;color:var(--primary)}
+  .pcard .reasons{font-size:12px;color:var(--ink-2);margin-top:8px}
+  .pcard .reasons li{list-style:none;padding-left:14px;position:relative}
+  .pcard .reasons li:before{content:"·";color:var(--primary);position:absolute;left:4px;font-weight:800}
+  .pcard .stars{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between}
+  .pcard .stars .s{color:#FFB800;font-size:18px;letter-spacing:2px}
+  .pcard .stars button{font-size:12px;border:none;background:var(--primary);color:#fff;padding:5px 12px;border-radius:999px;cursor:pointer}
+  /* scenario chips row */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 14px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chips button{flex-shrink:0;font-size:12px;border:1px solid var(--line);background:#fff;color:var(--muted);
+    padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chips button.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  /* input */
+  .inputbar{padding:10px 14px;border-top:1px solid var(--line);background:rgba(255,251,240,.95);display:flex;gap:8px;align-items:center}
+  .inputbar .plus{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--primary);font-size:20px;cursor:pointer;flex-shrink:0}
+  .inputbar .field{flex:1;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 14px;font-size:13px;color:var(--muted)}
+  .inputbar .send{width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,#FFA065,#FF7A3E);color:#fff;font-size:15px;cursor:pointer;flex-shrink:0}
+  /* play-mode panel (A2) */
+  .panel{margin:0 14px 14px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;animation:slideIn .4s ease}
+  .panel h6{font-size:13px;color:var(--primary-dark);margin-bottom:10px}
+  .panel .sel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .panel .sel button{font-size:12px;padding:9px;border:1px solid var(--line);border-radius:10px;background:#FFFBF0;cursor:pointer;color:var(--ink-2)}
+  .panel .sel button.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary-dark);font-weight:700}
+  /* split tab (A3) */
+  .tabbar{display:flex;border-bottom:1px solid var(--line);background:#fff}
+  .tabbar button{flex:1;font:inherit;font-size:13px;padding:12px;border:none;background:none;color:var(--muted);cursor:pointer;font-weight:600;border-bottom:2px solid transparent}
+  .tabbar button.on{color:var(--primary-dark);border-bottom-color:var(--primary)}
+  .hint{font-size:11px;color:var(--muted);text-align:center;padding:8px}
+  .float-fab{position:absolute;right:14px;bottom:74px;background:linear-gradient(135deg,#FFA065,#FF7A3E);color:#fff;
+    border:none;border-radius:999px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(255,138,76,.35);display:flex;gap:6px;align-items:center}
+  .note{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+  .verdict{background:linear-gradient(135deg,#FFF5DC,#FFECC8);border-radius:18px;padding:24px 28px;border:1px solid var(--line);margin-top:10px}
+  .verdict h3{font-size:18px;margin-bottom:8px}
+  .verdict p{font-size:14px;color:var(--ink-2)}
+  .verdict .win{color:var(--primary-dark);font-weight:800}
+  footer{text-align:center;margin-top:50px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="paw">🐾</div>
+    <div class="kicker">交互评审 · 设计方案 · 可交互原型</div>
+    <h1>猫咪陪玩 <em>×</em> AI 聊天<br/>交互合一探索</h1>
+    <p>当前「陪玩推荐」是独立页面，「喵喵医生」是对话页面 —— 二者本可共生。本文给出评审意见、3 套合一方案（含打分）与可点击原型。</p>
+  </div>
+
+  <!-- 1. 评审 -->
+  <section>
+    <div class="sec-head"><div class="no">1</div><h2>现状评审意见</h2><span class="sub">基于现有代码与 PRD</span></div>
+    <div class="card" style="margin-bottom:18px">
+      <h3>🔍 核心发现：能力已存在，入口被割裂</h3>
+      <p>后端 Agent 已注册 <code>RECOMMEND_play</code> 工具，对话里「陪 Mimi 玩什么」本可直接触发推荐；但前端 <code>cardRegistry.ts</code> 并未为它注册卡片，于是推荐被迫塞进独立的 <code>/play</code> 页面。结果是<strong>同一份能力出现两套 UI、两套埋点 source、两条用户心智路径</strong>，这正是「交互可优化」的根源。</p>
+    </div>
+
+    <div class="issue"><span class="tag high">高</span><h4>双入口割裂，用户心智分裂</h4>
+      <div class="desc">陪玩在 Tab/独立页，问健康在聊天页。用户想「边问边玩」时要来回跳转，且陪玩页的猫咪切换与聊天页的 CatSelector 是两套状态，容易不同步。</div></div>
+    <div class="issue"><span class="tag high">高</span><h4>陪玩卡片无法进入对话上下文</h4>
+      <div class="desc">PRD §6.1 主流程本就是「对话式推荐为主入口」，但实现里对话拿不到陪玩卡片（缺 card 注册），导致 PRD 设计意图与落地脱节，反馈闭环 recommendation→feedback 被拆在两处。</div></div>
+    <div class="issue"><span class="tag mid">中</span><h4>场景预设与建议芯片重复造轮子</h4>
+      <div class="desc">陪玩页有「只有5分钟/精力旺盛」等 chips（ScenarioPresets），聊天页有 contextualSuggestions chips，两者形态几乎一致却各写一份，维护成本翻倍。</div></div>
+    <div class="issue"><span class="tag mid">中</span><h4>反馈打分埋点 source 不统一</h4>
+      <div class="desc">陪玩卡片埋点 source 写死 <code>'page'</code>，而 PRD §7 期望区分 chat/quick/scenario。合一后可用统一 source 维度，漏斗更干净。</div></div>
+    <div class="issue"><span class="tag low">低</span><h4>视觉语言已统一，迁移成本低</h4>
+      <div class="desc">两处都已用奶油色系 + MascotCharacter + 同一套 design token，合并不会有视觉断层，主要工作量在交互编排而非重做样式。</div></div>
+  </section>
+
+  <!-- 2. 方案总览打分 -->
+  <section>
+    <div class="sec-head"><div class="no">2</div><h2>三套合一方案 · 评分总览</h2><span class="sub">满分 5，加权总分 100</span></div>
+    <table>
+      <thead><tr>
+        <th>评估维度（权重）</th>
+        <th>方案A 对话原生卡片</th>
+        <th>方案B 模式切换 / 陪玩抽屉</th>
+        <th>方案C 双 Tab 同壳</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>心智一致性 (25%)</td><td>⭐⭐⭐⭐⭐ 5</td><td>⭐⭐⭐⭐ 4</td><td>⭐⭐⭐ 3</td></tr>
+        <tr><td>实现成本 (20%)</td><td>⭐⭐⭐⭐ 4</td><td>⭐⭐⭐ 3</td><td>⭐⭐⭐⭐⭐ 5</td></tr>
+        <tr><td>反馈闭环顺滑度 (20%)</td><td>⭐⭐⭐⭐⭐ 5</td><td>⭐⭐⭐⭐ 4</td><td>⭐⭐⭐ 3</td></tr>
+        <tr><td>新手可发现性 (15%)</td><td>⭐⭐⭐ 3</td><td>⭐⭐⭐⭐⭐ 5</td><td>⭐⭐⭐⭐⭐ 5</td></tr>
+        <tr><td>场景表达灵活度 (10%)</td><td>⭐⭐⭐⭐⭐ 5</td><td>⭐⭐⭐⭐ 4</td><td>⭐⭐⭐ 3</td></tr>
+        <tr><td>多猫/状态复用 (10%)</td><td>⭐⭐⭐⭐⭐ 5</td><td>⭐⭐⭐⭐ 4</td><td>⭐⭐⭐ 3</td></tr>
+        <tr style="font-weight:800;background:#FFF8E7">
+          <td>加权总分</td>
+          <td><span class="score-bar" style="width:90px"></span>90</td>
+          <td><span class="score-bar" style="width:81px"></span>81</td>
+          <td><span class="score-bar" style="width:74px"></span>74</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 方案 A -->
+  <section>
+    <div class="sec-head"><div class="no">A</div><h2>方案 A · 对话原生陪玩卡片</h2></div>
+    <div class="prop">
+      <div class="prop-top">
+        <div class="lead">
+          <span class="badge">★ 推荐方案</span>
+          <h3>聊天即陪玩 —— 把推荐卡片织进对话流</h3>
+          <p class="one-liner">取消独立陪玩页，用户在喵喵医生对话里直接说「陪 Mimi 玩什么」，Agent 调用 RECOMMEND_play 工具，推荐卡片作为一种气泡内联渲染，打分、记录都在对话里完成。场景预设变成输入框上方的快捷 chips。</p>
+        </div>
+        <div class="total"><div class="num">90</div><div class="lab">加权总分</div></div>
+      </div>
+      <div class="prop-body">
+        <div><h5>优点</h5><ul>
+          <li>完全对齐 PRD「对话式推荐为主入口」原意</li>
+          <li>复用现有 AgentCardRenderer + cardRegistry，只需补一个 PlaySuggestionCard 注册</li>
+          <li>反馈闭环零跳转：推荐→打分→学习全在一条对话线</li>
+          <li>多猫切换、上下文、历史会话天然复用聊天页能力</li>
+        </ul></div>
+        <div><h5 class="con">需注意</h5><ul class="con">
+          <li>纯对话对新手「我能玩陪玩」的可发现性稍弱，需靠 chips + 首页卡片引导</li>
+          <li>卡片在窄气泡内信息密度要克制，详情走展开</li>
+        </ul></div>
+      </div>
+      <div class="proto-area">
+        <div class="proto-toolbar"><button class="active">📱 可点击原型 · 在对话里推荐与打分</button></div>
+        <div class="phone"><div class="phone-screen" id="screenA">
+          <div class="topbar"><div class="ava">🐱</div><div><div class="tt">喵喵医生</div><div class="st">● 智能顾问模式</div></div></div>
+          <div class="chatlog" id="logA">
+            <div class="msg ai"><span class="mini">喵喵医生</span>你好，我是 Mimi 的专属顾问 🐾 想了解健康，或者今天陪 Mimi 玩点什么都可以问我～</div>
+          </div>
+          <div class="chips" id="chipsA">
+            <button onclick="aAsk('陪 Mimi 玩什么')">陪它玩什么</button>
+            <button onclick="aAsk('我只有 5 分钟')">只有 5 分钟</button>
+            <button onclick="aAsk('Mimi 精力很旺盛')">精力旺盛</button>
+            <button onclick="aAsk('想玩益智类')">想玩益智</button>
+          </div>
+          <div class="inputbar">
+            <button class="plus">+</button>
+            <div class="field">问点什么…</div>
+            <button class="send" onclick="aAsk('陪 Mimi 玩什么')">➤</button>
+          </div>
+        </div></div>
+        <p class="note">点击上方任意快捷 chip 或发送按钮，体验「对话里弹出陪玩卡片 → 打分」的合一流程</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 方案 B -->
+  <section>
+    <div class="sec-head"><div class="no">B</div><h2>方案 B · 模式切换 + 陪玩抽屉</h2></div>
+    <div class="prop">
+      <div class="prop-top">
+        <div class="lead">
+          <span class="badge">兼顾可发现性</span>
+          <h3>一个壳两种模式 —— 顶部切「问诊 / 陪玩」</h3>
+          <p class="one-liner">保留单一对话壳，顶部分段控件在「问诊」与「陪玩」间切换。切到陪玩时，输入框上方升起一个轻量配置抽屉（时长/精力/类别），结果仍以卡片形式落在同一对话流，打分内联。既有显式入口，又共享对话上下文。</p>
+        </div>
+        <div class="total"><div class="num">81</div><div class="lab">加权总分</div></div>
+      </div>
+      <div class="prop-body">
+        <div><h5>优点</h5><ul>
+          <li>显式「陪玩」入口，新手可发现性强</li>
+          <li>配置抽屉比纯自然语言更精确（明确选时长/精力）</li>
+          <li>仍共享对话流与多猫状态，避免双页</li>
+        </ul></div>
+        <div><h5 class="con">需注意</h5><ul class="con">
+          <li>模式切换增加一层状态，需处理两模式的 prompt/工具集差异</li>
+          <li>抽屉 + 对话两种交互并存，认知负担略高于 A</li>
+        </ul></div>
+      </div>
+      <div class="proto-area">
+        <div class="proto-toolbar"><button class="active">📱 可点击原型 · 切到陪玩模式并配置</button></div>
+        <div class="phone"><div class="phone-screen" id="screenB">
+          <div class="topbar"><div class="ava">🐱</div><div><div class="tt">Mimi 的顾问</div><div class="st">● 在线</div></div>
+            <div class="seg"><span class="on" id="segChat" onclick="bMode('chat')">问诊</span><span id="segPlay" onclick="bMode('play')">陪玩</span></div>
+          </div>
+          <div class="chatlog" id="logB">
+            <div class="msg ai"><span class="mini">顾问</span>切到「陪玩」可以快速给 Mimi 配一套今日游戏 🎾</div>
+          </div>
+          <div id="panelB"></div>
+          <div class="inputbar">
+            <button class="plus">+</button>
+            <div class="field" id="fieldB">问点什么…</div>
+            <button class="send" onclick="bSend()">➤</button>
+          </div>
+        </div></div>
+        <p class="note">点击右上角「陪玩」→ 在抽屉里选时长与精力 → 生成卡片</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 方案 C -->
+  <section>
+    <div class="sec-head"><div class="no">C</div><h2>方案 C · 双 Tab 同壳（最低成本）</h2></div>
+    <div class="prop">
+      <div class="prop-top">
+        <div class="lead">
+          <span class="badge">最快落地</span>
+          <h3>共用一个页面外壳，顶部 Tab 切两个面板</h3>
+          <p class="one-liner">把陪玩页与聊天页合进同一路由 <code>/assistant</code>，顶部两个 Tab：「对话」「陪玩」。共享 CatSelector、头部、底部输入。两面板各自保留现有 UI，只是被装进同一外壳，状态（当前猫）打通。改动最小，但两个面板仍是各自独立的体验。</p>
+        </div>
+        <div class="total"><div class="num">74</div><div class="lab">加权总分</div></div>
+      </div>
+      <div class="prop-body">
+        <div><h5>优点</h5><ul>
+          <li>工程量最小，几乎是把两页塞进一个 Tab 容器</li>
+          <li>两个入口都极其显眼，零学习成本</li>
+          <li>共享猫咪选择器，解决状态不同步问题</li>
+        </ul></div>
+        <div><h5 class="con">需注意</h5><ul class="con">
+          <li>本质仍是两套体验拼贴，未真正「合二为一」</li>
+          <li>反馈闭环仍隔在陪玩面板内，未流入对话</li>
+          <li>长期看是过渡形态，非终态</li>
+        </ul></div>
+      </div>
+      <div class="proto-area">
+        <div class="proto-toolbar"><button class="active">📱 可点击原型 · 切换两个 Tab</button></div>
+        <div class="phone"><div class="phone-screen" id="screenC">
+          <div class="topbar"><div class="ava">🐱</div><div><div class="tt">Mimi 助手</div><div class="st">● 在线</div></div></div>
+          <div class="tabbar">
+            <button class="on" id="tabChat" onclick="cTab('chat')">💬 对话</button>
+            <button id="tabPlay" onclick="cTab('play')">🎾 陪玩</button>
+          </div>
+          <div id="panelC"></div>
+          <div class="inputbar" id="inputC">
+            <button class="plus">+</button><div class="field">问点什么…</div><button class="send">➤</button>
+          </div>
+        </div></div>
+        <p class="note">点击「对话 / 陪玩」Tab 切换，注意头部与猫咪是同一份</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 结论 -->
+  <section>
+    <div class="sec-head"><div class="no">3</div><h2>结论与建议</h2></div>
+    <div class="verdict">
+      <h3>推荐 <span class="win">方案 A（对话原生卡片）</span>为终态，<span class="win">方案 C</span> 可作为一周内的过渡。</h3>
+      <p>方案 A 最贴合 PRD「对话式推荐为主入口」的原始设计，且复用现有 AgentCardRenderer 体系，落地只需：① 在 <code>cardRegistry.ts</code> 注册 <code>RECOMMEND_play → PlaySuggestionCard</code>；② 让 PlaySuggestionCard 适配卡片 toolOutput 契约；③ 把 ScenarioPresets 提升为输入框上方的快捷 chips。若团队希望同时照顾新手可发现性，可在方案 A 基础上叠加方案 B 的「陪玩」快捷入口（首页「今日陪玩」卡片点进来预填一句 prompt），即得到「A 为主、B 引导」的组合形态。</p>
+    </div>
+  </section>
+
+  <footer>哈吉咪养成计划 · 猫咪陪玩 × AI 聊天 合一设计评审 · 可交互原型</footer>
+</div>
+
+<script>
+/* ============ 方案 A ============ */
+function aAsk(text){
+  const log=document.getElementById('logA');
+  log.insertAdjacentHTML('beforeend',`<div class="msg me">${text}</div>`);
+  scrollA();
+  setTimeout(()=>{
+    log.insertAdjacentHTML('beforeend',`<div class="msg ai"><span class="mini">喵喵医生</span>好嘞！根据 Mimi 的「活泼好动」性格，我挑了几个适合现在玩的 👇</div>`);
+    scrollA();
+  },350);
+  setTimeout(()=>{ log.insertAdjacentHTML('beforeend', playCardHTML('A')); scrollA(); },800);
+}
+function playCardHTML(ns){
+  return `<div class="pcard">
+    <div class="ph"><div><h6>羽毛钓鱼</h6><div class="meta"><span>狩猎</span><span>10 分钟</span><span>强度 ●●●●○</span></div></div><div class="sc">92</div></div>
+    <ul class="reasons"><li>匹配活泼好动性格</li><li>刚好 10 分钟</li><li>狩猎本能释放</li></ul>
+    <div class="stars"><span>猫咪喜欢吗？ <span class="s" id="stars${ns}" onclick="setStars('${ns}')">☆☆☆☆☆</span></span>
+    <button onclick="recorded('${ns}')">记录</button></div>
+  </div>`;
+}
+function setStars(ns){document.getElementById('stars'+ns).textContent='★★★★☆';}
+function recorded(ns){
+  const log=document.getElementById('log'+ns);
+  log.insertAdjacentHTML('beforeend',`<div class="msg ai"><span class="mini">喵喵医生</span>已记录 ⭐4 · 完成 ✅ 我会记住 Mimi 喜欢狩猎类，下次优先推荐～</div>`);
+  ns==='A'?scrollA():scrollB();
+}
+function scrollA(){const s=document.getElementById('screenA');s.scrollTop=s.scrollHeight;}
+
+/* ============ 方案 B ============ */
+let bState='chat';
+function bMode(m){
+  bState=m;
+  document.getElementById('segChat').className=m==='chat'?'on':'';
+  document.getElementById('segPlay').className=m==='play'?'on':'';
+  const panel=document.getElementById('panelB');
+  document.getElementById('fieldB').textContent = m==='play'?'描述场景，或用下方快捷设置…':'问点什么…';
+  if(m==='play'){
+    panel.innerHTML=`<div class="panel">
+      <h6>🎾 给 Mimi 配今日陪玩</h6>
+      <div class="sel" id="selTime">
+        <button onclick="pick('selTime',this)" class="on">⏱ 10 分钟</button>
+        <button onclick="pick('selTime',this)">⏱ 5 分钟</button>
+        <button onclick="pick('selTime',this)">🔥 精力旺盛</button>
+        <button onclick="pick('selTime',this)">😴 有点累</button>
+      </div>
+      <button class="send" style="width:100%;border-radius:12px;margin-top:12px;height:38px" onclick="bGenerate()">生成推荐</button>
+    </div>`;
+  }else{ panel.innerHTML=''; }
+}
+function pick(group,el){
+  document.querySelectorAll('#'+group+' button').forEach(b=>b.className='');
+  el.className='on';
+}
+function bGenerate(){
+  document.getElementById('panelB').innerHTML='';
+  const log=document.getElementById('logB');
+  log.insertAdjacentHTML('beforeend',`<div class="msg me">陪玩 · 10 分钟</div>`);
+  setTimeout(()=>{ log.insertAdjacentHTML('beforeend', playCardHTML('B')); scrollB(); },400);
+  document.getElementById('fieldB').textContent='问点什么…';
+  bState='chat';
+  document.getElementById('segChat').className='on';document.getElementById('segPlay').className='';
+}
+function bSend(){
+  const log=document.getElementById('logB');
+  log.insertAdjacentHTML('beforeend',`<div class="msg me">Mimi 今天没什么精神</div>`);
+  setTimeout(()=>{log.insertAdjacentHTML('beforeend',`<div class="msg ai"><span class="mini">顾问</span>没精神可以试试低强度互动，或切到「陪玩」我帮你配套～</div>`);scrollB();},400);
+  scrollB();
+}
+function scrollB(){const s=document.getElementById('screenB');s.scrollTop=s.scrollHeight;}
+
+/* ============ 方案 C ============ */
+function cTab(t){
+  document.getElementById('tabChat').className=t==='chat'?'on':'';
+  document.getElementById('tabPlay').className=t==='play'?'on':'';
+  const p=document.getElementById('panelC');
+  const input=document.getElementById('inputC');
+  if(t==='chat'){
+    input.style.display='flex';
+    p.innerHTML=`<div class="chatlog">
+      <div class="msg ai"><span class="mini">助手</span>你好，我是 Mimi 的健康顾问，有什么想问的？</div>
+      <div class="msg me">最近 Mimi 有点胖</div>
+      <div class="msg ai"><span class="mini">助手</span>可以多安排追逐类运动，去「陪玩」Tab 我帮你出方案 🏃</div>
+    </div>`;
+  }else{
+    input.style.display='none';
+    p.innerHTML=`<div class="chips"><button class="on">只有 10 分钟</button><button>精力旺盛</button><button>想玩追逐</button></div>
+      <div class="chatlog" style="gap:12px">${playCardHTML('C')}</div>`;
+  }
+}
+/* init */
+bMode('chat'); cTab('chat');
+</script>
+</body>
+</html>

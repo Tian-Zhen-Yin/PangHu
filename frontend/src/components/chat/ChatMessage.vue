@@ -5,6 +5,8 @@ import MascotCharacter from '../mascot/MascotCharacter.vue'
 import AgentCardRenderer from './AgentCardRenderer.vue'
 import ExecutionTracePanel from './ExecutionTracePanel.vue'
 import AllergyConfirmCard from './AllergyConfirmCard.vue'
+import RecordConfirmCard from './RecordConfirmCard.vue'
+import { getImageUrl } from '../../utils/format.js'
 import type { Message, ToolCallInfo } from '../../types/chat.js'
 import api from '../../api/index.js'
 
@@ -91,6 +93,8 @@ function toolIcon(name: string): string {
       return '📊'
     case 'ADD_allergy_record':
       return '📝'
+    case 'RECOMMEND_play':
+      return '🎾'
     default:
       return '🧠'
   }
@@ -101,6 +105,11 @@ function toolStatusText(tool: ToolCallInfo): string {
   if (tool.status === 'error') return '调用失败'
   if (tool.costMs != null) return `完成 · ${tool.costMs} ms`
   return '完成'
+}
+
+function resolveAttachmentUrl(url: string): string {
+  if (!url || url.startsWith('blob:')) return url
+  return getImageUrl(url)
 }
 
 async function copyMessage() {
@@ -185,7 +194,14 @@ const timeDisplay = computed(() => {
 
           <!-- V2.0 过敏录入确认卡片（写入工具需要用户确认时渲染） -->
           <AllergyConfirmCard
-            v-if="message.agentMeta?.pendingConfirmation"
+            v-if="message.agentMeta?.pendingConfirmation && message.agentMeta.pendingConfirmation.toolName === 'ADD_allergy_record'"
+            :confirmation="message.agentMeta.pendingConfirmation"
+            @resolved="message.agentMeta!.pendingConfirmation = undefined"
+          />
+
+          <!-- 通用录入确认卡片（成长记录/疫苗/体重） -->
+          <RecordConfirmCard
+            v-else-if="message.agentMeta?.pendingConfirmation"
             :confirmation="message.agentMeta.pendingConfirmation"
             @resolved="message.agentMeta!.pendingConfirmation = undefined"
           />
@@ -211,6 +227,15 @@ const timeDisplay = computed(() => {
 
         <!-- ================= 用户消息 ================= -->
         <div v-else class="user-bubble">
+          <div v-if="message.attachments && message.attachments.length > 0" class="user-images">
+            <img
+              v-for="(img, idx) in message.attachments"
+              :key="idx"
+              :src="resolveAttachmentUrl(img)"
+              class="user-image"
+              alt="上传的图片"
+            />
+          </div>
           <div class="plain-content">{{ message.content }}</div>
         </div>
       </div>
@@ -283,7 +308,19 @@ const timeDisplay = computed(() => {
 
 .chat-message.user { flex-direction: row-reverse }
 .chat-message.user .message-content-wrapper { align-items: flex-end }
-
+.user-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  justify-content: flex-end;
+}
+.user-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 12px;
+}
 .message-avatar {
   width: 36px;
   height: 36px;

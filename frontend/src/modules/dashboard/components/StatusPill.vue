@@ -58,10 +58,14 @@ function statusLabel(status?: string): string {
   .status-pill {
     width: 100%;
     order: 10;
+    align-items: flex-start;
     border: 1px solid var(--color-success-light);
     border-radius: var(--radius-sm);
     padding: var(--space-md);
   }
+
+  .status-pill .status-dot { margin-top: 5px; }
+  .status-pill .status-divider { margin-top: 3px; }
 }
 
 .status-dot {
@@ -96,10 +100,14 @@ function statusLabel(status?: string): string {
   font-size: var(--text-xs);
   color: var(--color-success);
   opacity: 0.8;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   flex: 1;
+  min-width: 0;
+  line-height: 1.4;
   font-weight: var(--font-normal);
 }
 </style>

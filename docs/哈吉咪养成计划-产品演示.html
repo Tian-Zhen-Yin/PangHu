@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>哈吉咪养成计划 · 一个懂你家这只猫的 AI 养护伙伴 | TRAE AI 创造力大赛</title>
+<style>
+  :root{
+    --primary:#F4A261;--primary-deep:#E76F51;--primary-light:#FDF3E9;
+    --mint:#2A9D8F;--mint-deep:#1F7A6E;--sky:#6EC1E4;
+    --rose:#E9A6A0;--rose-deep:#D87D75;
+    --ink:#5C544E;--ink-soft:#8A8078;--ink-faint:#B5ADA4;
+    --bg:#FAF8F5;--bg-warm:#F5EFE6;--card:#FFFFFF;
+    --line:rgba(244,162,97,.16);--line-rose:rgba(233,166,160,.24);
+    --r:24px;--r-sm:16px;
+    --shadow-sm:0 8px 16px rgba(0,0,0,.04);--shadow:0 18px 44px -16px rgba(231,111,81,.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.75;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(1000px 640px at 80% -10%,rgba(244,162,97,.16),transparent 60%),radial-gradient(820px 560px at 6% 8%,rgba(233,166,160,.12),transparent 55%),radial-gradient(1100px 820px at 50% 116%,rgba(42,157,143,.07),transparent 60%)}
+  .paw{position:fixed;top:-30px;font-size:18px;opacity:.14;pointer-events:none;z-index:-1;animation:drift linear infinite}
+  @keyframes drift{0%{transform:translateY(-8vh) translateX(0) rotate(0)}100%{transform:translateY(112vh) translateX(70px) rotate(360deg)}}
+  .wrap{max-width:980px;margin:0 auto;padding:0 22px}
+  section{padding:60px 0}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;letter-spacing:.1em;color:var(--primary-deep);font-weight:700;padding:6px 15px;border:1px solid var(--line);border-radius:999px;background:var(--primary-light);margin-bottom:18px}
+  .eyebrow.rose{color:var(--rose-deep);border-color:var(--line-rose);background:rgba(233,166,160,.08)}
+  h2.title{font-size:clamp(24px,4.4vw,33px);line-height:1.3;margin-bottom:14px;color:var(--ink)}
+  h2.title .sub{color:var(--primary-deep)}
+  h2.title .sub-rose{color:var(--rose-deep)}
+  .lead{color:var(--ink-soft);font-size:16px;max-width:720px}
+  .demo-flag{position:fixed;right:14px;bottom:14px;z-index:50;font-size:11px;color:#fff;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--primary-deep));padding:7px 13px;border-radius:999px;box-shadow:var(--shadow)}
+
+  .hero{padding:76px 0 44px;text-align:center;position:relative}
+  .mascot-hero{width:130px;height:130px;margin:0 auto 22px;position:relative}
+  .mascot-hero .halo{position:absolute;inset:-28px;border-radius:50%;background:radial-gradient(circle,rgba(244,162,97,.4),rgba(244,162,97,.08) 50%,transparent 72%);animation:breathe 4.5s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.12);opacity:1}}
+  .mascot-hero img{position:relative;width:130px;height:130px;object-fit:contain;display:block}
+  .seal{display:inline-block;padding:6px 16px;border-radius:999px;font-size:12px;letter-spacing:.2em;color:var(--primary-deep);background:var(--primary-light);border:1px solid var(--line);margin-bottom:24px;font-weight:700}
+  .hero h1{font-size:clamp(34px,7vw,54px);line-height:1.12;margin-bottom:16px;font-weight:900;background:linear-gradient(180deg,#6b6058,#E76F51 130%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .slogan{font-size:clamp(17px,3.2vw,21px);color:var(--ink);font-weight:600;margin-bottom:18px}
+  .hero .empathy{color:var(--ink-soft);max-width:680px;margin:0 auto 26px;font-size:15.5px}
+  .vs-banner{max-width:660px;margin:0 auto 26px;padding:16px 22px;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--primary-light),#fff);border:1px solid rgba(244,162,97,.4);box-shadow:var(--shadow-sm)}
+  .vs-banner .vs-line{font-size:clamp(15px,2.6vw,18px);line-height:1.6;color:var(--ink);font-weight:600}
+  .vs-banner .vs-line .dim{color:var(--ink-soft);font-weight:400}
+  .vs-banner .vs-line .hot{color:var(--primary-deep);font-weight:800}
+  .vs-banner .vs-tag{display:inline-block;margin-top:8px;font-size:11.5px;color:var(--mint-deep);font-weight:700;padding:3px 11px;border-radius:999px;background:rgba(42,157,143,.1);border:1px solid rgba(42,157,143,.3)}
+  .chip{font-size:13px;padding:7px 15px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-soft)}
+  .tagchips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .chip.warm{border-color:rgba(244,162,97,.5);color:var(--primary-deep);background:var(--primary-light)}
+  .chip.green{border-color:rgba(42,157,143,.4);color:var(--mint-deep);background:rgba(42,157,143,.08)}
+  .chip.rose{border-color:rgba(233,166,160,.5);color:var(--rose-deep);background:rgba(233,166,160,.1)}
+  .two-lights{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  .light-pill{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:10px 18px;border-radius:999px;background:var(--primary-light);border:1px solid var(--line);color:var(--primary-deep)}
+  .light-pill .em{font-size:16px}
+  .light-pill.rose{background:rgba(233,166,160,.1);border-color:var(--line-rose);color:var(--rose-deep)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm)}
+  .pillar-head{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .pillar-head .badge{font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;white-space:nowrap}
+  .pillar-head .badge.warm{color:var(--primary-deep);background:var(--primary-light);border:1px solid var(--line)}
+  .pillar-head .badge.rose{color:var(--rose-deep);background:rgba(233,166,160,.1);border:1px solid var(--line-rose)}
+
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;align-items:stretch;margin-top:30px}
+  .flow-step{position:relative;text-align:center;padding:26px 14px;background:#fff;border:1px solid var(--line)}
+  .flow-step:first-child{border-radius:var(--r) 0 0 var(--r)}
+  .flow-step:last-child{border-radius:0 var(--r) var(--r) 0}
+  .flow-step + .flow-step{border-left:none}
+  .flow-step .ic{font-size:32px;display:block;margin-bottom:10px;line-height:1}
+  .flow-step h4{font-size:15px;margin-bottom:6px;color:var(--ink)}
+  .flow-step p{font-size:12.5px;color:var(--ink-faint);line-height:1.5}
+  .flow-step .num{position:absolute;top:10px;left:12px;font-size:12px;color:var(--primary-deep);border:1px solid var(--line);border-radius:50%;width:22px;height:22px;display:grid;place-items:center;background:var(--primary-light)}
+  .flow-step:not(:last-child)::after{content:"→";position:absolute;right:-11px;top:50%;transform:translateY(-50%);z-index:3;color:var(--primary-deep);font-size:18px;font-weight:bold;background:var(--bg);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:30px}
+  .feat{padding:24px 22px;border-radius:var(--r);background:#fff;border:1px solid var(--line);transition:transform .25s,border-color .25s,box-shadow .25s}
+  .feat:hover{transform:translateY(-4px);border-color:rgba(244,162,97,.5);box-shadow:var(--shadow)}
+  .feat.rose:hover{border-color:rgba(233,166,160,.55)}
+  .feat .ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:25px;margin-bottom:14px;background:var(--primary-light);border:1px solid var(--line)}
+  .feat.rose .ic{background:rgba(233,166,160,.12);border-color:var(--line-rose)}
+  .feat h4{font-size:16.5px;margin-bottom:8px;color:var(--ink)}
+  .feat p{font-size:13.5px;color:var(--ink-soft)}
+  .feat .tagline{display:inline-block;margin-top:12px;font-size:11.5px;color:var(--rose-deep);font-weight:700}
+
+  .pains{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:28px}
+  .pain{padding:18px 20px;border-radius:var(--r-sm);background:#fff;border:1px solid var(--line)}
+  .pain .q{font-size:14px;color:var(--primary-deep);font-style:italic;margin-bottom:6px;font-weight:600}
+  .pain p{font-size:13px;color:var(--ink-soft)}
+
+  .values{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+  .value-card{padding:26px 24px;border-radius:var(--r)}
+  .value-card.soc{background:linear-gradient(180deg,rgba(42,157,143,.1),#fff);border:1px solid rgba(42,157,143,.28)}
+  .value-card.emo{background:linear-gradient(180deg,rgba(233,166,160,.12),#fff);border:1px solid var(--line-rose)}
+  .value-card.eff{background:linear-gradient(180deg,rgba(244,162,97,.1),#fff);border:1px solid rgba(244,162,97,.3)}
+  .value-card h3{font-size:17px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .value-card ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .value-card li{font-size:13.5px;color:var(--ink-soft);padding-left:20px;position:relative}
+  .value-card li::before{content:"●";position:absolute;left:0;top:0;font-size:9px;line-height:22px}
+  .value-card.soc li::before{color:var(--mint)}
+  .value-card.emo li::before{color:var(--rose-deep)}
+  .value-card.eff li::before{color:var(--primary-deep)}
+  .value-card strong{color:var(--ink)}
+
+  .phone-stage{display:flex;justify-content:center;margin-top:34px}
+  .chat-sim{width:100%;max-width:440px;border-radius:26px;overflow:hidden;background:#fff;box-shadow:0 26px 64px -22px rgba(160,90,40,.5),0 0 0 1px var(--line);position:relative}
+  .chat-sim .topbar{padding:16px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;display:flex;align-items:center;justify-content:space-between}
+  .chat-sim .topbar .l{display:flex;align-items:center;gap:10px}
+  .chat-sim .av{width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}
+  .chat-sim .av img{width:32px;height:32px;object-fit:contain}
+  .chat-sim .topbar h3{font-size:15.5px;line-height:1.2}
+  .chat-sim .topbar .meta{font-size:11.5px;opacity:.85}
+  .chat-sim .topbar .demo{font-size:10px;background:rgba(0,0,0,.18);color:#fff;padding:4px 9px;border-radius:999px;font-weight:700;white-space:nowrap}
+  .chat-sim .body{padding:18px;background:var(--bg)}
+  .msg{margin-bottom:12px;display:flex}
+  .msg.user{justify-content:flex-end}
+  .bubble{max-width:90%;padding:11px 15px;border-radius:16px;font-size:13.5px;line-height:1.6}
+  .msg.user .bubble{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;border-bottom-right-radius:4px}
+  .msg.ai .bubble{background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+  .trace{background:var(--primary-light);border:1px dashed rgba(244,162,97,.5);border-radius:12px;padding:11px 13px;margin-bottom:10px}
+  .trace .t-title{font-weight:700;color:var(--primary-deep);margin-bottom:7px;font-size:12.5px}
+  .trace .t-item{display:flex;align-items:center;gap:8px;padding:2px 0;color:var(--ink-soft);font-size:12.5px}
+  .trace .t-item .ok{color:var(--mint);font-weight:900}
+  .cards-inline{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+  .info-chip{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:12.5px;flex:1;min-width:118px}
+  .info-chip .ic-lbl{color:var(--ink-faint);font-size:11px}
+  .info-chip .ic-val{font-weight:800;color:var(--ink)}
+  .ref{font-size:11.5px;color:var(--ink-faint);margin-top:7px}
+
+  .merge{margin-top:30px}
+  .merge-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+  .sources{display:flex;flex-direction:column;gap:12px}
+  .src{padding:14px 16px;border-radius:var(--r-sm);background:#fff;border:1px solid var(--line);font-size:13px;color:var(--ink-soft)}
+  .src .who{color:var(--ink);font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .src .raw{font-size:12px;color:var(--ink-faint);font-style:italic}
+  .merge-arrow{font-size:24px;color:var(--primary-deep);text-align:center;animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.12)}}
+  .merged{padding:22px 20px;border-radius:var(--r);text-align:center;background:linear-gradient(180deg,rgba(42,157,143,.14),#fff);border:1px solid rgba(42,157,143,.4)}
+  .merged .ic{font-size:28px;margin-bottom:8px}
+  .merged h4{font-size:15px;color:var(--mint-deep);margin-bottom:6px}
+  .merged .one{font-size:13px;color:var(--ink-soft)}
+  .merged .chan{display:inline-block;margin-top:12px;font-size:12px;color:var(--mint-deep);font-weight:700;padding:5px 14px;border-radius:999px;background:rgba(42,157,143,.12);border:1px solid rgba(42,157,143,.35)}
+
+  .timestrip-wrap{margin-top:30px;border-radius:var(--r);padding:24px 22px;background:linear-gradient(135deg,rgba(233,166,160,.1),#fff);border:1px solid var(--line-rose)}
+  .timestrip-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .timestrip-head .t-band{font-size:13px;font-weight:700;color:var(--rose-deep);padding:5px 13px;border-radius:999px;background:rgba(233,166,160,.12);border:1px solid var(--line-rose)}
+  .timestrip-head .scene{font-size:12.5px;color:var(--ink-faint)}
+  .timestrip{display:flex;gap:0;align-items:flex-end;margin-top:20px;overflow-x:auto;padding-bottom:8px}
+  .frame{position:relative;flex:1;min-width:92px;text-align:center;padding:0 6px}
+  .frame:not(:last-child)::after{content:"→";position:absolute;right:-7px;bottom:42px;color:var(--rose-deep);font-size:15px;opacity:.7}
+  .frame .photo{margin:0 auto 10px;border-radius:14px;display:grid;place-items:center;background:radial-gradient(circle at 42% 35%,#fbe2d6,#f3b89e);border:2px solid rgba(255,255,255,.7);box-shadow:0 8px 20px -10px rgba(160,90,40,.5);overflow:hidden}
+  .frame .cat{line-height:1}
+  .frame.d1 .photo{width:48px;height:48px}.frame.d1 .cat{font-size:22px}
+  .frame.d2 .photo{width:58px;height:58px}.frame.d2 .cat{font-size:27px}
+  .frame.d3 .photo{width:68px;height:68px}.frame.d3 .cat{font-size:32px}
+  .frame.d4 .photo{width:80px;height:80px}.frame.d4 .cat{font-size:38px}
+  .frame.d5 .photo{width:94px;height:94px}.frame.d5 .cat{font-size:46px}
+  .frame .day{font-size:13px;font-weight:800;color:var(--rose-deep);font-variant-numeric:tabular-nums}
+  .frame .cap{font-size:11px;color:var(--ink-faint);margin-top:3px;line-height:1.4}
+  .timestrip-note{font-size:12.5px;color:var(--ink-soft);margin-top:18px;line-height:1.6}
+  .timestrip-note strong{color:var(--rose-deep)}
+
+  .metrics{margin-top:30px;padding:34px 28px;border-radius:var(--r);background:linear-gradient(135deg,#5C544E,#3f3a35);color:#fff;position:relative;overflow:hidden}
+  .metrics h3{font-size:20px;color:#fff;margin-bottom:6px}
+  .metrics .mz{font-size:13px;letter-spacing:.2em;opacity:.65;margin-bottom:26px}
+  .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .metric{padding-left:16px;border-left:2px solid var(--primary)}
+  .metric .num{font-size:38px;font-weight:800;line-height:1}
+  .metric .num small{font-size:16px;color:var(--primary);margin-left:3px}
+  .metric .lbl{margin-top:8px;font-size:12.5px;color:var(--primary-light);opacity:.85}
+
+  .story{margin-top:24px;display:grid;gap:16px}
+  .story .para{padding:18px 22px;border-radius:var(--r-sm);background:#fff;border-left:3px solid var(--primary);font-size:14.5px;color:var(--ink-soft)}
+  .story .para.rose{border-left-color:var(--rose)}
+  .story .para strong{color:var(--ink);font-weight:600}
+
+  .tech{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px}
+  .tech-tag{background:#fff;border:1px solid var(--line);padding:10px 18px;border-radius:999px;font-size:13.5px;color:var(--ink-soft)}
+  .tech-tag b{color:var(--primary-deep)}
+
+  /* ===== 陪玩 · 数据闭环 ===== */
+  .loop{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:30px;align-items:center}
+  .loop-node{display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink)}
+  .loop-node .ic{font-size:16px}
+  .loop-arrow{color:var(--primary-deep);font-size:16px;font-weight:bold}
+  .loop-node.hl{background:var(--primary-light);border-color:rgba(244,162,97,.5);color:var(--primary-deep)}
+
+  /* ===== 陪玩推荐卡仿真 ===== */
+  .play-stage{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px}
+  @media(max-width:720px){.play-stage{grid-template-columns:1fr}}
+  .play-card{border-radius:var(--r);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);overflow:hidden}
+  .play-card .pc-top{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+  .play-card .pc-name{font-weight:800;font-size:16px;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .play-card .pc-cat{font-size:11px;padding:3px 10px;border-radius:999px;background:var(--primary-light);color:var(--primary-deep);font-weight:700}
+  .play-card .pc-score{font-size:13px;font-weight:800;color:var(--mint-deep);background:rgba(42,157,143,.1);padding:4px 11px;border-radius:999px}
+  .play-card .pc-body{padding:16px 18px}
+  .play-card .pc-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin-bottom:12px}
+  .play-card .pc-meta b{color:var(--ink)}
+  .play-card .pc-reasons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .play-card .reason{font-size:11.5px;padding:4px 10px;border-radius:999px;background:var(--bg-warm);color:var(--ink-soft);border:1px solid var(--line)}
+  /* 子分数条 */
+  .scorebar{display:flex;flex-direction:column;gap:7px}
+  .sb-row{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--ink-soft)}
+  .sb-row .sb-lbl{width:58px;flex:none}
+  .sb-track{flex:1;height:7px;border-radius:99px;background:var(--bg-warm);overflow:hidden}
+  .sb-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--primary-deep))}
+  .sb-row .sb-val{width:30px;text-align:right;font-weight:700;color:var(--ink)}
+  .pc-stars{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink-faint)}
+  .pc-stars .stars{color:var(--primary);font-size:15px;letter-spacing:2px}
+  /* 健康禁忌兜底卡 */
+  .safety{margin-top:30px;border-radius:var(--r);padding:22px 24px;background:linear-gradient(135deg,rgba(42,157,143,.1),#fff);border:1px solid rgba(42,157,143,.3);display:flex;gap:16px;align-items:flex-start}
+  .safety .s-ic{font-size:30px;flex:none}
+  .safety h4{font-size:16px;color:var(--mint-deep);margin-bottom:6px}
+  .safety p{font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+  .safety .s-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .safety .s-tag{font-size:11.5px;padding:4px 11px;border-radius:999px;background:#fff;border:1px solid rgba(42,157,143,.3);color:var(--mint-deep);font-weight:600}
+
+  /* ===== 可交互通用 ===== */
+  .live{margin-top:30px;border-radius:var(--r);background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+  .live-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff}
+  .live-head .lh-l{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
+  .live-head .lh-tag{font-size:10.5px;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+  .live-body{padding:20px}
+  .try-hint{font-size:12px;color:var(--primary-deep);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .try-hint::before{content:"👆";font-size:14px}
+
+  /* 交互1 · 喵喵医生 */
+  .ask-btns{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:8px}
+  .ask-btn{font-size:13px;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;transition:all .2s;font-weight:600}
+  .ask-btn:hover{border-color:var(--primary);background:var(--primary-light);transform:translateY(-2px)}
+  .ask-btn.active{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;border-color:transparent}
+  .ask-stage{margin-top:16px;min-height:60px}
+  .ask-stage .ask-empty{color:var(--ink-faint);font-size:13.5px;text-align:center;padding:24px 0}
+  .ask-q{display:flex;justify-content:flex-end;margin-bottom:12px}
+  .ask-q .b{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;padding:10px 15px;border-radius:16px;border-bottom-right-radius:4px;font-size:13.5px;max-width:85%}
+  .ask-trace{background:var(--primary-light);border:1px dashed rgba(244,162,97,.5);border-radius:12px;padding:11px 13px;margin-bottom:10px}
+  .ask-trace .tt{font-weight:700;color:var(--primary-deep);font-size:12.5px;margin-bottom:7px}
+  .ask-step{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);padding:3px 0;opacity:0;transform:translateX(-8px);transition:all .35s}
+  .ask-step.show{opacity:1;transform:translateX(0)}
+  .ask-step .ok{color:var(--mint);font-weight:900}
+  .ask-step.run .ok{color:var(--primary-deep);animation:spin 1s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .ask-ans{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13.5px;color:var(--ink);opacity:0;transform:translateY(8px);transition:all .4s}
+  .ask-ans.show{opacity:1;transform:translateY(0)}
+  .ask-ans .a-cards{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .ask-ans .a-chip{flex:1;min-width:120px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+  .ask-ans .a-chip .l{font-size:10.5px;color:var(--ink-faint)}
+  .ask-ans .a-chip .v{font-size:13px;font-weight:800;color:var(--ink)}
+  .ask-ans .a-ref{font-size:11px;color:var(--ink-faint);margin-top:8px}
+
+  /* 交互2 · 陪玩滑块 */
+  .ctrl{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
+  @media(max-width:560px){.ctrl{grid-template-columns:1fr}}
+  .ctrl-item label{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  .ctrl-item label .val{color:var(--primary-deep)}
+  input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:99px;background:var(--bg-warm);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-deep));cursor:pointer;box-shadow:0 2px 6px rgba(231,111,81,.4);border:2px solid #fff}
+  .rec-list{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .rec{display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:14px;background:var(--bg);border:1px solid var(--line);transition:all .45s cubic-bezier(.2,.7,.2,1)}
+  .rec.top{background:linear-gradient(135deg,var(--primary-light),#fff);border-color:rgba(244,162,97,.5)}
+  .rec.blocked{opacity:.55;background:repeating-linear-gradient(45deg,#f7f3ee,#f7f3ee 8px,#f1ece4 8px,#f1ece4 16px)}
+  .rec .r-emoji{font-size:26px;flex:none}
+  .rec .r-main{flex:1;min-width:0}
+  .rec .r-name{font-size:14.5px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .rec .r-cat{font-size:10.5px;padding:2px 9px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--ink-soft);font-weight:600}
+  .rec .r-meta{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
+  .rec .r-bar{margin-top:7px;height:6px;border-radius:99px;background:var(--bg-warm);overflow:hidden}
+  .rec .r-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--primary-deep));transition:width .5s}
+  .rec .r-score{flex:none;text-align:center}
+  .rec .r-score .n{font-size:22px;font-weight:900;color:var(--primary-deep);line-height:1;font-variant-numeric:tabular-nums}
+  .rec .r-score .t{font-size:10px;color:var(--ink-faint)}
+  .rec.blocked .r-score .n{color:var(--ink-faint);font-size:15px}
+  .rec .r-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px}
+  .badge-top{background:var(--primary-deep);color:#fff}
+  .badge-block{background:rgba(42,157,143,.12);color:var(--mint-deep);border:1px solid rgba(42,157,143,.3)}
+  .health-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .h-tab{font-size:12px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;font-weight:600;transition:all .2s}
+  .h-tab:hover{border-color:var(--mint)}
+  .h-tab.on{background:rgba(42,157,143,.12);border-color:var(--mint);color:var(--mint-deep)}
+
+  /* 交互3 · 体重曲线 */
+  .cat-tabs{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+  .cat-tab{display:flex;align-items:center;gap:7px;font-size:13px;padding:8px 15px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-weight:600;transition:all .2s}
+  .cat-tab:hover{border-color:var(--primary)}
+  .cat-tab.on{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;border-color:transparent}
+  .chart-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:center}
+  @media(max-width:560px){.chart-wrap{grid-template-columns:1fr}}
+  .chart{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px 14px 8px}
+  .chart svg{width:100%;height:auto;display:block;overflow:visible}
+  .chart .dot{cursor:pointer;transition:r .2s}
+  .chart .dot:hover{r:7}
+  .wt-info{display:flex;flex-direction:column;gap:12px}
+  .wt-info .big{font-size:34px;font-weight:900;color:var(--ink);line-height:1}
+  .wt-info .big small{font-size:15px;color:var(--ink-soft);font-weight:600}
+  .wt-info .sub{font-size:12.5px;color:var(--ink-faint)}
+  .wt-health{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;width:fit-content}
+  .wt-health.ok{background:rgba(42,157,143,.12);color:var(--mint-deep);border:1px solid rgba(42,157,143,.3)}
+  .wt-health.over{background:var(--primary-light);color:var(--primary-deep);border:1px solid rgba(244,162,97,.5)}
+  .wt-std{font-size:12px;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;line-height:1.6}
+  .wt-std b{color:var(--ink)}
+
+  /* 交互4 · 多猫对比 */
+  .pick-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px}
+  .pick{display:flex;align-items:center;gap:8px;font-size:13px;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-weight:600;transition:all .2s;user-select:none}
+  .pick:hover{border-color:var(--primary)}
+  .pick.on{background:linear-gradient(135deg,var(--primary),var(--primary-deep));color:#fff;border-color:transparent;box-shadow:var(--shadow-sm)}
+  .pick .box{width:15px;height:15px;border-radius:4px;border:1.5px solid currentColor;display:grid;place-items:center;font-size:11px}
+  .pick.on .box{background:#fff;color:var(--primary-deep)}
+  .pick-tip{font-size:11.5px;color:var(--ink-faint);margin:10px 0 14px}
+  .cmp-table{width:100%;border-collapse:collapse;font-size:13px;overflow:hidden;border-radius:14px;border:1px solid var(--line)}
+  .cmp-table th,.cmp-table td{padding:11px 12px;text-align:center;border-bottom:1px solid var(--line)}
+  .cmp-table thead th{background:var(--primary-light);color:var(--primary-deep);font-weight:800;font-size:12.5px}
+  .cmp-table tbody th{text-align:left;color:var(--ink-soft);font-weight:600;background:var(--bg);font-size:12px;white-space:nowrap}
+  .cmp-table .cat-h{font-weight:800;color:var(--ink)}
+  .cmp-table .cat-h .b{display:block;font-size:11px;color:var(--ink-faint);font-weight:500}
+  .cmp-bar{height:8px;border-radius:99px;background:var(--bg-warm);overflow:hidden;margin-top:5px}
+  .cmp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--primary),var(--primary-deep));transition:width .5s}
+  .hbadge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+  .hbadge.ok{background:rgba(42,157,143,.12);color:var(--mint-deep)}
+  .hbadge.over{background:var(--primary-light);color:var(--primary-deep)}
+  .hbadge.thin{background:rgba(110,193,228,.16);color:#3a86a8}
+  .cmp-summary{margin-top:16px;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,var(--primary-light),#fff);border:1px solid var(--line);font-size:13px;color:var(--ink);line-height:1.7}
+  .cmp-summary b{color:var(--primary-deep)}
+  .cmp-empty{text-align:center;color:var(--ink-faint);font-size:13.5px;padding:24px 0}
+
+  footer{padding:58px 0 86px;text-align:center;border-top:1px solid var(--line);margin-top:40px}
+  .footer-tagline{font-size:clamp(18px,3.6vw,24px);color:var(--ink);font-weight:700;margin-bottom:18px;line-height:1.5}
+  .footer-tagline .hl{color:var(--primary-deep)}
+  .race-tags{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+  .race-tag{font-size:14px;font-weight:600;padding:10px 22px;border-radius:999px;background:var(--primary-light);border:1px solid var(--line);color:var(--primary-deep)}
+  .footer-note{font-size:12px;color:var(--ink-faint);max-width:580px;margin:0 auto;line-height:1.7}
+  .divider-quote{text-align:center;font-size:clamp(16px,3.2vw,20px);color:var(--ink);font-weight:500;line-height:1.7;max-width:680px;margin:8px auto 0;font-style:italic}
+
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:translateY(0)}
+
+  @media(max-width:720px){
+    section{padding:46px 0}
+    .flow{grid-template-columns:1fr 1fr}
+    .flow-step:nth-child(1){border-radius:var(--r) 0 0 0}
+    .flow-step:nth-child(2){border-radius:0 var(--r) 0 0;border-left:none}
+    .flow-step:nth-child(3){border-radius:0 0 0 var(--r);border-top:none}
+    .flow-step:nth-child(4){border-radius:0 0 var(--r) 0;border-left:none;border-top:none}
+    .flow-step:nth-child(2)::after,.flow-step:nth-child(4)::after{display:none}
+    .flow-step:nth-child(1)::after,.flow-step:nth-child(3)::after{content:"↓";right:auto;left:50%;top:auto;bottom:-11px;transform:translateX(-50%)}
+    .values{grid-template-columns:1fr}
+    .merge-grid{grid-template-columns:1fr}
+    .merge-arrow{transform:rotate(90deg)}
+    .metric-grid{grid-template-columns:1fr 1fr}
+    .frame{min-width:76px}
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-flag">演示数据 · 猫咪信息均为虚构</div>
+<div class="paw" style="left:10%;animation-duration:20s">🐾</div>
+<div class="paw" style="left:40%;animation-duration:26s;animation-delay:5s">🐾</div>
+<div class="paw" style="left:72%;animation-duration:23s;animation-delay:8s">🐾</div>
+<div class="paw" style="left:88%;animation-duration:28s;animation-delay:3s">🐾</div>
+
+<!-- ===== HERO ===== -->
+<header class="hero wrap">
+  <div class="mascot-hero">
+    <div class="halo"></div>
+    <img src="../frontend/src/assets/mascot/focused.png" alt="喵喵医生" />
+  </div>
+  <div class="seal">TRAE AI 创造力大赛 · 参赛作品</div>
+  <h1>哈吉咪养成计划</h1>
+  <p class="slogan">一个真正「懂你家这只猫」的 AI 养护伙伴</p>
+  <p class="empathy">第一次养猫的那天，你对着满屏「标准答案」却越看越慌：它今天少吃了两口、是不是病了？这个体重到底正不正常？疫苗到底打没打？通用 AI 答得头头是道，却唯独不认识——你家这一只猫。</p>
+  <div class="vs-banner">
+    <div class="vs-line"><span class="dim">别的养猫 App 帮你「记录」猫，</span><br/>哈吉咪帮你 <span class="hot">读懂</span> 猫——尤其是市面上几乎没人做的：<span class="hot">根据它的性格和状态，告诉你此刻该怎么陪它玩。</span></div>
+    <span class="vs-tag">✦ 同品类调研：体重/疫苗记录是标配，「个性化陪玩教练」近乎空白</span>
+  </div>
+  <div class="tagchips">
+    <span class="chip warm">🤖 AI Agent 顾问</span>
+    <span class="chip warm">⭐ 个性化陪玩教练</span>
+    <span class="chip green">📊 体重健康可视化</span>
+    <span class="chip green">📚 知识库溯源</span>
+    <span class="chip rose">🎞️ 成长时间线</span>
+    <span class="chip">多猫管理 · 一键对比</span>
+  </div>
+  <div class="two-lights">
+    <span class="light-pill"><span class="em">🔆</span>第一束 · 读懂当下的它（智能线）</span>
+    <span class="light-pill rose"><span class="em">🌙</span>第二束 · 陪它走过每一天（陪伴线）</span>
+  </div>
+</header>
+
+<!-- ===== 核心链路 ===== -->
+<section class="wrap">
+  <span class="eyebrow">一句话，到一份有据可查的建议</span>
+  <h2 class="title">不是套壳聊天，<span class="sub">而是像真正的顾问一步步思考</span></h2>
+  <p class="lead">喵喵医生基于 ReAct（Reasoning + Acting）模式：先听懂你问什么，再决定查哪些数据，最后给出基于你猫咪真实档案、可溯源的个性化建议。</p>
+  <div class="flow card">
+    <div class="flow-step"><span class="num">1</span><span class="ic">🧠</span><h4>意图识别</h4><p>分类问题类型，提取实体：哪只猫、问什么</p></div>
+    <div class="flow-step"><span class="num">2</span><span class="ic">🧭</span><h4>工具规划</h4><p>动态决定调用：档案 / 体重 / 疫苗 / 知识库</p></div>
+    <div class="flow-step"><span class="num">3</span><span class="ic">⚙️</span><h4>编排执行</h4><p>依次调用工具，结构化输出，流式展示进度</p></div>
+    <div class="flow-step"><span class="num">4</span><span class="ic">💡</span><h4>生成建议</h4><p>融合数据与 RAG 知识，个性化、可溯源</p></div>
+  </div>
+</section>
+
+<!-- ===== 第一束光 · 智能线 ===== -->
+<section class="wrap">
+  <div class="pillar-head"><span class="badge warm">🔆 第一束光 · 智能线</span></div>
+  <h2 class="title">把「科学养猫」的门槛，<span class="sub">降到「问一句话、看一眼卡片就行」</span></h2>
+  <div class="grid">
+    <div class="feat"><div class="ic">🤖</div><h4>喵喵医生 AI 顾问</h4><p>多工具编排、执行轨迹可视化、智能 / 普通双模式，建议基于你家这只猫的真实档案。</p></div>
+    <div class="feat"><div class="ic">📊</div><h4>体重健康可视化</h4><p>体重趋势曲线 + 品种标准对照 + 健康徽章，偏胖偏瘦一目了然，不再凭感觉。</p></div>
+    <div class="feat"><div class="ic">📚</div><h4>知识库溯源</h4><p>187 个知识块、20 个养护指南，建议附带引用来源，点击可跳转原文，不怕 AI 胡说。</p></div>
+    <div class="feat"><div class="ic">💉</div><h4>疫苗到期提醒</h4><p>集中管理接种记录，临近到期主动提醒，喵喵医生也能随口查「它该打疫苗了吗」。</p></div>
+    <div class="feat"><div class="ic">🐱</div><h4>多猫档案管理</h4><p>一个账户管理多只猫，切换猫咪时全应用上下文跟随——问「它」，总是当前这只。</p></div>
+    <div class="feat"><div class="ic">⭐</div><h4>个性化陪玩教练</h4><p>按性格、精力、健康加权打分推荐游戏，反馈驱动越用越懂，是本作最独特的差异化能力。</p></div>
+  </div>
+</section>
+
+<!-- ===== 对话仿真 ===== -->
+<section class="wrap">
+  <span class="eyebrow">示意版 · 喵喵医生对话</span>
+  <h2 class="title">问一句话，<span class="sub">看 AI 一步步读档案、查体重、查疫苗</span></h2>
+  <p class="lead">以下为视觉仿真，全部为演示数据，猫咪「奶糖」为虚构角色。注意中间那段「执行轨迹」——这是喵喵医生执行流程的可视化，让每条建议都有据可查。</p>
+  <div class="phone-stage">
+    <div class="chat-sim">
+      <div class="topbar">
+        <div class="l">
+          <div class="av"><img src="../frontend/src/assets/mascot/default.png" alt="喵喵医生"></div>
+          <div><h3>喵喵医生 · 智能模式</h3><div class="meta">当前猫咪：奶糖 · 英短 · 2岁3个月</div></div>
+        </div>
+        <span class="demo">演示数据</span>
+      </div>
+      <div class="body">
+        <div class="msg user"><div class="bubble">奶糖最近体重正常吗？该打疫苗了吗？</div></div>
+        <div class="msg ai">
+          <div class="bubble">
+            <div class="trace">
+              <div class="t-title">▼ 执行轨迹</div>
+              <div class="t-item"><span class="ok">✓</span> 识别意图 → 健康咨询 + 疫苗查询</div>
+              <div class="t-item"><span class="ok">✓</span> 读取猫咪档案（奶糖 · 英短 · 公）</div>
+              <div class="t-item"><span class="ok">✓</span> 分析体重趋势 + 套用品种标准</div>
+              <div class="t-item"><span class="ok">✓</span> 检查疫苗记录 → 计算下次到期</div>
+              <div class="t-item"><span class="ok">✓</span> 检索知识库《疫苗接种指南》</div>
+            </div>
+            <div class="cards-inline">
+              <div class="info-chip"><div class="ic-lbl">🐱 奶糖 · 健康</div><div class="ic-val">4.52kg · 偏差 +0.12</div></div>
+              <div class="info-chip"><div class="ic-lbl">💉 下次疫苗</div><div class="ic-val">18 天后到期</div></div>
+            </div>
+            根据奶糖的体重趋势，本周保持稳定，处在英短公猫的健康区间内，暂时无需调整喂养。疫苗方面，距离下次接种还有 18 天，建议提前预约。
+            <div class="ref">📚 知识参考：《英短养护指南》《疫苗接种指南》（演示）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 差异化 · 宠物陪玩教练 ===== -->
+<section class="wrap">
+  <div class="pillar-head"><span class="badge warm">⭐ 差异化亮点 · 宠物陪玩教练</span></div>
+  <h2 class="title">不止看健康，<span class="sub">还懂怎么陪它好好玩</span></h2>
+  <p class="lead">这是哈吉咪最独特的能力：它不是一份冷冰冰的游戏清单，而是一个会「越用越懂你家猫」的陪玩 Agent——给猫建个性档案，按性格、精力、健康加权打分推荐游戏，再用你的反馈不断学习，形成「推荐 → 反馈 → 学习 → 优化」的数据闭环。</p>
+
+  <div class="loop">
+    <span class="loop-node"><span class="ic">🐾</span>宠物画像</span>
+    <span class="loop-arrow">→</span>
+    <span class="loop-node hl"><span class="ic">🎯</span>加权推荐</span>
+    <span class="loop-arrow">→</span>
+    <span class="loop-node"><span class="ic">▶️</span>采纳陪玩</span>
+    <span class="loop-arrow">→</span>
+    <span class="loop-node"><span class="ic">⭐</span>反馈打分</span>
+    <span class="loop-arrow">→</span>
+    <span class="loop-node"><span class="ic">🧠</span>偏好学习</span>
+    <span class="loop-arrow">↻</span>
+    <span class="loop-node"><span class="ic">🔔</span>主动提醒</span>
+  </div>
+
+  <p class="lead" style="margin-top:34px">示意版 · 输入「奶糖有点累，我只有 10 分钟」，看推荐怎么按 <b>性格 35% · 精力 25% · 时间 20% · 偏好 20%</b> 打分排序：</p>
+  <div class="play-stage">
+    <div class="play-card">
+      <div class="pc-top">
+        <div class="pc-name">🪶 羽毛钓鱼 <span class="pc-cat">狩猎</span></div>
+        <span class="pc-score">92 分</span>
+      </div>
+      <div class="pc-body">
+        <div class="pc-meta"><span>⏱ <b>10 分钟</b></span><span>💪 强度 <b>4/5</b></span><span>🎣 道具：逗猫棒</span></div>
+        <div class="pc-reasons">
+          <span class="reason">匹配「活泼好动」性格</span>
+          <span class="reason">刚好 10 分钟</span>
+        </div>
+        <div class="scorebar">
+          <div class="sb-row"><span class="sb-lbl">性格</span><span class="sb-track"><span class="sb-fill" style="width:100%"></span></span><span class="sb-val">100</span></div>
+          <div class="sb-row"><span class="sb-lbl">精力</span><span class="sb-track"><span class="sb-fill" style="width:75%"></span></span><span class="sb-val">75</span></div>
+          <div class="sb-row"><span class="sb-lbl">时间</span><span class="sb-track"><span class="sb-fill" style="width:100%"></span></span><span class="sb-val">100</span></div>
+          <div class="sb-row"><span class="sb-lbl">偏好</span><span class="sb-track"><span class="sb-fill" style="width:60%"></span></span><span class="sb-val">60</span></div>
+        </div>
+        <div class="pc-stars"><span>玩完打个分？</span><span class="stars">★★★★★</span></div>
+      </div>
+    </div>
+    <div class="play-card">
+      <div class="pc-top">
+        <div class="pc-name">🧩 食物谜题 <span class="pc-cat">益智</span></div>
+        <span class="pc-score">78 分</span>
+      </div>
+      <div class="pc-body">
+        <div class="pc-meta"><span>⏱ <b>15 分钟</b></span><span>💪 强度 <b>2/5</b></span><span>🍖 道具：漏食球</span></div>
+        <div class="pc-reasons">
+          <span class="reason">精力档位接近（它有点累）</span>
+          <span class="reason">低强度更适合当下</span>
+        </div>
+        <div class="scorebar">
+          <div class="sb-row"><span class="sb-lbl">性格</span><span class="sb-track"><span class="sb-fill" style="width:70%"></span></span><span class="sb-val">70</span></div>
+          <div class="sb-row"><span class="sb-lbl">精力</span><span class="sb-track"><span class="sb-fill" style="width:95%"></span></span><span class="sb-val">95</span></div>
+          <div class="sb-row"><span class="sb-lbl">时间</span><span class="sb-track"><span class="sb-fill" style="width:70%"></span></span><span class="sb-val">70</span></div>
+          <div class="sb-row"><span class="sb-lbl">偏好</span><span class="sb-track"><span class="sb-fill" style="width:60%"></span></span><span class="sb-val">60</span></div>
+        </div>
+        <div class="pc-stars"><span>玩完打个分？</span><span class="stars">★★★★★</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="safety">
+    <span class="s-ic">🛡️</span>
+    <div>
+      <h4>健康禁忌是「硬过滤」，再高分也不会推</h4>
+      <p>老年猫、术后、幼猫、肥胖等健康标签会作为安全底线优先生效：比如术后猫绝不会被推荐高强度的激光追逐，幼猫不会被推猫薄荷。候选不足时还有三层降级兜底，确保「安全」永远排在「好玩」前面。</p>
+      <div class="s-tags">
+        <span class="s-tag">老年猫 · 禁高强度</span>
+        <span class="s-tag">术后 30 天 · 禁拉扯</span>
+        <span class="s-tag">幼猫 · 禁猫薄荷</span>
+        <span class="s-tag">不构成兽医诊疗建议</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 可交互体验区 ===== -->
+<section class="wrap">
+  <span class="eyebrow">🖐️ 动手玩玩 · 可交互演示</span>
+  <h2 class="title">不止是看，<span class="sub">下面这三块你可以直接上手体验</span></h2>
+  <p class="lead">以下为前端交互示意（演示数据），让你直观感受哈吉咪「读懂你家猫」的三种核心能力——点一点、拖一拖，看结果实时变化。</p>
+
+  <!-- 交互1：喵喵医生 -->
+  <div class="live">
+    <div class="live-head">
+      <div class="lh-l">🤖 喵喵医生 · 点一个问题试试</div>
+      <span class="lh-tag">交互演示</span>
+    </div>
+    <div class="live-body">
+      <div class="try-hint">点击下面任意问题，看 AI 一步步思考</div>
+      <div class="ask-btns" id="askBtns">
+        <button class="ask-btn" data-q="0">奶糖最近体重正常吗？</button>
+        <button class="ask-btn" data-q="1">它该打疫苗了吗？</button>
+        <button class="ask-btn" data-q="2">它有点没精神，要紧吗？</button>
+      </div>
+      <div class="ask-stage" id="askStage">
+        <div class="ask-empty">👆 选一个问题，喵喵医生开始工作</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 交互2：陪玩教练滑块 -->
+  <div class="live">
+    <div class="live-head">
+      <div class="lh-l">⭐ 陪玩教练 · 拖动滑块，推荐实时变</div>
+      <span class="lh-tag">交互演示</span>
+    </div>
+    <div class="live-body">
+      <div class="try-hint">调节奶糖此刻的「精力」和你的「可用时间」，看游戏怎么重新打分排序</div>
+      <div class="ctrl">
+        <div class="ctrl-item">
+          <label>🔋 猫咪当前精力 <span class="val" id="energyVal">中（50）</span></label>
+          <input type="range" id="energy" min="0" max="100" value="50" />
+        </div>
+        <div class="ctrl-item">
+          <label>⏱ 你的可用时间 <span class="val" id="timeVal">10 分钟</span></label>
+          <input type="range" id="time" min="5" max="30" step="5" value="10" />
+        </div>
+      </div>
+      <div class="health-tabs" id="healthTabs">
+        <span style="font-size:12px;color:var(--ink-soft);align-self:center;margin-right:4px">健康标签：</span>
+        <button class="h-tab on" data-h="none">健康成年</button>
+        <button class="h-tab" data-h="post">术后恢复</button>
+        <button class="h-tab" data-h="senior">老年猫</button>
+        <button class="h-tab" data-h="kitten">幼猫</button>
+      </div>
+      <div class="rec-list" id="recList"></div>
+    </div>
+  </div>
+
+  <!-- 交互3：体重曲线 -->
+  <div class="live">
+    <div class="live-head">
+      <div class="lh-l">📊 体重曲线 · 切换猫咪 / 点数据点</div>
+      <span class="lh-tag">交互演示</span>
+    </div>
+    <div class="live-body">
+      <div class="try-hint">切换不同猫咪，或点击曲线上的圆点，看体重数据与健康判断</div>
+      <div class="cat-tabs" id="catTabs">
+        <button class="cat-tab on" data-cat="0">🐱 奶糖 · 英短</button>
+        <button class="cat-tab" data-cat="1">🐱 小白 · 布偶</button>
+        <button class="cat-tab" data-cat="2">🐱 花花 · 田园</button>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart"><svg id="wtSvg" viewBox="0 0 320 180" preserveAspectRatio="none"></svg></div>
+        <div class="wt-info">
+          <div>
+            <div class="big" id="wtBig">4.5<small>kg</small></div>
+            <div class="sub" id="wtSub">第 27 月 · 点击圆点查看各时间点</div>
+          </div>
+          <div class="wt-health ok" id="wtHealth">✓ 健康区间内</div>
+          <div class="wt-std" id="wtStd"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 多猫对比小演示（可交互） ===== -->
+<section class="wrap">
+  <span class="eyebrow">🖐️ 多猫健康对比 · 可交互</span>
+  <h2 class="title">多猫家庭，<span class="sub">勾选要对比的猫，一张表说清谁胖了谁瘦了</span></h2>
+  <p class="lead">同一个家里几只猫，体重、健康各不相同，散落各处难以比较。下面勾选 2–5 只猫，系统实时把它们放进同一维度横向对比（演示数据）。</p>
+  <div class="live">
+    <div class="live-head">
+      <div class="lh-l">🔀 选猫对比 · 实时生成</div>
+      <span class="lh-tag">交互演示</span>
+    </div>
+    <div class="live-body">
+      <div class="try-hint">点击下面的猫，把它加入/移出对比（至少选 1 只）</div>
+      <div class="pick-row" id="pickRow"></div>
+      <div class="pick-tip">已选 <b id="pickCount">3</b> 只 · 支持 2–5 只横向对比</div>
+      <div id="cmpResult"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== 第二束光 · 陪伴线 ===== -->
+<section class="wrap">
+  <div class="pillar-head"><span class="badge rose">🌙 第二束光 · 陪伴线</span></div>
+  <span class="eyebrow rose">养成时间线 · 成长记忆</span>
+  <h2 class="title">智能线管好「当下的健康」，<span class="sub-rose">陪伴线收藏「一起走过的日子」</span></h2>
+  <p class="lead">每一次记体重、记疫苗、记下它今天的小状态，都在悄悄拼成一条成长轨迹。养护不只是数据，更是你和它共同的时间。</p>
+  <div class="grid">
+    <div class="feat rose"><div class="ic">🎞️</div><h4>养成时间线</h4><p>体重、疫苗、状态备注按时间串成一条成长轨迹，每次记录自动更新趋势图。</p></div>
+    <div class="feat rose"><div class="ic">📈</div><h4>体重成长曲线 <span style="color:var(--rose-deep)">· 杀手锏</span></h4><p>从领养到现在的每一笔体重，连成一条专属曲线。这条纵深靠真实记录一天天积累，无法临场拼凑。</p></div>
+    <div class="feat rose"><div class="ic">🩺</div><h4>健康变化回溯</h4><p>结合历史记录，喵喵医生能判断「最近是不是瘦了」，而不只是看当下这一个数字。</p></div>
+  </div>
+
+  <div class="timestrip-wrap">
+    <div class="timestrip-head">
+      <span class="t-band">🎞️ 体重成长曲线</span>
+      <span class="scene">奶糖 · 领养至今 · 第1月 → 第27月（视觉示意，演示数据）</span>
+    </div>
+    <div class="timestrip">
+      <div class="frame d1"><div class="photo"><span class="cat">🐱</span></div><div class="day">第1月</div><div class="cap">1.2kg · 刚到家</div></div>
+      <div class="frame d2"><div class="photo"><span class="cat">🐱</span></div><div class="day">第6月</div><div class="cap">2.8kg · 长身体</div></div>
+      <div class="frame d3"><div class="photo"><span class="cat">🐱</span></div><div class="day">第12月</div><div class="cap">3.9kg · 成年了</div></div>
+      <div class="frame d4"><div class="photo"><span class="cat">🐱</span></div><div class="day">第18月</div><div class="cap">4.3kg · 稳了</div></div>
+      <div class="frame d5"><div class="photo"><span class="cat">🐱</span></div><div class="day">第27月</div><div class="cap">4.5kg · 健康</div></div>
+    </div>
+    <p class="timestrip-note">同一只猫，时间替你把每一笔记录串在一起。<strong>这条成长纵深无法临场造假，只能从今天起一天天攒——这正是技术为陪伴沉淀下的独有资产。</strong></p>
+  </div>
+</section>
+
+<!-- ===== 创意叙事 ===== -->
+<section class="wrap">
+  <span class="eyebrow">创意名称与介绍</span>
+  <h2 class="title">哈吉咪养成计划，<span class="sub">点亮两束光</span></h2>
+  <div class="story">
+    <div class="para">第一次养猫，最难的从来不是不够爱，而是<strong>「面对它，我却不知道什么才是对的」</strong>。网上的养猫知识铺天盖地，通用 AI 答得头头是道，可它们都不认识——你家这一只猫。</div>
+    <div class="para">于是有了「哈吉咪养成计划」与它的 AI 顾问「喵喵医生」。<strong>第一束光照亮当下的它</strong>：基于猫咪的品种、年龄、体重趋势与疫苗记录，喵喵医生一步步调用工具、检索专业知识库，给出个性化、可溯源、过程全程透明的养护建议；更进一步，<strong>「宠物陪玩教练」</strong>会按它的性格、精力与健康加权打分，告诉你此刻最该陪它玩什么，还会用你的反馈越学越懂——这是本作最独特的差异化能力。</div>
+    <div class="para rose"><strong>第二束光陪它走过每一天</strong>：每一次记录都沉淀进养成时间线，体重连成专属成长曲线，健康变化可回溯。养护的不只是数据，更是你和它一起走过的日子。</div>
+    <div class="para">愿这两束光，<strong>让每一个新手铲屎官都不必在慌乱里独自摸索，也让每一只猫，都被一种更懂它的方式好好照顾。</strong></div>
+  </div>
+</section>
+
+<!-- ===== 目标用户 & 痛点 ===== -->
+<section class="wrap">
+  <span class="eyebrow">目标用户与痛点</span>
+  <h2 class="title">面向新手与多猫铲屎官，<span class="sub">以及所有想把猫养得更科学的人</span></h2>
+  <p class="lead">场景就是日常养猫里那些具体的慌——</p>
+  <div class="pains">
+    <div class="pain"><div class="q">「这个体重到底正不正常？」</div><p>不同品种、年龄的标准差很多，全靠感觉判断，心里没底。</p></div>
+    <div class="pain"><div class="q">「它今天有点不对劲。」</div><p>遇到状况只能临时狂搜，信息碎片化，越查越慌。</p></div>
+    <div class="pain"><div class="q">「疫苗到底打没打、该打了吗？」</div><p>接种记录散落各处，下次到期全靠脑子记。</p></div>
+    <div class="pain"><div class="q">「通用 AI 又不认识我家猫。」</div><p>给的建议泛泛而谈，不知道适不适合自家这一只。</p></div>
+    <div class="pain"><div class="q">「买了一堆玩具，它却不爱玩。」</div><p>不知道猫的性格适合什么游戏，精力旺/累了该怎么陪，全凭瞎试。</p></div>
+    <div class="pain"><div class="q">「家里几只猫，记录各管各的。」</div><p>多只猫数据难以横向对比，看不清谁的状态在变化。</p></div>
+  </div>
+</section>
+
+<!-- ===== 价值 ===== -->
+<section class="wrap">
+  <span class="eyebrow">价值与意义</span>
+  <h2 class="title">把养猫的焦虑接走，<span class="sub">把易逝的陪伴留下</span></h2>
+  <div class="values">
+    <div class="value-card soc">
+      <h3>🤝 社会价值</h3>
+      <ul>
+        <li>把科学养猫门槛从「会查、会辨」降到<strong>「问一句、看一眼」</strong>。</li>
+        <li>用知识库溯源对抗碎片化伪科普，<strong>建议有据可查</strong>。</li>
+        <li>提升宠物福利，<strong>减少因养护不当导致的健康问题</strong>。</li>
+      </ul>
+    </div>
+    <div class="value-card emo">
+      <h3>💗 情感价值</h3>
+      <ul>
+        <li>成长时间线替你<strong>「记住」并「回看」</strong>它一点点长大的样子。</li>
+        <li>体重成长曲线靠<strong>真实记录的纵深</strong>，是无法临场拼凑的独有资产。</li>
+        <li>让养护从「应付任务」变成<strong>「共同的陪伴」</strong>。</li>
+      </ul>
+    </div>
+    <div class="value-card eff">
+      <h3>⚡ 效率价值</h3>
+      <ul>
+        <li><strong>个性化建议</strong>，基于真实档案，不再大海捞针。</li>
+        <li><strong>陪玩教练加权推荐</strong>，性格/精力/时间一次算清，不再纠结今天玩什么。</li>
+        <li><strong>执行轨迹可视化</strong>，AI 怎么得出结论一清二楚。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <h3>作品现状</h3>
+    <div class="mz">已实现 · 可在线体验</div>
+    <div class="metric-grid">
+      <div class="metric"><div class="num">10<small>+</small></div><div class="lbl">Agent 工具</div></div>
+      <div class="metric"><div class="num">187<small></small></div><div class="lbl">知识块</div></div>
+      <div class="metric"><div class="num">20<small></small></div><div class="lbl">养护指南</div></div>
+      <div class="metric"><div class="num">全栈<small></small></div><div class="lbl">已云端部署</div></div>
+    </div>
+  </div>
+
+  <div class="tech">
+    <span class="tech-tag"><b>前端</b> Vue 3 · Vite · Pinia · TailwindCSS · PWA</span>
+    <span class="tech-tag"><b>后端</b> Express · TypeScript · Prisma</span>
+    <span class="tech-tag"><b>AI</b> LLM Agent · ReAct · RAG · 向量检索</span>
+    <span class="tech-tag"><b>测试</b> Vitest · Playwright E2E</span>
+    <span class="tech-tag"><b>部署</b> Vercel · 云端可访问</span>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="wrap">
+  <p class="divider-quote">「它不是又一个泛泛而谈的养猫助手，<br>而是一个真正认识你家这只猫、也陪它一起长大的伙伴。」</p>
+  <p class="footer-tagline" style="margin-top:28px">一束读懂当下的它 · <span class="hl">一束陪它走过每一天</span></p>
+  <div class="race-tags"><span class="race-tag">🏷️ 生活娱乐赛道</span></div>
+  <p class="footer-note">本页随帖展示「哈吉咪养成计划」创意产物。为保护隐私，页内所有猫咪信息（奶糖 / 小白 / 花花、体重、疫苗等）均为<strong style="color:var(--primary-deep)">演示数据 · 纯属虚构</strong>；吉祥物为项目原创角色「胖虎」。知识卡文案为示意内容，不构成兽医诊疗建议。</p>
+</footer>
+
+<script>
+  /* ===== 交互1：喵喵医生 ===== */
+  const ASKS = [
+    {
+      q:"奶糖最近体重正常吗？",
+      steps:["识别意图 → 健康咨询","读取猫咪档案（奶糖 · 英短 · 公）","分析体重趋势 + 套用品种标准","检索知识库《英短养护指南》"],
+      chips:[["🐱 当前体重","4.52kg"],["📐 品种标准","4.0–5.0kg"],["📊 偏差","+0.12（正常）"]],
+      ans:"奶糖本周体重保持稳定，处在英短公猫的健康区间内，暂时无需调整喂养。建议保持每周称重的习惯，关注趋势变化。",
+      ref:"📚 知识参考：《英短养护指南》（演示数据）"
+    },
+    {
+      q:"它该打疫苗了吗？",
+      steps:["识别意图 → 疫苗查询","读取猫咪档案与免疫史","查询上次接种记录 → 计算到期","检索知识库《疫苗接种指南》"],
+      chips:[["💉 上次接种","11 个月前"],["📅 下次到期","18 天后"],["⏰ 状态","建议提前预约"]],
+      ans:"奶糖距离下一针疫苗还有 18 天到期，建议提前 1–2 周联系宠物医院预约，避免漏接种导致免疫空窗。",
+      ref:"📚 知识参考：《疫苗接种指南》（演示数据）"
+    },
+    {
+      q:"它有点没精神，要紧吗？",
+      steps:["识别意图 → 异常状态咨询","读取近期体重 / 进食 / 状态记录","比对历史基线判断变化","检索知识库《常见异常自查》"],
+      chips:[["🍚 近 3 日进食","略低于平均"],["⚖️ 体重","无明显下降"],["🌡️ 风险","建议观察 24h"]],
+      ans:"目前体重无明显下降，多为短期状态波动。建议观察 24 小时，留意进食、饮水、排便与精神；若持续萎靡或伴随呕吐腹泻，请及时就医。",
+      ref:"📚 仅供参考，不构成兽医诊疗建议（演示数据）"
+    }
+  ];
+  (function(){
+    const btns=document.getElementById('askBtns'), stage=document.getElementById('askStage');
+    if(!btns) return;
+    let timers=[];
+    btns.addEventListener('click',e=>{
+      const b=e.target.closest('.ask-btn'); if(!b) return;
+      [...btns.children].forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      timers.forEach(clearTimeout); timers=[];
+      const d=ASKS[+b.dataset.q];
+      let html='<div class="ask-q"><div class="b">'+d.q+'</div></div>';
+      html+='<div class="ask-trace"><div class="tt">▼ 执行轨迹</div>';
+      d.steps.forEach((s,i)=>html+='<div class="ask-step" id="stp'+i+'"><span class="ok">⟳</span> '+s+'</div>');
+      html+='</div>';
+      const chips=d.chips.map(c=>'<div class="a-chip"><div class="l">'+c[0]+'</div><div class="v">'+c[1]+'</div></div>').join('');
+      html+='<div class="ask-ans" id="askAns"><div class="a-cards">'+chips+'</div>'+d.ans+'<div class="a-ref">'+d.ref+'</div></div>';
+      stage.innerHTML=html;
+      d.steps.forEach((s,i)=>{
+        timers.push(setTimeout(()=>{
+          const el=document.getElementById('stp'+i); if(!el)return;
+          el.classList.add('show','run');
+          timers.push(setTimeout(()=>{el.classList.remove('run');el.querySelector('.ok').textContent='✓';}, 520));
+        }, 300+i*700));
+      });
+      timers.push(setTimeout(()=>{const a=document.getElementById('askAns'); if(a)a.classList.add('show');}, 300+d.steps.length*700+200));
+    });
+  })();
+
+  /* ===== 交互2：陪玩教练 ===== */
+  const GAMES=[
+    {name:"羽毛钓鱼",emoji:"🪶",cat:"狩猎",ideal:75,dur:10,intensity:4,banFor:["post","senior"]},
+    {name:"激光追逐",emoji:"🔴",cat:"狩猎",ideal:90,dur:8,intensity:5,banFor:["post","senior"]},
+    {name:"食物谜题",emoji:"🧩",cat:"益智",ideal:40,dur:15,intensity:2,banFor:[]},
+    {name:"逗猫棒挥舞",emoji:"🎣",cat:"互动",ideal:65,dur:10,intensity:3,banFor:["post"]},
+    {name:"猫薄荷玩具",emoji:"🌿",cat:"嗅觉",ideal:55,dur:5,intensity:2,banFor:["kitten"]},
+    {name:"纸箱探险",emoji:"📦",cat:"探索",ideal:35,dur:20,intensity:1,banFor:[]}
+  ];
+  (function(){
+    const eR=document.getElementById('energy'),tR=document.getElementById('time'),
+          eV=document.getElementById('energyVal'),tV=document.getElementById('timeVal'),
+          list=document.getElementById('recList'),tabs=document.getElementById('healthTabs');
+    if(!eR) return;
+    let health='none';
+    const eLbl=v=>v<33?'低（'+v+'）':v<66?'中（'+v+'）':'高（'+v+'）';
+    function score(g,energy,time){
+      const eScore=Math.max(0,100-Math.abs(g.ideal-energy)*1.1);
+      const tScore=time>=g.dur?100:Math.max(0,100-(g.dur-time)*8);
+      const pref=60;
+      return Math.round(eScore*0.4+tScore*0.35+pref*0.25);
+    }
+    function render(){
+      const energy=+eR.value,time=+tR.value;
+      eV.textContent=eLbl(energy); tV.textContent=time+' 分钟';
+      const rows=GAMES.map(g=>{
+        const blocked=g.banFor.includes(health);
+        return {g,blocked,s:blocked?-1:score(g,energy,time)};
+      }).sort((a,b)=>b.s-a.s);
+      list.innerHTML=rows.map((r,i)=>{
+        if(r.blocked){
+          return '<div class="rec blocked"><span class="r-emoji">'+r.g.emoji+'</span><div class="r-main"><div class="r-name">'+r.g.name+' <span class="r-cat">'+r.g.cat+'</span></div><div class="r-meta">⛔ 健康禁忌已过滤 · 当前状态不适合此强度</div></div><div class="r-score"><span class="r-badge badge-block">已拦截</span></div></div>';
+        }
+        const top=i===0;
+        return '<div class="rec'+(top?' top':'')+'"><span class="r-emoji">'+r.g.emoji+'</span><div class="r-main"><div class="r-name">'+r.g.name+' <span class="r-cat">'+r.g.cat+'</span>'+(top?' <span class="r-badge badge-top">本次最推荐</span>':'')+'</div><div class="r-meta">⏱ '+r.g.dur+' 分钟 · 💪 强度 '+r.g.intensity+'/5</div><div class="r-bar"><div class="r-fill" style="width:'+r.s+'%"></div></div></div><div class="r-score"><div class="n">'+r.s+'</div><div class="t">分</div></div></div>';
+      }).join('');
+    }
+    eR.addEventListener('input',render); tR.addEventListener('input',render);
+    tabs.addEventListener('click',e=>{const b=e.target.closest('.h-tab');if(!b)return;[...tabs.querySelectorAll('.h-tab')].forEach(x=>x.classList.remove('on'));b.classList.add('on');health=b.dataset.h;render();});
+    render();
+  })();
+
+  /* ===== 交互3：体重曲线 ===== */
+  const CATS=[
+    {name:"奶糖",breed:"英短",std:[4.0,5.0],pts:[{m:1,w:1.2},{m:6,w:2.8},{m:12,w:3.9},{m:18,w:4.3},{m:27,w:4.52}]},
+    {name:"小白",breed:"布偶",std:[4.5,6.5],pts:[{m:1,w:1.4},{m:6,w:3.2},{m:12,w:4.8},{m:18,w:5.5},{m:27,w:5.8}]},
+    {name:"花花",breed:"田园",std:[3.5,4.5],pts:[{m:1,w:1.0},{m:6,w:2.4},{m:12,w:3.3},{m:18,w:3.7},{m:27,w:3.9}]}
+  ];
+  (function(){
+    const svg=document.getElementById('wtSvg'),tabs=document.getElementById('catTabs'),
+          big=document.getElementById('wtBig'),sub=document.getElementById('wtSub'),
+          hEl=document.getElementById('wtHealth'),stdEl=document.getElementById('wtStd');
+    if(!svg) return;
+    let cur=0;
+    const W=320,H=180,pad=18;
+    function judge(c,w){
+      if(w<c.std[0]) return ['over','偏瘦：低于品种标准'];
+      if(w>c.std[1]) return ['over','偏胖：超出品种标准'];
+      return ['ok','健康区间内'];
+    }
+    function setInfo(c,p){
+      big.innerHTML=p.w+'<small>kg</small>';
+      sub.textContent='第 '+p.m+' 月 · '+c.name+' · '+c.breed;
+      const [cls,txt]=judge(c,p.w);
+      hEl.className='wt-health '+cls; hEl.textContent=(cls==='ok'?'✓ ':'⚠ ')+txt;
+      stdEl.innerHTML='<b>'+c.breed+'</b> 成年标准体重：<b>'+c.std[0]+'–'+c.std[1]+'kg</b>　|　当前偏差：<b>'+(p.w-(c.std[0]+c.std[1])/2>=0?'+':'')+(p.w-(c.std[0]+c.std[1])/2).toFixed(2)+'</b>';
+    }
+    function draw(){
+      const c=CATS[cur];
+      const ws=c.pts.map(p=>p.w),minW=Math.min(...ws)-0.5,maxW=Math.max(...ws)+0.5;
+      const X=i=>pad+ (W-2*pad)*(i/(c.pts.length-1));
+      const Y=w=>H-pad-(H-2*pad)*((w-minW)/(maxW-minW));
+      let band='';
+      const yTop=Y(Math.min(c.std[1],maxW)),yBot=Y(Math.max(c.std[0],minW));
+      band='<rect x="'+pad+'" y="'+yTop+'" width="'+(W-2*pad)+'" height="'+(yBot-yTop)+'" fill="rgba(42,157,143,.10)" rx="4"/>';
+      let path='M'+c.pts.map((p,i)=>X(i)+','+Y(p.w)).join(' L');
+      let area='M'+X(0)+','+(H-pad)+' L'+c.pts.map((p,i)=>X(i)+','+Y(p.w)).join(' L')+' L'+X(c.pts.length-1)+','+(H-pad)+' Z';
+      let dots=c.pts.map((p,i)=>'<circle class="dot" data-i="'+i+'" cx="'+X(i)+'" cy="'+Y(p.w)+'" r="5" fill="#fff" stroke="#E76F51" stroke-width="2.5"/><text x="'+X(i)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="#B5ADA4">'+p.m+'月</text>').join('');
+      svg.innerHTML=band+'<path d="'+area+'" fill="rgba(244,162,97,.12)"/><path d="'+path+'" fill="none" stroke="#E76F51" stroke-width="2.5" stroke-linejoin="round"/>'+dots;
+      svg.querySelectorAll('.dot').forEach(d=>d.addEventListener('click',()=>{
+        svg.querySelectorAll('.dot').forEach(x=>x.setAttribute('fill','#fff'));
+        d.setAttribute('fill','#E76F51'); setInfo(c,c.pts[+d.dataset.i]);
+      }));
+      setInfo(c,c.pts[c.pts.length-1]);
+    }
+    tabs.addEventListener('click',e=>{const b=e.target.closest('.cat-tab');if(!b)return;[...tabs.querySelectorAll('.cat-tab')].forEach(x=>x.classList.remove('on'));b.classList.add('on');cur=+b.dataset.cat;draw();});
+    draw();
+  })();
+
+  /* ===== 交互4：多猫对比 ===== */
+  const FAMILY=[
+    {name:"奶糖",emoji:"🐱",breed:"英短",age:"2岁3月",w:4.52,std:[4.0,5.0]},
+    {name:"小白",emoji:"🐈",breed:"布偶",age:"3岁1月",w:5.80,std:[4.5,6.5]},
+    {name:"花花",emoji:"🐈‍⬛",breed:"田园",age:"1岁8月",w:3.90,std:[3.5,4.5]},
+    {name:"豆豆",emoji:"🐱",breed:"美短",age:"4岁",w:6.10,std:[4.5,5.5]},
+    {name:"咪咪",emoji:"🐈",breed:"暹罗",age:"11月",w:2.80,std:[3.0,4.0]}
+  ];
+  (function(){
+    const row=document.getElementById('pickRow'),res=document.getElementById('cmpResult'),cnt=document.getElementById('pickCount');
+    if(!row) return;
+    let sel=[0,1,2];
+    function judge(c){
+      const mid=(c.std[0]+c.std[1])/2, dev=+(c.w-mid).toFixed(2);
+      if(c.w<c.std[0]) return {cls:'thin',txt:'偏瘦',dev};
+      if(c.w>c.std[1]) return {cls:'over',txt:'偏胖',dev};
+      return {cls:'ok',txt:'健康',dev};
+    }
+    function renderPicks(){
+      row.innerHTML=FAMILY.map((c,i)=>'<div class="pick'+(sel.includes(i)?' on':'')+'" data-i="'+i+'"><span class="box">'+(sel.includes(i)?'✓':'')+'</span>'+c.emoji+' '+c.name+' · '+c.breed+'</div>').join('');
+    }
+    function renderCmp(){
+      cnt.textContent=sel.length;
+      if(sel.length===0){res.innerHTML='<div class="cmp-empty">👆 至少选 1 只猫开始对比</div>';return;}
+      const cats=sel.map(i=>FAMILY[i]);
+      const maxW=Math.max(...cats.map(c=>c.w));
+      let head='<tr><th>对比维度</th>'+cats.map(c=>'<th><span class="cat-h">'+c.emoji+' '+c.name+'<span class="b">'+c.breed+'</span></span></th>').join('')+'</tr>';
+      let rAge='<tr><th>年龄</th>'+cats.map(c=>'<td>'+c.age+'</td>').join('')+'</tr>';
+      let rStd='<tr><th>品种标准</th>'+cats.map(c=>'<td>'+c.std[0]+'–'+c.std[1]+'kg</td>').join('')+'</tr>';
+      let rW='<tr><th>当前体重</th>'+cats.map(c=>'<td><b style="color:var(--ink)">'+c.w.toFixed(2)+'kg</b><div class="cmp-bar"><i style="width:'+(c.w/maxW*100)+'%"></i></div></td>').join('')+'</tr>';
+      let rDev='<tr><th>偏差</th>'+cats.map(c=>{const j=judge(c);return '<td>'+(j.dev>=0?'+':'')+j.dev+'</td>';}).join('')+'</tr>';
+      let rH='<tr><th>健康判定</th>'+cats.map(c=>{const j=judge(c);return '<td><span class="hbadge '+j.cls+'">'+j.txt+'</span></td>';}).join('')+'</tr>';
+      let table='<table class="cmp-table"><thead>'+head+'</thead><tbody>'+rAge+rStd+rW+rDev+rH+'</tbody></table>';
+      const over=cats.filter(c=>judge(c).cls==='over').map(c=>c.name);
+      const thin=cats.filter(c=>judge(c).cls==='thin').map(c=>c.name);
+      const ok=cats.filter(c=>judge(c).cls==='ok').map(c=>c.name);
+      let sum='📊 在所选 <b>'+cats.length+'</b> 只猫中：';
+      let parts=[];
+      if(ok.length) parts.push('<b>'+ok.join('、')+'</b> 处于健康区间');
+      if(over.length) parts.push('<b>'+over.join('、')+'</b> 偏胖，建议关注饮食');
+      if(thin.length) parts.push('<b>'+thin.join('、')+'</b> 偏瘦，建议加强营养');
+      sum+=parts.join('；')+'。';
+      res.innerHTML=table+'<div class="cmp-summary">'+sum+'</div>';
+    }
+    row.addEventListener('click',e=>{
+      const b=e.target.closest('.pick'); if(!b)return;
+      const i=+b.dataset.i, idx=sel.indexOf(i);
+      if(idx>-1){ if(sel.length<=1) return; sel.splice(idx,1); }
+      else { if(sel.length>=5) return; sel.push(i); }
+      sel.sort((a,b)=>a-b); renderPicks(); renderCmp();
+    });
+    renderPicks(); renderCmp();
+  })();
+
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})
+  },{threshold:.1,rootMargin:'0px 0px -50px 0px'});
+  document.querySelectorAll('section, .hero').forEach(el=>{el.classList.add('reveal');io.observe(el)});
+</script>
+</body>
+</html>
