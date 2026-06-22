@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon --exec \"ts-node --transpile-only\" src/server.ts",
-    "build": "mkdir -p ../api && NODE_TLS_REJECT_UNAUTHORIZED=0 prisma generate && esbuild src/server.ts --bundle --platform=node --target=node20 --format=cjs --outfile=../api/_server.js --external:@prisma/client --external:@prisma/adapter-pg --external:pg",
+    "build": "mkdir -p ../api && NODE_TLS_REJECT_UNAUTHORIZED=0 prisma generate && prisma migrate deploy && esbuild src/server.ts --bundle --platform=node --target=node20 --format=cjs --outfile=../api/_server.js --external:@prisma/client --external:@prisma/adapter-pg --external:pg",
     "start": "node dist/server.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
