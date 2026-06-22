@@ -1,0 +1,12 @@
+# Only keep the RHEL Prisma engine binary needed on Vercel
+backend/node_modules/.prisma/client/*engine*
+!backend/node_modules/.prisma/client/*rhel-openssl-3.0.x*
+node_modules/.prisma/client/*engine*
+!node_modules/.prisma/client/*rhel-openssl-3.0.x*
+
+# Dev dependencies (not needed at runtime)
+backend/node_modules/@prisma/generator-*
+backend/node_modules/prisma
+backend/node_modules/.cache
+docs
+.git

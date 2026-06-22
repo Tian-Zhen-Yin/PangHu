@@ -67,6 +67,7 @@ interface AgentCapability {
   prompt: string // 一键发起的示例 prompt
   category: 'record' | 'health' | 'play' | 'knowledge'
   needsAttachment?: boolean // 需图片附件（如成长记录最佳搭配图片）
+  highlight?: boolean // 重点提醒类（疫苗到期、过敏档案等）
 }
 
 const AGENT_CAPABILITIES: AgentCapability[] = [
@@ -128,6 +129,7 @@ const AGENT_CAPABILITIES: AgentCapability[] = [
     desc: '查询下次该接种时间',
     prompt: '下次该打什么疫苗了',
     category: 'health',
+    highlight: true,
   },
   {
     id: 'allergy_query',
@@ -136,6 +138,7 @@ const AGENT_CAPABILITIES: AgentCapability[] = [
     desc: '查看过敏原 & 反应记录',
     prompt: '看看猫咪的过敏档案',
     category: 'health',
+    highlight: true,
   },
   // 陪玩
   {
@@ -398,6 +401,15 @@ function handleBackToList() {
   showConversationList.value = true
 }
 
+// 关闭移动端列表面板，并把焦点恢复到打开它的按钮（无障碍焦点管理）
+const backButtonRef = ref<HTMLButtonElement | null>(null)
+function closeConversationListMobile() {
+  showConversationList.value = false
+  nextTick(() => {
+    backButtonRef.value?.focus?.()
+  })
+}
+
 // 跳转到指南详情
 function navigateToGuide(guideId: string) {
   router.push(`/guides/${guideId}`)
@@ -436,20 +448,16 @@ const contextualSuggestions = computed(() => {
   <div class="ai-chat-page">
     <!-- 移动端对话列表 -->
     <div v-if="isMobile && showConversationList" class="conversation-list-panel mobile">
-      <!-- 关闭按钮：返回聊天页 -->
-      <button class="mobile-list-close" @click="showConversationList = false" title="返回对话">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
       <ConversationList
         :conversations="chatStore.conversations"
         :current-id="chatStore.currentConversationId"
         :loading="chatStore.loading"
+        :show-close="true"
         @select="handleSelectConversation"
         @new="handleNewConversation"
         @delete="handleDeleteConversation"
         @rename="handleRenameConversation"
+        @close="closeConversationListMobile"
       />
     </div>
 
@@ -490,7 +498,7 @@ const contextualSuggestions = computed(() => {
       <!-- 移动端头部 -->
       <header v-if="isMobile && !showConversationList" class="chat-header mobile">
         <!-- 历史会话按钮（打开对话列表） -->
-        <button class="back-button" @click="handleBackToList" title="历史会话">
+        <button ref="backButtonRef" class="back-button" @click="handleBackToList" title="历史会话" aria-label="打开历史对话列表">
           <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10"/>
           </svg>
@@ -591,6 +599,7 @@ const contextualSuggestions = computed(() => {
                   v-for="cap in caps"
                   :key="cap.id"
                   class="capability-card"
+                  :class="{ 'is-highlight': cap.highlight }"
                   @click="handleCapabilityClick(cap)"
                 >
                   <span class="capability-icon">{{ cap.icon }}</span>
@@ -598,6 +607,7 @@ const contextualSuggestions = computed(() => {
                     <span class="capability-title">{{ cap.title }}</span>
                     <span class="capability-desc">{{ cap.desc }}</span>
                   </span>
+                  <span v-if="cap.highlight" class="capability-dot" aria-hidden="true"></span>
                 </button>
               </div>
             </div>
@@ -1001,37 +1011,6 @@ const contextualSuggestions = computed(() => {
   bottom: 0;
   z-index: 100;
   width: 100%;
-}
-
-/* 移动端对话列表的关闭按钮（默认隐藏列表后，从聊天页打开列表时需要一个返回入口） */
-.mobile-list-close {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 12px);
-  right: 16px;
-  z-index: 110;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #FFF5DC;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FFFBF0 0%, #FFF8E7 100%);
-  color: #8B7355;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.18);
-  transition: all 0.2s ease;
-}
-
-.mobile-list-close:hover {
-  background: linear-gradient(135deg, #FFF8E7 0%, #FFF5DC 100%);
-  color: #BC8F6F;
-  transform: scale(1.05);
-}
-
-.mobile-list-close svg {
-  width: 18px;
-  height: 18px;
 }
 
 .chat-area {
@@ -1517,14 +1496,14 @@ const contextualSuggestions = computed(() => {
   position: absolute;
   bottom: -4px;
   right: -8px;
-  padding: var(--space-xs) var(--space-md);
-  /* 奶油色渐变背景 */
+  padding: 4px 10px;
   background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
-  color: #8B7355;
-  font-size: 12px;
+  color: #8B5A2B;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.5px;
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 12px rgba(255, 236, 179, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 178, 102, 0.28);
   border: 2px solid #FFFBF0;
 }
 
@@ -1769,20 +1748,38 @@ const contextualSuggestions = computed(() => {
 .mode-switch {
   display: flex;
   gap: 6px;
-  padding: 0 0 var(--space-sm) 0;
+  padding: 4px;
+  margin-bottom: var(--space-sm);
+  background: linear-gradient(135deg, #FFF8E7 0%, #FFFBF0 100%);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 1px 3px rgba(255, 218, 158, 0.15);
 }
 
 .mode-btn {
   flex: 1;
   padding: 8px 0;
-  border: 1.5px solid #FFF5DC;
+  border: 1.5px solid transparent;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
-  color: #8B7355;
+  background: transparent;
+  color: #BC8F6F;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: background 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              transform 0.2s ease,
+              box-shadow 0.3s ease;
+  position: relative;
+}
+
+.mode-btn:hover:not(.active) {
+  color: #8B5A2B;
+  background: rgba(255, 251, 240, 0.6);
+}
+
+.mode-btn:active {
+  transform: scale(0.97);
 }
 
 .mode-btn.active {
@@ -1804,6 +1801,7 @@ const contextualSuggestions = computed(() => {
   background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
   border-color: #E76F51;
   color: #fff;
+  box-shadow: 0 4px 14px rgba(231, 111, 81, 0.3);
 }
 
 /* ===== Agent 能力面板 ===== */
@@ -1825,15 +1823,26 @@ const contextualSuggestions = computed(() => {
 .capability-group-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 700;
-  color: #BC8F6F;
+  color: #8B5A2B;
   padding-left: 2px;
+  position: relative;
+}
+
+.capability-group-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #F4A261 0%, #FFDAB9 100%);
+  margin-right: 2px;
 }
 
 .group-emoji {
   font-size: 16px;
+  line-height: 1;
 }
 
 .group-label {
@@ -1849,16 +1858,20 @@ const contextualSuggestions = computed(() => {
 .capability-card {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 10px;
   padding: 12px 14px;
   background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
   border: 1.5px solid #FFF5DC;
   border-radius: var(--radius-lg);
   cursor: pointer;
   text-align: left;
-  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease,
+              background 0.25s ease;
   position: relative;
   overflow: hidden;
+  will-change: transform;
 }
 
 .capability-card::before {
@@ -1872,21 +1885,88 @@ const contextualSuggestions = computed(() => {
   transition: transform 0.3s ease;
 }
 
+.capability-card::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(244, 162, 97, 0.18);
+  transform: translate(-50%, -50%);
+  transition: width 0.45s ease, height 0.45s ease, opacity 0.6s ease;
+  opacity: 1;
+  pointer-events: none;
+}
+
 .capability-card:hover {
   transform: translateY(-2px);
   border-color: #FFE5B4;
   background: linear-gradient(135deg, #FFFBF0 0%, #FFF5DC 100%);
-  box-shadow: 0 6px 18px rgba(255, 236, 179, 0.18);
+  box-shadow: 0 6px 18px rgba(255, 236, 179, 0.22);
 }
 
 .capability-card:hover::before {
   transform: scaleX(1);
 }
 
+.capability-card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(255, 236, 179, 0.18);
+}
+
+.capability-card:active::after {
+  width: 240px;
+  height: 240px;
+  opacity: 0;
+  transition: width 0.5s ease, height 0.5s ease, opacity 0.6s ease;
+}
+
 .capability-icon {
-  font-size: 22px;
+  font-size: 20px;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 4px rgba(255, 236, 179, 0.2));
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFF5DC 0%, #FFECC8 100%);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 228, 181, 0.4);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              background 0.3s ease;
+}
+
+.capability-card:hover .capability-icon {
+  transform: scale(1.08) rotate(-4deg);
+  background: linear-gradient(135deg, #FFECC8 0%, #FFE5B4 100%);
+}
+
+/* 重点提醒类卡片（疫苗到期 / 过敏档案）：右上角呼吸点 */
+.capability-card.is-highlight .capability-icon {
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFCB94 100%);
+}
+
+.capability-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F4A261;
+  box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.5);
+  animation: dotPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 162, 97, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(244, 162, 97, 0);
+  }
 }
 
 .capability-text {
@@ -2124,17 +2204,22 @@ const contextualSuggestions = computed(() => {
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  font-size: 12px;
-  color: #D4C4A8;
+  font-size: 11.5px;
+  color: #BC8F6F;
   text-align: center;
-  margin: var(--space-sm) 0 0 0;
+  margin: var(--space-md) auto 0;
+  padding: 6px 14px;
+  background: rgba(255, 248, 231, 0.6);
+  border-radius: var(--radius-full);
+  width: fit-content;
+  max-width: 100%;
 }
 
 .disclaimer-icon {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   flex-shrink: 0;
-  color: #D4A574;
+  color: #F4A261;
 }
 
 @media (max-width: 767px) {
@@ -2195,7 +2280,10 @@ const contextualSuggestions = computed(() => {
   }
 
   .capability-icon {
-    font-size: 20px;
+    font-size: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
   }
 
   .capability-title {
@@ -2204,6 +2292,13 @@ const contextualSuggestions = computed(() => {
 
   .capability-desc {
     font-size: 11px;
+  }
+
+  .capability-dot {
+    top: 8px;
+    right: 8px;
+    width: 7px;
+    height: 7px;
   }
 
   .capability-board {

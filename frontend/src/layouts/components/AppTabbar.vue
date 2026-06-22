@@ -62,23 +62,33 @@ function isActive(path: string): boolean {
       <!-- 普通 Tab -->
       <template v-else>
         <span class="tab-icon">
-          <!-- 首页：猫爪印 -->
-          <svg v-if="item.key === 'home'" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <ellipse cx="12" cy="15" rx="4" ry="3.2" />
-            <ellipse cx="5.5" cy="10.5" rx="1.6" ry="2" />
-            <ellipse cx="9.5" cy="6.5" rx="1.6" ry="2" />
-            <ellipse cx="14.5" cy="6.5" rx="1.6" ry="2" />
-            <ellipse cx="18.5" cy="10.5" rx="1.6" ry="2" />
+          <!-- 首页：猫爪印（描边风格）-->
+          <svg v-if="item.key === 'home'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <ellipse cx="12" cy="15" rx="3.8" ry="3" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            <path d="M5.5 10.5 L5.5 7.5" stroke-width="1.5"/>
+            <ellipse cx="5.5" cy="10" rx="1.5" ry="1.7" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            <path d="M9.5 6.5 L9.5 3.5" stroke-width="1.5"/>
+            <ellipse cx="9.5" cy="6" rx="1.5" ry="1.7" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            <path d="M14.5 6.5 L14.5 3.5" stroke-width="1.5"/>
+            <ellipse cx="14.5" cy="6" rx="1.5" ry="1.7" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            <path d="M18.5 10.5 L18.5 7.5" stroke-width="1.5"/>
+            <ellipse cx="18.5" cy="10" rx="1.5" ry="1.7" stroke="currentColor" stroke-width="1.8" fill="none"/>
           </svg>
-          <!-- 记录：笔记本 + 猫耳 -->
+          <!-- 记录：日历 + 猫耳（增强语义）-->
           <svg v-else-if="item.key === 'record'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M5 7 L6.5 3 L8.5 6" />
-            <path d="M19 7 L17.5 3 L15.5 6" />
-            <rect x="4" y="7" width="16" height="13" rx="2" />
-            <line x1="9" y1="7" x2="9" y2="20" />
-            <line x1="12" y1="11" x2="17" y2="11" />
-            <line x1="12" y1="14" x2="17" y2="14" />
-            <line x1="12" y1="17" x2="15" y2="17" />
+            <!-- 日历主体 -->
+            <rect x="5" y="6" width="14" height="14" rx="2"/>
+            <!-- 日历顶部小方块 -->
+            <rect x="7" y="2" width="10" height="4" rx="1"/>
+            <!-- 日期数字 -->
+            <text x="12" y="5" font-size="2.5" font-weight="600" fill="currentColor" text-anchor="middle">12</text>
+            <!-- 猫耳装饰 -->
+            <path d="M5 5 L3.5 2 L5.5 3.5" />
+            <path d="M19 5 L20.5 2 L18.5 3.5" />
+            <!-- 日历格子示意 -->
+            <line x1="8" y1="10" x2="16" y2="10" stroke-width="1.2"/>
+            <line x1="8" y1="13" x2="16" y2="13" stroke-width="1.2"/>
+            <line x1="8" y1="16" x2="14" y2="16" stroke-width="1.2"/>
           </svg>
           <!-- 指南：翻开的书 -->
           <svg v-else-if="item.key === 'guide'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -160,11 +170,23 @@ function isActive(path: string): boolean {
   width: 24px;
   height: 24px;
   margin: 0 auto 2px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              filter 0.2s ease;
 }
 
 .tab-icon svg {
   width: 24px;
   height: 24px;
+}
+
+.tab-item.active .tab-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(255, 184, 108, 0.35));
+}
+
+.tab-item:active .tab-icon {
+  transform: scale(0.95);
+  filter: none;
 }
 
 .tab-label {

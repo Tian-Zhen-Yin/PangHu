@@ -10,6 +10,7 @@ import ImageLoader from '../../components/common/ImageLoader.vue'
 import CatSelector from '../../components/cat/CatSelector.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import HorizontalStageTimeline from '../../components/growth/HorizontalStageTimeline.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import type { Stage, Task, Vaccine } from '../../types/cat.js'
 import { getImageUrl } from '../../utils/format.js'
 import type { CreatePetRecordParams } from '../../api/pet.js'
@@ -418,13 +419,31 @@ async function savePetRecord() {
   }
 }
 
-async function deletePetRecord(recordId: string) {
-  if (confirm('确定要删除这条记录吗？')) {
-    const success = await petStore.deleteRecord(recordId)
-    if (success) {
-      toast.success('记录已删除')
-    }
+// 删除确认弹窗
+const showDeleteConfirm = ref(false)
+const recordToDelete = ref<string | null>(null)
+
+// 打开删除确认
+function openDeleteConfirm(recordId: string) {
+  recordToDelete.value = recordId
+  showDeleteConfirm.value = true
+}
+
+// 关闭删除确认
+function closeDeleteConfirm() {
+  showDeleteConfirm.value = false
+  recordToDelete.value = null
+}
+
+// 确认删除记录
+async function confirmDeleteRecord() {
+  if (!recordToDelete.value) return
+  
+  const success = await petStore.deleteRecord(recordToDelete.value)
+  if (success) {
+    toast.success('记录已删除')
   }
+  closeDeleteConfirm()
 }
 
 // 计算任务完成进度
@@ -467,9 +486,30 @@ const healthProgressMascot = computed(() => {
   return 'waiting'
 })
 
-// 判断疫苗是否已完成（基于年龄）
+// 判断疫苗是否已完成（基于实际接种记录）
 function isVaccineDone(vaccine: Vaccine): boolean {
   if (!currentCat.value) return false
+  
+  // 首先检查是否有实际接种记录
+  const vaccineRecords = petStore.records.filter(r => 
+    r.type === 'vaccine' && 
+    r.templateData
+  )
+  
+  for (const record of vaccineRecords) {
+    try {
+      const data = typeof record.templateData === 'string' 
+        ? JSON.parse(record.templateData) 
+        : record.templateData
+      if (data?.vaccineName === vaccine.name) {
+        return true
+      }
+    } catch {
+      // 忽略解析错误
+    }
+  }
+  
+  // 如果没有实际记录，回退到基于年龄的判断（作为参考）
   const catAgeWeeks = currentCat.value.ageMonths ? currentCat.value.ageMonths * 4 : 0
   return vaccine.ageWeeks <= catAgeWeeks
 }
@@ -562,17 +602,12 @@ watch(currentCat, () => {
   }
 })
 
-// 确保 selectedStage 始终有效
+// 阶段切换时不再强制重置到概览标签，保留用户当前选择
 watch(filteredStages, (stages) => {
   if (stages.length > 0 && (!selectedStage.value || !stages.find(s => s.id === selectedStage.value!.id))) {
     selectedStage.value = stages[0]!
   }
-})
-
-// 阶段切换时重置到概览标签
-watch(selectedStage, () => {
-  activeTab.value = 'overview'
-})
+}, { immediate: true })
 </script>
 
 <template>
@@ -642,18 +677,6 @@ watch(selectedStage, () => {
 
           <button
             class="tab-btn"
-            :class="{ 'is-active': activeTab === 'vaccines' }"
-            @click="activeTab = 'vaccines'"
-          >
-            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-            <span class="tab-text">疫苗接种</span>
-            <span v-if="selectedStage?.vaccines?.length" class="tab-badge warning">{{ selectedStage.vaccines.length }}</span>
-          </button>
-
-          <button
-            class="tab-btn"
             :class="{ 'is-active': activeTab === 'growth' }"
             @click="activeTab = 'growth'"
           >
@@ -662,6 +685,18 @@ watch(selectedStage, () => {
             </svg>
             <span class="tab-text">成长记录</span>
             <span v-if="petStore.recordCount > 0" class="tab-badge">{{ petStore.recordCount }}</span>
+          </button>
+
+          <button
+            class="tab-btn"
+            :class="{ 'is-active': activeTab === 'vaccines' }"
+            @click="activeTab = 'vaccines'"
+          >
+            <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <span class="tab-text">疫苗接种</span>
+            <span v-if="selectedStage?.vaccines?.length" class="tab-badge warning">{{ selectedStage.vaccines.length }}</span>
           </button>
 
         </div>
@@ -1110,7 +1145,7 @@ watch(selectedStage, () => {
                                 领养纪念日
                               </span>
                             </div>
-                            <button @click="deletePetRecord(record.id)" class="btn-delete-record" title="删除记录">×</button>
+                            <button @click="openDeleteConfirm(record.id)" class="btn-delete-record" title="删除记录">×</button>
                           </div>
                           <div class="record-stats">
                             <span v-if="!shouldHideAge && record.ageMonths" class="record-stat">
@@ -1394,6 +1429,18 @@ watch(selectedStage, () => {
       <p>{{ catStore.error }}</p>
       <button @click="catStore.fetchStages" class="retry-btn">重试</button>
     </div>
+
+    <!-- 删除确认弹窗 -->
+    <ConfirmDialog
+      :visible="showDeleteConfirm"
+      title="删除记录"
+      message="确定要删除这条记录吗？删除后无法恢复哦~"
+      confirm-text="删除"
+      cancel-text="取消"
+      type="danger"
+      @confirm="confirmDeleteRecord"
+      @cancel="closeDeleteConfirm"
+    />
   </div>
 </template>
 
@@ -3061,20 +3108,46 @@ watch(selectedStage, () => {
 .month-divider {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-text-secondary);
-  padding: 0.75rem 0;
-  margin: 0 0 1rem 0;
+  padding: 1rem 0;
+  margin: 0 0 1.5rem 0;
+  position: relative;
+}
+
+.month-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-border-light), transparent);
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.month-divider > span:first-child {
+  position: relative;
+  z-index: 1;
+  padding: 0.5rem 1rem;
+  background: var(--color-bg-card);
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .month-count {
-  padding: 0.125rem 0.5rem;
-  background: var(--color-bg-muted);
+  position: relative;
+  z-index: 1;
+  padding: 0.25rem 0.625rem;
+  background: var(--color-bg-cream);
+  color: var(--color-primary);
   border-radius: 9999px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.12);
 }
 
 /* 重置筛选按钮 */
@@ -3267,19 +3340,50 @@ watch(selectedStage, () => {
   opacity: 1;
 }
 
-.record-photo {
-  width: 120px;
-  height: 120px;
+/* 记录照片区域 - 优化版 */
+.record-photos {
+  display: flex;
   flex-shrink: 0;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  background: var(--color-bg-block-hover);
 }
 
-.record-photo img {
+.record-photo-main {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-bg-block-hover);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.record-item:hover .record-photo-main {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.record-photo-main img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* 多图计数徽章 */
+.photo-count-badge {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-warning) 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.4);
+  border: 3px solid var(--color-bg-card);
 }
 
 /* 记录信息区域 - 优化版 */
@@ -3457,14 +3561,30 @@ watch(selectedStage, () => {
 .empty-records {
   text-align: center;
   padding: 4rem 2rem;
-  background: var(--color-bg-page);
-  border-radius: 1rem;
+  background: linear-gradient(145deg, var(--color-bg-page) 0%, var(--color-bg-warm) 100%);
+  border-radius: 1.5rem;
+  border: 1px dashed var(--color-border-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-records::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, var(--color-primary-light) 0%, transparent 70%);
+  opacity: 0.5;
 }
 
 .empty-icon {
   font-size: 4rem;
   display: block;
   margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .empty-text {
@@ -3472,22 +3592,35 @@ watch(selectedStage, () => {
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 .empty-hint {
   color: var(--color-text-placeholder);
   margin: 0 0 1.5rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 .btn-add-first-record {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-warning) 100%);
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 9999px;
   font-size: 0.9375rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 16px rgba(244, 162, 97, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-add-first-record:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(244, 162, 97, 0.4);
 }
 
 /* ================= 奶油风记录弹窗 ================= */
