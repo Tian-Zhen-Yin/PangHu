@@ -101,7 +101,17 @@ export class ZhipuaiClient implements LLMClient {
         signal: opts.signal as any,
       })
     } catch (error: any) {
-      yield { type: 'finish', reason: 'error', error: error.message || 'LLM request failed' }
+      // 把 400 错误的实际 body 读出来,方便定位问题
+      let detail = ''
+      if (error.response?.data) {
+        try {
+          const chunks: Buffer[] = []
+          for await (const c of error.response.data) chunks.push(c as Buffer)
+          detail = Buffer.concat(chunks).toString('utf-8').substring(0, 500)
+        } catch { /* ignore */ }
+      }
+      console.error('[ZhipuClient] LLM 请求失败:', error.message, 'status=', error.response?.status, 'body=', detail)
+      yield { type: 'finish', reason: 'error', error: `${error.message}${detail ? ' | ' + detail : ''}` }
       return
     }
 

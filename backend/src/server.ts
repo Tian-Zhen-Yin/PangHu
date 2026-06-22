@@ -55,10 +55,10 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter)
 app.use('/api/auth/register', authLimiter)
 
-// AI 聊天限流：每分钟 10 次
+// AI 聊天限流：每分钟 10 次（生产）/ 200 次（PERF_TEST 时放开）
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10,
+  max: process.env.PERF_TEST === '1' ? 200 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'AI 聊天请求过于频繁，请稍后再试' },

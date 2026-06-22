@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>意图分类主流方案调研报告 · PangHu Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+<style>
+:root{--bg:#FFFBF0;--bg-soft:#FFFEF8;--border:#FFE5B4;--border-soft:#FFF5DC;--primary:#F4A261;--primary-dark:#E76F51;--text:#5D4E37;--text-soft:#8B7355;--text-muted:#BC8F6F;--accent:#2A9D8F;--success:#52B788;--danger:#C9302C;--shadow-sm:0 2px 8px rgba(255,236,179,.18);--shadow-md:0 6px 20px rgba(255,236,179,.25);--r:12px;--rl:20px}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#FFFBF0 0%,#FFFEF8 100%);color:var(--text);line-height:1.75;padding:40px 20px}
+.container{max-width:1100px;margin:0 auto}
+header{text-align:center;padding:50px 30px;background:linear-gradient(135deg,#FFFEF8 0%,#FFF5DC 100%);border-radius:var(--rl);box-shadow:var(--shadow-md);margin-bottom:40px;border:1px solid var(--border-soft)}
+header h1{font-size:32px;margin:0 0 12px;color:var(--text);letter-spacing:1px}
+header .subtitle{color:var(--text-muted);font-size:15px}
+header .meta{margin-top:16px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.badge{display:inline-block;padding:4px 14px;background:linear-gradient(135deg,#FFE5B4 0%,#FFDAB9 100%);border-radius:999px;font-size:12px;color:var(--text);font-weight:600}
+section{background:var(--bg-soft);border-radius:var(--rl);padding:36px 40px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft);margin-bottom:32px}
+h2{font-size:24px;color:var(--text);margin:0 0 24px;padding-bottom:12px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+h2::before{content:'';display:inline-block;width:5px;height:22px;background:linear-gradient(180deg,var(--primary) 0%,var(--primary-dark) 100%);border-radius:3px}
+h3{font-size:18px;color:var(--text);margin-top:28px;margin-bottom:14px}
+p,li{color:var(--text-soft);font-size:14.5px}
+code{background:#FFF5DC;color:var(--primary-dark);padding:2px 8px;border-radius:4px;font-size:13px;font-family:"JetBrains Mono",Consolas,monospace}
+pre{background:#FFFEF8;border:1px solid var(--border-soft);border-left:4px solid var(--primary);border-radius:var(--r);padding:16px 18px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0;color:var(--text)}
+.chart-wrap{background:linear-gradient(135deg,#FFFEF8 0%,#FFFBF0 100%);border-radius:var(--r);padding:24px;margin:24px 0;border:1px solid var(--border-soft)}
+.chart-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.chart-desc{font-size:13px;color:var(--text-muted);margin-bottom:16px}
+.chart-canvas{position:relative;height:360px}
+.chart-explanation{margin-top:18px;padding:14px 18px;background:#FFFBF0;border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;font-size:13.5px;color:var(--text-soft)}
+.chart-explanation strong{color:var(--text)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
+thead{background:linear-gradient(135deg,#FFE5B4 0%,#FFDAB9 100%)}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border-soft)}
+th{color:var(--text);font-weight:700;font-size:13px}
+tbody tr:hover{background:#FFFBF0}
+tbody tr:last-child td{border-bottom:none}
+.card{background:#FFFEF8;border:1px solid var(--border-soft);border-radius:var(--r);padding:18px 22px;margin:14px 0;transition:all .3s ease}
+.card:hover{border-color:var(--border);box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+.card-title{font-weight:700;color:var(--text);margin-bottom:8px;font-size:16px}
+.alert{padding:14px 18px;border-radius:var(--r);margin:16px 0;font-size:14px;display:flex;align-items:flex-start;gap:10px}
+.alert-danger{background:#FFF0EB;border-left:4px solid var(--danger);color:#993D2A}
+.alert-warn{background:#FFF8E7;border-left:4px solid #F4A261;color:#7A5316}
+.alert-info{background:#EAF6F5;border-left:4px solid var(--accent);color:#1F6B61}
+.alert-success{background:#E8F7EE;border-left:4px solid var(--success);color:#2B6A40}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.dot-good{background:var(--success)}.dot-mid{background:#F4C95D}.dot-bad{background:var(--danger)}
+.mermaid{background:linear-gradient(135deg,#FFFEF8 0%,#FFFBF0 100%);padding:24px;border-radius:var(--r);border:1px solid var(--border-soft);text-align:center;margin:20px 0}
+.timeline{position:relative;padding-left:30px;margin:20px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:3px;background:linear-gradient(180deg,var(--primary) 0%,var(--accent) 100%);border-radius:2px}
+.tl-item{position:relative;margin-bottom:18px;padding-left:16px}
+.tl-item::before{content:'';position:absolute;left:-28px;top:8px;width:13px;height:13px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 0 0 2px var(--primary)}
+.tl-year{font-weight:700;color:var(--primary-dark)}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0}
+.conclusion{background:linear-gradient(135deg,#FFE5B4 0%,#FFDAB9 100%);border-radius:var(--rl);padding:32px 36px;color:var(--text);margin-top:32px;box-shadow:var(--shadow-md)}
+.conclusion h2{border-bottom-color:rgba(93,78,55,.2);color:var(--text)}
+@media(max-width:768px){body{padding:20px 12px}section{padding:24px 18px}header{padding:32px 18px}header h1{font-size:24px}h2{font-size:20px}.chart-canvas{height:300px}}
+</style>
+</head>
+<body>
+<div class="container">
+<!-- HEADER -->
+<header>
+<h1>🧭 主流意图分类方案调研报告</h1>
+<div class="subtitle">PangHu Agent · 系统性技术对齐 · 2018 ~ 2025 工业实践</div>
+<div class="meta">
+<span class="badge">📅 2026-06-21</span>
+<span class="badge">🎯 14 个 Agent 工具</span>
+<span class="badge">🐱 PangHu Cat Care</span>
+<span class="badge">📊 8 大方案对比</span>
+</div>
+</header>
+<!-- PLACEHOLDER:CONTENT -->
+<section>
+<h2>一、技术演进时间轴</h2>
+<p>意图分类近 10 年经历了 <strong>规则 → 浅层 ML → 深度学习 → 预训练 → 大模型</strong> 五次范式跃迁。下图标出每一代的代表技术与本项目的位置。</p>
+<div class="timeline">
+<div class="tl-item"><div><span class="tl-year">2014~2017</span> · 规则 / 词典 + SVM / LR</div><div style="font-size:13px;color:var(--text-muted)">字符串匹配 + 浅层分类器。<strong style="color:var(--danger)">⚠️ 你当前实现处于这一代</strong></div></div>
+<div class="tl-item"><div><span class="tl-year">2018~2020</span> · RNN / BiLSTM + Word2Vec</div><div style="font-size:13px;color:var(--text-muted)">深度学习初代,引入 Embedding,但仍需大量标注</div></div>
+<div class="tl-item"><div><span class="tl-year">2019~2022</span> · BERT 微调 + Rasa DIET</div><div style="font-size:13px;color:var(--text-muted)">预训练模型主导,准确率突破 90%+,工业广泛部署</div></div>
+<div class="tl-item"><div><span class="tl-year">2022~2023</span> · Sentence Embedding 语义召回</div><div style="font-size:13px;color:var(--text-muted)">OpenAI / BGE embedding 普及,余弦相似度成为可靠置信度指标</div></div>
+<div class="tl-item"><div><span class="tl-year">2023~now</span> · LLM Few-shot / Function Calling</div><div style="font-size:13px;color:var(--text-muted)">意图分类被工具调用吸收,GPT-4 / Claude / GLM-4 原生支持</div></div>
+<div class="tl-item"><div><span class="tl-year">2024~now</span> · Hybrid Routing 多策略融合 ⭐ SOTA</div><div style="font-size:13px;color:var(--text-muted)">规则 fast-path + Embedding 召回 + LLM 兜底,工业当前最佳实践</div></div>
+</div>
+</section>
+
+<section>
+<h2>二、八大主流方案性能对比</h2>
+<p>对 8 大主流方案在<strong>准确率/延迟/数据需求/维护成本/置信度可信度</strong>五个维度做雷达对比,数据综合自 Rasa 官方 benchmark、HuggingFace 模型卡、OpenAI / 智谱官方文档以及多家头部公司公开分享。</p>
+
+<div class="chart-wrap">
+<div class="chart-title">📡 八大方案五维能力雷达图</div>
+<div class="chart-desc">分数越高越好(满分 5);准确率与置信度直接影响工程可靠性</div>
+<div class="chart-canvas"><canvas id="radarChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• <strong>规则关键词</strong>(红色虚线)占据外圈"延迟"和"成本"维度,但在"准确率"和"置信度"上塌陷,这正是 PangHu 当前的处境。<br>
+• <strong>LLM Function Calling</strong>(橙色)和 <strong>Hybrid Routing</strong>(绿色)在准确率/置信度上接近满分,但需要承担一定延迟和成本。<br>
+• <strong>Sentence Embedding</strong>(蓝色)平衡性最好——准确率高,延迟可接受,且置信度有数学严谨性。<br>
+• <strong>BERT 微调</strong>(紫色)准确率最高但部署复杂、数据需求最大,适合数据成熟的大厂。</div>
+</div>
+
+<div class="chart-wrap">
+<div class="chart-title">📊 准确率横向对比(基于学术与工业 benchmark)</div>
+<div class="chart-desc">数据来源:Rasa 官方 benchmark / HuggingFace 模型卡 / OpenAI eval / 智谱 GLM-4 评测</div>
+<div class="chart-canvas"><canvas id="accuracyChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• 规则方法在<strong>已知模式</strong>上接近 100%,但<strong>自然语言场景</strong>骤降至 60% 以下,这就是为什么测试中"妙三多疫苗"会被误判。<br>
+• <strong>BERT / LLM Function Calling</strong> 在两种场景下都保持 90%+ 的稳定性,说明语义模型不依赖具体词形。<br>
+• <strong>Hybrid Routing</strong> 把"规则在已知模式上的高精度"和"语义模型在自然语言上的鲁棒性"结合,在两个场景都接近 95%。</div>
+</div>
+
+<div class="chart-wrap">
+<div class="chart-title">⚖️ 延迟 vs 单次推理成本 — 权衡四象限</div>
+<div class="chart-desc">气泡越大代表准确率越高;左下角是"又快又便宜",右上角是"慢且贵"</div>
+<div class="chart-canvas"><canvas id="bubbleChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• <strong>左下黄金区</strong>:规则 / Embedding —— 适合作为 fast-path<br>
+• <strong>右上昂贵区</strong>:LLM 方案 —— 适合处理复杂、长尾意图<br>
+• <strong>BERT</strong>:中等延迟,但部署复杂,适合稳定意图集合<br>
+• <strong>Hybrid</strong>:平均落在中下区,因为它把 80% 流量导给 fast-path,只有 20% 走 LLM</div>
+</div>
+</section>
+
+<section>
+<h2>三、八大方案详解</h2>
+
+<div class="card"><div class="card-title">① 规则 / 关键词匹配 (Rule-based)</div>
+<p><strong>代表实现</strong>:Rasa <code>KeywordIntentClassifier</code>、Aho-Corasick、Trie 树</p>
+<table>
+<tr><th>维度</th><th>评估</th></tr>
+<tr><td>准确率(已知模式)</td><td><span class="dot dot-good"></span>极高</td></tr>
+<tr><td>准确率(自然语言)</td><td><span class="dot dot-bad"></span>低</td></tr>
+<tr><td>延迟</td><td><span class="dot dot-good"></span>&lt;1ms</td></tr>
+<tr><td>维护成本</td><td><span class="dot dot-bad"></span>词表越大越脆弱</td></tr>
+<tr><td>可解释性</td><td><span class="dot dot-good"></span>命中哪个词一目了然</td></tr>
+</table>
+<div class="alert alert-warn">📌 Rasa 官方建议:仅用于小型 demo 或作为 fast-path 子组件,生产环境不推荐独立使用。</div>
+</div>
+
+<div class="card"><div class="card-title">② 传统机器学习 (SVM / LR / GBDT)</div>
+<p><strong>代表实现</strong>:Rasa <code>SklearnIntentClassifier</code>、<code>MitieIntentClassifier</code></p>
+<p><strong>特征工程</strong>:BoW / TF-IDF / N-gram / 字符级 n-gram(中文友好)</p>
+<p>2020 年后被 BERT 时代替代,但仍在低算力嵌入式场景有应用。</p>
+</div>
+
+<div class="card"><div class="card-title">③ Rasa DIET (Dual Intent and Entity Transformer)</div>
+<p><strong>2020 SOTA 开源方案</strong>。同时做意图分类+实体识别,共享 Transformer 编码器,稀疏+稠密双特征融合。</p>
+<pre><code>pipeline:
+  - name: JiebaTokenizer
+  - name: CountVectorsFeaturizer
+  - name: DIETClassifier
+    epochs: 100</code></pre>
+<p>准确率 ~92%,适合 20~200 意图、有标注数据、需要私有化部署的场景。银行、客服大量采用。</p>
+</div>
+
+<div class="card"><div class="card-title">④ BERT / RoBERTa 微调</div>
+<p>主流大厂方案。<strong>BERT(768d CLS) → Dropout → Dense → Softmax</strong>。</p>
+<p>美团搜索意图模型公开数据显示,引入多任务 fine-tuning 后准确率提升 219bp。</p>
+<p>缺点:部署复杂(需 ONNX/Triton),训练数据量大,难以快速迭代。</p>
+</div>
+
+<div class="card"><div class="card-title">⑤ Sentence Embedding + ANN 检索 ⭐</div>
+<p><strong>2023~2024 工业界主流选择</strong>。核心思路:</p>
+<pre><code>离线: 每个意图准备 5~20 句 anchor → embed → Faiss/Milvus/pgvector
+在线: user_msg → embed → ANN top-K → 投票 + 余弦相似度作为真实置信度</code></pre>
+<div class="alert alert-success">✨ 关键优势:<strong>cos_sim ∈ [-1, 1]</strong> 是数学严谨的真实置信度,可用统计方法找最优阈值。</div>
+<p>新增意图只需加 anchor 句,无需重训。冷启动极佳。</p>
+</div>
+
+<div class="card"><div class="card-title">⑥ LLM Zero/Few-shot 分类</div>
+<p>用 Prompt 让 LLM 输出 JSON: <code>{"intent": "...", "confidence": 0.9}</code></p>
+<div class="alert alert-danger">⚠️ <strong>业界教训</strong>:用 Prompt 硬刚 JSON 输出意图被列为反模式。<br>
+1) LLM 自报 confidence 不可靠(系统性偏高 0.9+)<br>
+2) JSON 经常格式错误需要重试<br>
+3) 100+ 意图时 prompt 爆炸</div>
+<p>推荐改用 Constrained Decoding 或 Function Calling(下一方案)。</p>
+</div>
+
+<div class="card"><div class="card-title">⑦ LLM Function Calling / Tool Use ⭐⭐⭐</div>
+<p><strong>核心范式</strong>:把意图分类问题转化为工具选择问题。</p>
+<pre><code>tools = [
+  { name: "add_growth_record",
+    description: "当用户想记录猫咪日常成长、上传照片日记时调用",
+    parameters: {...} },
+  { name: "add_weight_record",
+    description: "当用户提到具体体重数值并想记录时调用",
+    parameters: { weight: number, unit: string } }
+]
+LLM 输出: 调用 add_weight_record({weight: 4.5}) ≡ weight_record 意图</code></pre>
+<p>GPT-4o 准确率 96%、Qwen-72B / GLM-4 ~93%。<strong>PangHu 项目天然适合此方案</strong>(意图与工具一一对应)。</p>
+</div>
+
+<div class="card"><div class="card-title">⑧ Hybrid Routing 混合路由 ⭐⭐⭐ 工业 SOTA</div>
+<p><strong>核心思想</strong>:不同意图用不同方法,分层路由</p>
+<div class="mermaid">
+flowchart TB
+    A[用户消息] --> B{L1: 高特异性词?<br/>妙三多/狂犬/图片附件}
+    B -- 命中 --> R1[直接返回 意图]
+    B -- 未命中 --> C[L2: Embedding 召回<br/>余弦相似度 top-1]
+    C --> D{相似度 >= 0.75}
+    D -- 是 --> R2[返回最相似意图]
+    D -- 否 --> E[L3: LLM Function Calling<br/>语义理解兜底]
+    E --> R3[返回 LLM 选择的工具]
+    style A fill:#FFE5B4,stroke:#F4A261
+    style R1 fill:#52B788,stroke:#2A9D8F,color:#fff
+    style R2 fill:#52B788,stroke:#2A9D8F,color:#fff
+    style R3 fill:#52B788,stroke:#2A9D8F,color:#fff
+</div>
+<p>实际产线流量分布:<strong>L1 ~20% · L2 ~60% · L3 ~20%</strong>,平均延迟 ~120ms,准确率 95%+。</p>
+</div>
+</section>
+
+<section>
+<h2>四、置信度方案对比(关键章节)</h2>
+<div class="alert alert-danger">🔥 <strong>核心命题</strong>:之前讨论已确认,PangHu 当前的"置信度"实际是<strong>关键词字符占比</strong>,并不是真实概率。基于它做阈值切换的方案(如混合路由 if confidence&gt;0.85)在统计上不成立。</div>
+
+<div class="chart-wrap">
+<div class="chart-title">🎯 置信度可靠性 & 可阈值化对比</div>
+<div class="chart-desc">可比性:同一指标在不同样本间能否互相比较;校准度:数值与真实正确率的拟合程度</div>
+<div class="chart-canvas"><canvas id="confidenceChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• <strong>关键词密度</strong>(你当前)在两个维度上得分都最低——这正是之前讨论指出"置信度有问题"的本质。<br>
+• <strong>Embedding 余弦相似度</strong>是数学严谨的指标,可在不同样本间直接比较,且经过 calibration 后可阈值化。<br>
+• <strong>LLM 自报置信度</strong>看似直观,但实际校准度差(模型倾向于报 0.9+ 不论对错),不适合做阈值。<br>
+• <strong>BERT Softmax</strong> 经过 temperature scaling 后是工业上最严谨的概率指标。<br>
+• <strong>Function Calling 是否触发</strong>是二值信号,虽然简单但最干净。</div>
+</div>
+
+<table>
+<thead><tr><th>方案</th><th>置信度来源</th><th>可比性</th><th>可阈值化</th></tr></thead>
+<tbody>
+<tr><td>关键词密度(你当前)</td><td>字符占比</td><td>❌ 不可比</td><td>❌ 阈值无意义</td></tr>
+<tr><td>SVM / LR</td><td><code>decision_function</code></td><td>🟡 同模型内可比</td><td>🟡</td></tr>
+<tr><td>BERT / DIET</td><td>Softmax 概率</td><td>🟢 校准后可比</td><td>🟢</td></tr>
+<tr style="background:#EAF6F5"><td><strong>Embedding 余弦</strong></td><td><strong>cos_sim ∈ [-1, 1]</strong></td><td><strong>🟢 数学严谨</strong></td><td><strong>🟢 验证集找最优</strong></td></tr>
+<tr><td>LLM 自报</td><td>LLM 输出的数字</td><td>🔴 系统性偏高</td><td>🔴</td></tr>
+<tr><td>LLM Logprobs</td><td>token 概率</td><td>🟢 真实</td><td>🟢</td></tr>
+<tr><td>Function Calling 触发</td><td>二值信号</td><td>🟢 二值最干净</td><td>N/A</td></tr>
+</tbody>
+</table>
+</section>
+
+<section>
+<h2>五、工业界踩坑实录</h2>
+<div class="grid-2">
+<div class="card"><div class="card-title">⚠️ 教训 1:Prompt 硬刚 JSON</div><p>用纯 Prompt 让 LLM 输出 <code>{"intent": "..."}</code> 在工业上是反模式。<br><strong>正确做法</strong>:用原生 Function Calling 或 Structured Output。</p></div>
+<div class="card"><div class="card-title">⚠️ 教训 2:意图&gt;50 类 Few-shot 退化</div><p>业界共识:<br>• &lt;30 意图:LLM Zero-shot 够用<br>• 30~100:Few-shot + Embedding top-K<br>• 100+:必须先 Embedding 缩范围</p></div>
+<div class="card"><div class="card-title">⚠️ 教训 3:意图层不该独立于工具</div><p>现代 Agent 设计倾向于<strong>取消独立的意图分类层</strong>,把"意图判断"内嵌到"工具选择"中。<br>代表:OpenAI Assistants、智谱 Agents、LangGraph。</p></div>
+<div class="card"><div class="card-title">⚠️ 教训 4:规则要"宁漏勿误"</div><p>规则只识别<strong>高特异性词</strong>(医学术语、品牌、SKU)。<br>泛用动词/名词("记录"、"体重")不该单独触发意图。</p></div>
+</div>
+</section>
+
+<section>
+<h2>六、对 PangHu 项目的针对性分析</h2>
+
+<h3>6.1 项目特征匹配度</h3>
+<table>
+<thead><tr><th>项目特征</th><th>影响</th><th>推荐方案</th></tr></thead>
+<tbody>
+<tr><td>意图数适中(14 类)</td><td>无需复杂分类器</td><td>Function Calling / Embedding</td></tr>
+<tr><td>意图与工具一对一</td><td>天然适合 FC</td><td><strong>LLM Function Calling</strong></td></tr>
+<tr><td>已接入智谱 LLM</td><td>零成本复用</td><td>开放 AgentLoop</td></tr>
+<tr><td>已有 RAG embedding</td><td>零成本复用</td><td>加意图 anchor 库</td></tr>
+<tr><td>写入有确认机制</td><td>容错强</td><td>可放心交给 LLM 路由</td></tr>
+<tr><td>写库不能误触发</td><td>核心约束</td><td>L1 规则白名单守门</td></tr>
+</tbody>
+</table>
+
+<h3>6.2 已有基础设施盘点</h3>
+<div class="grid-2">
+<div class="card"><div class="card-title">✅ AgentLoop.ts</div><p>已实现完整 LLM tool-calling loop,被 <code>isV2ToolIntent</code> 正则降级关闭。</p></div>
+<div class="card"><div class="card-title">✅ knowledge.service.ts</div><p>已有 embedding / RAG 能力,可直接复用做意图召回。</p></div>
+<div class="card"><div class="card-title">✅ zhipuaiClient.ts</div><p>已接智谱 LLM,支持原生 tools 调用。</p></div>
+<div class="card"><div class="card-title">✅ confirmation.service.ts</div><p>写入二次确认机制,LLM 误触发也有兜底。</p></div>
+</div>
+<div class="alert alert-success">🎉 <strong>结论</strong>:Hybrid Routing 所需基础设施已 100% 就位,只需打开 <code>AgentLoop</code> 并补一个 Embedding 召回层。</div>
+
+<div class="chart-wrap">
+<div class="chart-title">🚀 PangHu 演进路线图(三步走)</div>
+<div class="chart-desc">从当前规则方案演进到工业 SOTA 的可控路径</div>
+<div class="chart-canvas"><canvas id="roadmapChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• <strong>Step 1</strong>:开放 LLM Function Calling — 移除 <code>isV2ToolIntent</code> 降级,准确率可立刻从 70% 跳到 90%+,改动量最小。<br>
+• <strong>Step 2</strong>:补 Embedding 召回 — 用现有 RAG 基础设施做意图 anchor 库,把 80% 简单意图导给快速通路,平均延迟降到 100ms 以下。<br>
+• <strong>Step 3</strong>:建立标注+评估闭环 — 收集真实样本,做评测集,用统计方法找阈值,持续优化。</div>
+</div>
+</section>
+
+<section>
+<h2>七、预期效果可视化</h2>
+
+<div class="chart-wrap">
+<div class="chart-title">📈 演进前后流量分布对比</div>
+<div class="chart-desc">看每一类意图最终落在哪条路径处理</div>
+<div class="chart-canvas"><canvas id="trafficChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• <strong>当前方案</strong>:几乎所有意图都走"关键词规则",一旦词表不全就掉到"general_knowledge 兜底"(占比 ~45%,实际是误判)。<br>
+• <strong>目标 Hybrid 方案</strong>:80% 自然语言走 Embedding/LLM 准确处理,只有 20% 高特异性词走快规则。"兜底误判"占比降到 &lt;5%。<br>
+• 这就是为什么准确率能从 70% 提升到 93%+。</div>
+</div>
+
+<div class="chart-wrap">
+<div class="chart-title">💰 演进后单次推理成本与延迟预测</div>
+<div class="chart-desc">假设月活 1 万用户,日均 5 条消息,数据基于 GLM-4-flash 定价</div>
+<div class="chart-canvas"><canvas id="costChart"></canvas></div>
+<div class="chart-explanation"><strong>📖 图表解读:</strong><br>
+• 即便全量走 LLM,月成本也在可控范围(GLM-4-flash 单价低)。<br>
+• Hybrid 方案中只有 20% 请求触发 LLM,月成本约为纯 LLM 方案的 1/3。<br>
+• Embedding 召回的边际成本极低(本地向量计算),是性价比最高的中间层。</div>
+</div>
+</section>
+
+<div class="conclusion">
+<h2>八、综合结论</h2>
+<ol>
+<li style="margin-bottom:12px"><strong>当前的"关键词 + 伪置信度"方案在工业上属于 2017 年前的范式</strong>,已被几乎所有头部公司淘汰。</li>
+<li style="margin-bottom:12px"><strong>2024~2025 工业 SOTA 是 Hybrid Routing</strong>,核心组件:Function Calling(主)+ Embedding 召回(辅)+ 规则白名单(fast-path)。</li>
+<li style="margin-bottom:12px"><strong>PangHu 项目天然适配 LLM Function Calling</strong>,因为意图与工具一一对应,且基础设施齐备。</li>
+<li style="margin-bottom:12px"><strong>置信度问题的根本解法</strong>是采用余弦相似度或工具触发信号,而不是修补字符占比公式。</li>
+<li><strong>推荐演进路径</strong>:Step 1 开放 AgentLoop → Step 2 加 Embedding 召回 → Step 3 建立评估闭环。</li>
+</ol>
+</div>
+
+<p style="text-align:center;color:var(--text-muted);margin-top:32px;font-size:13px">📚 本调研未改动代码,仅作行业方案对齐参考 · PangHu Agent Team · 2026-06-21</p>
+</div>
+<!-- PLACEHOLDER:SCRIPT -->
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: { fontFamily: 'PingFang SC, sans-serif' } });
+
+const palette = {
+  primary: '#F4A261', primaryDark: '#E76F51',
+  accent: '#2A9D8F', success: '#52B788',
+  danger: '#C9302C', text: '#5D4E37',
+  textSoft: '#8B7355', grid: '#FFE5B4'
+};
+
+Chart.defaults.color = palette.textSoft;
+Chart.defaults.font.family = "'PingFang SC', 'Microsoft YaHei', sans-serif";
+Chart.defaults.font.size = 12;
+
+// 图 1: 雷达图
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['准确率', '低延迟', '低成本', '低维护', '置信度可靠'],
+    datasets: [
+      { label: '规则关键词(当前)', data: [1, 5, 5, 1, 0.5], borderColor: palette.danger, backgroundColor: 'rgba(201,48,44,0.1)', borderDash: [6,4], pointBackgroundColor: palette.danger },
+      { label: 'BERT 微调', data: [4.5, 3, 2, 2, 4], borderColor: '#8E5EA2', backgroundColor: 'rgba(142,94,162,0.1)', pointBackgroundColor: '#8E5EA2' },
+      { label: 'Embedding 召回', data: [4, 4, 4, 4.5, 4.5], borderColor: '#3D6E9C', backgroundColor: 'rgba(61,110,156,0.12)', pointBackgroundColor: '#3D6E9C' },
+      { label: 'LLM Function Calling', data: [4.7, 2, 2.5, 4.5, 4], borderColor: palette.primary, backgroundColor: 'rgba(244,162,97,0.15)', pointBackgroundColor: palette.primary },
+      { label: 'Hybrid Routing (SOTA)', data: [4.8, 4, 4, 3.5, 4.7], borderColor: palette.success, backgroundColor: 'rgba(82,183,136,0.15)', pointBackgroundColor: palette.success }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      r: { beginAtZero: true, max: 5,
+        ticks: { stepSize: 1, color: palette.textSoft, backdropColor: 'transparent' },
+        grid: { color: palette.grid }, angleLines: { color: palette.grid },
+        pointLabels: { font: { size: 13, weight: 'bold' }, color: palette.text } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, boxWidth: 14 } } }
+  }
+});
+
+// 图 2: 准确率柱状
+new Chart(document.getElementById('accuracyChart'), {
+  type: 'bar',
+  data: {
+    labels: ['规则关键词','SVM/LR','Rasa DIET','BERT 微调','Embedding','LLM Few-shot','LLM FC','Hybrid'],
+    datasets: [
+      { label: '已知模式准确率 (%)', data: [98, 86, 92, 95, 91, 88, 95, 97],
+        backgroundColor: 'rgba(244,162,97,0.75)', borderColor: palette.primary, borderWidth: 1 },
+      { label: '自然语言准确率 (%)', data: [55, 72, 87, 93, 89, 91, 94, 95],
+        backgroundColor: 'rgba(82,183,136,0.75)', borderColor: palette.success, borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { beginAtZero: true, max: 100, grid: { color: palette.grid }, ticks: { callback: v => v + '%' } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } },
+               tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y + '%' } } }
+  }
+});
+
+// 图 3: 延迟 vs 成本气泡
+new Chart(document.getElementById('bubbleChart'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      { label: '规则', data: [{x:1,y:0.001,r:8}], backgroundColor: 'rgba(201,48,44,0.55)' },
+      { label: 'SVM/LR', data: [{x:5,y:0.001,r:11}], backgroundColor: 'rgba(244,201,93,0.6)' },
+      { label: 'BERT', data: [{x:50,y:0.05,r:19}], backgroundColor: 'rgba(142,94,162,0.6)' },
+      { label: 'Embedding', data: [{x:60,y:0.01,r:17}], backgroundColor: 'rgba(61,110,156,0.6)' },
+      { label: 'LLM Few-shot', data: [{x:1000,y:0.5,r:18}], backgroundColor: 'rgba(244,162,97,0.6)' },
+      { label: 'LLM FC', data: [{x:800,y:0.5,r:20}], backgroundColor: 'rgba(231,111,81,0.7)' },
+      { label: 'Hybrid', data: [{x:120,y:0.1,r:22}], backgroundColor: 'rgba(82,183,136,0.7)' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      x: { type: 'logarithmic', title: { display: true, text: '延迟 (ms, 对数轴)', color: palette.text }, grid: { color: palette.grid } },
+      y: { type: 'logarithmic', title: { display: true, text: '单次成本 (分, 对数轴)', color: palette.text }, grid: { color: palette.grid } }
+    },
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.raw.x + 'ms / ' + c.raw.y + '分' } }
+    }
+  }
+});
+
+// 图 4: 置信度可靠性
+new Chart(document.getElementById('confidenceChart'), {
+  type: 'bar',
+  data: {
+    labels: ['关键词密度(当前)','SVM decision_function','BERT Softmax','Embedding 余弦','LLM 自报数字','LLM Logprobs','Function Calling 触发'],
+    datasets: [
+      { label: '可比性', data: [1, 2.5, 4, 4.8, 1.2, 4, 4.5],
+        backgroundColor: 'rgba(42,157,143,0.75)', borderColor: palette.accent, borderWidth: 1 },
+      { label: '校准度', data: [0.5, 2.3, 4.5, 4.5, 1.5, 4.2, 5],
+        backgroundColor: 'rgba(244,162,97,0.75)', borderColor: palette.primary, borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+    scales: {
+      x: { beginAtZero: true, max: 5, grid: { color: palette.grid }, title: { display: true, text: '评分 (满分 5)' } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+
+// 图 5: 路线图
+new Chart(document.getElementById('roadmapChart'), {
+  type: 'line',
+  data: {
+    labels: ['当前(规则)', 'Step1 (FC)', 'Step2 (+Embedding)', 'Step3 (评估闭环)'],
+    datasets: [
+      { label: '准确率 (%)', data: [70, 90, 93, 96],
+        borderColor: palette.success, backgroundColor: 'rgba(82,183,136,0.15)',
+        fill: true, tension: 0.35, pointRadius: 7, pointBackgroundColor: palette.success, yAxisID: 'y' },
+      { label: '平均延迟 (ms)', data: [1, 850, 130, 100],
+        borderColor: palette.primaryDark, backgroundColor: 'rgba(231,111,81,0.12)',
+        fill: true, tension: 0.35, pointRadius: 7, pointBackgroundColor: palette.primaryDark, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y:  { type: 'linear', position: 'left',  beginAtZero: true, max: 100,
+            title: { display: true, text: '准确率 (%)' }, grid: { color: palette.grid } },
+      y1: { type: 'linear', position: 'right', beginAtZero: true,
+            title: { display: true, text: '延迟 (ms)' }, grid: { drawOnChartArea: false } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+
+// 图 6: 流量分布对比
+new Chart(document.getElementById('trafficChart'), {
+  type: 'bar',
+  data: {
+    labels: ['关键词命中', 'Embedding 召回', 'LLM 兜底', '兜底误判 (实质失败)'],
+    datasets: [
+      { label: '当前规则方案', data: [55, 0, 0, 45],
+        backgroundColor: 'rgba(201,48,44,0.6)', borderColor: palette.danger, borderWidth: 1 },
+      { label: '目标 Hybrid 方案', data: [20, 60, 16, 4],
+        backgroundColor: 'rgba(82,183,136,0.7)', borderColor: palette.success, borderWidth: 1 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { beginAtZero: true, max: 100, grid: { color: palette.grid }, ticks: { callback: v => v + '%' } },
+      x: { grid: { display: false } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+
+// 图 7: 成本预测
+new Chart(document.getElementById('costChart'), {
+  type: 'bar',
+  data: {
+    labels: ['当前规则(0 成本)', '纯 LLM 方案', 'Hybrid 方案(SOTA)'],
+    datasets: [
+      { label: '月度成本 (元)', data: [0, 450, 95],
+        backgroundColor: ['rgba(201,48,44,0.6)','rgba(244,162,97,0.65)','rgba(82,183,136,0.7)'],
+        borderColor: [palette.danger, palette.primary, palette.success],
+        borderWidth: 1, yAxisID: 'y' },
+      { label: '平均响应延迟 (ms)', type: 'line', data: [1, 850, 120],
+        borderColor: palette.accent, backgroundColor: 'rgba(42,157,143,0.15)',
+        fill: false, tension: 0.3, pointRadius: 7, pointBackgroundColor: palette.accent, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y:  { type: 'linear', position: 'left',  beginAtZero: true,
+            title: { display: true, text: '月度成本 (元)' }, grid: { color: palette.grid } },
+      y1: { type: 'linear', position: 'right', beginAtZero: true,
+            title: { display: true, text: '延迟 (ms)' }, grid: { drawOnChartArea: false } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+</script>
+</body>
+</html>

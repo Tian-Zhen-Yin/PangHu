@@ -105,7 +105,7 @@ export const INTENT_ANCHORS: IntentAnchor[] = [
     ],
   },
   {
-    toolName: 'GET_health_report',
+    toolName: 'GENERATE_health_report',
     anchors: [
       '帮我生成本周健康周报',
       '猫咪健康报告',

@@ -140,7 +140,12 @@ export class AgentLoop {
       messages.push({
         role: 'assistant',
         content: '',
-        tool_calls: callsInOrder.map((c) => ({ id: c.id, name: c.name, arguments: c.args })),
+        // 智谱 / OpenAI 兼容格式要求 tool_calls 为 { id, type, function: { name, arguments } }
+        tool_calls: callsInOrder.map((c) => ({
+          id: c.id,
+          type: 'function',
+          function: { name: c.name, arguments: c.args || '{}' },
+        })),
       })
 
       const execResults = await Promise.all(
