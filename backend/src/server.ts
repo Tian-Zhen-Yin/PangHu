@@ -90,30 +90,6 @@ app.use('/uploads', express.static('uploads'))
 app.use(notFoundHandler)
 app.use(errorHandler)
 
-// Vercel 环境：同步补齐缺失的数据库列（阻塞模块导出，确保首次请求前完成）
-if (process.env.VERCEL && process.env.DATABASE_URL) {
-  const { execSync } = require('child_process')
-  try {
-    execSync('node', {
-      input: `
-        const { PrismaClient } = require('@prisma/client');
-        const p = new PrismaClient();
-        (async () => {
-          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "personality" TEXT;');
-          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "energyBaseline" INTEGER;');
-          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "healthTags" TEXT;');
-          await p.$disconnect();
-        })().catch(e => { console.error(e.message); process.exit(1); });
-      `,
-      timeout: 15000,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-    console.log('[Schema] Missing columns patched')
-  } catch (e) {
-    console.error('[Schema] Patch failed (non-fatal):', (e.stderr || '').toString().trim().slice(0, 120))
-  }
-}
-
 // 导出 app 供 Vercel Serverless Functions 使用
 export default app
 
