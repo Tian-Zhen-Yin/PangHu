@@ -205,7 +205,7 @@ onMounted(async () => {
     <!-- Guest state -->
     <div v-if="!authStore.isAuthenticated" class="guest-state">
       <div class="guest-content">
-        <img src="@/assets/icon/记一笔.png" alt="欢迎" class="welcome-icon" />
+        <img src="@/assets/icon/记一笔.webp" alt="欢迎" class="welcome-icon" />
         <h2 class="guest-title">欢迎使用哈吉咪养成计划</h2>
         <p class="guest-desc">登录后即可记录你的喵星人成长足迹</p>
         <div class="guest-actions">

@@ -2,11 +2,11 @@
 import { RouterLink, useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useAuthStore } from '../../stores/auth.js'
-import iconHome from '../../assets/icon/首页.png'
-import iconTimeline from '../../assets/icon/成长记录.png'
-import iconGuide from '../../assets/icon/养猫指南.png'
-import iconAdvisor from '../../assets/icon/喵星顾问.png'
-import iconMascot from '../../assets/mascot/sleepy.png'
+import iconHome from '../../assets/icon/首页.webp'
+import iconTimeline from '../../assets/icon/成长记录.webp'
+import iconGuide from '../../assets/icon/养猫指南.webp'
+import iconAdvisor from '../../assets/icon/喵星顾问.webp'
+import iconMascot from '../../assets/mascot/sleepy.webp'
 
 const authStore = useAuthStore()
 const route = useRoute()

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import defaultImg from '../../assets/mascot/default.png'
-import sleepyImg from '../../assets/mascot/sleepy.png'
-import happyImg from '../../assets/mascot/happy.png'
-import confusedImg from '../../assets/mascot/confused.png'
-import excitedImg from '../../assets/mascot/excited.png'
-import yawningImg from '../../assets/mascot/yawning.png'
-import waitingImg from '../../assets/mascot/waiting.png'
-import focusedImg from '../../assets/mascot/focused.png'
+import defaultImg from '../../assets/mascot/default.webp'
+import sleepyImg from '../../assets/mascot/sleepy.webp'
+import happyImg from '../../assets/mascot/happy.webp'
+import confusedImg from '../../assets/mascot/confused.webp'
+import excitedImg from '../../assets/mascot/excited.webp'
+import yawningImg from '../../assets/mascot/yawning.webp'
+import waitingImg from '../../assets/mascot/waiting.webp'
+import focusedImg from '../../assets/mascot/focused.webp'
 
 export type MascotExpression =
   | 'default'    // 微笑陪伴 - Logo/个人中心
