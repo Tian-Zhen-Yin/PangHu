@@ -58,6 +58,145 @@ function onProfileCompleted() {
   showProfileSetup.value = false
 }
 
+// ===== Agent 能力引导入口（向用户暴露隐藏工具）=====
+interface AgentCapability {
+  id: string
+  icon: string
+  title: string
+  desc: string
+  prompt: string // 一键发起的示例 prompt
+  category: 'record' | 'health' | 'play' | 'knowledge'
+  needsAttachment?: boolean // 需图片附件（如成长记录最佳搭配图片）
+}
+
+const AGENT_CAPABILITIES: AgentCapability[] = [
+  // 记录类
+  {
+    id: 'growth_record',
+    icon: '📖',
+    title: '成长记录',
+    desc: '上传照片 + 描述，记录今天',
+    prompt: '帮我记录一下猫咪今天的成长',
+    category: 'record',
+    needsAttachment: true,
+  },
+  {
+    id: 'weight_record',
+    icon: '⚖️',
+    title: '记录体重',
+    desc: '快速登记今日称重',
+    prompt: '记一下今天的体重',
+    category: 'record',
+  },
+  {
+    id: 'vaccine_record',
+    icon: '💉',
+    title: '记录疫苗',
+    desc: '登记接种 / 驱虫记录',
+    prompt: '帮我记录一下刚打的疫苗',
+    category: 'record',
+  },
+  {
+    id: 'growth_query',
+    icon: '📚',
+    title: '查看记录',
+    desc: '回顾成长日记 & 历史',
+    prompt: '看看最近的成长记录',
+    category: 'record',
+  },
+  // 健康类
+  {
+    id: 'health_report',
+    icon: '📊',
+    title: '健康周报',
+    desc: '一周健康状况总结',
+    prompt: '帮我生成本周的健康周报',
+    category: 'health',
+  },
+  {
+    id: 'health_check',
+    icon: '🩺',
+    title: '健康评估',
+    desc: '体重 / 营养 / 异常排查',
+    prompt: '帮我评估一下猫咪现在的健康状况',
+    category: 'health',
+  },
+  {
+    id: 'vaccine_check',
+    icon: '📅',
+    title: '疫苗到期',
+    desc: '查询下次该接种时间',
+    prompt: '下次该打什么疫苗了',
+    category: 'health',
+  },
+  {
+    id: 'allergy_query',
+    icon: '⚠️',
+    title: '过敏档案',
+    desc: '查看过敏原 & 反应记录',
+    prompt: '看看猫咪的过敏档案',
+    category: 'health',
+  },
+  // 陪玩
+  {
+    id: 'play_recommend',
+    icon: '🎾',
+    title: '陪玩推荐',
+    desc: '根据精力 / 时长智能推荐',
+    prompt: '陪猫咪玩什么好',
+    category: 'play',
+  },
+  // 知识
+  {
+    id: 'general_knowledge',
+    icon: '💡',
+    title: '养猫百科',
+    desc: '饮食 / 行为 / 训练问题',
+    prompt: '',
+    category: 'knowledge',
+  },
+]
+
+const CATEGORY_META: Record<AgentCapability['category'], { label: string; emoji: string }> = {
+  record: { label: '记录管家', emoji: '📝' },
+  health: { label: '健康守护', emoji: '❤️' },
+  play: { label: '陪玩助手', emoji: '🎮' },
+  knowledge: { label: '养猫百科', emoji: '💡' },
+}
+
+const groupedCapabilities = computed(() => {
+  const groups: Record<string, AgentCapability[]> = {}
+  for (const cap of AGENT_CAPABILITIES) {
+    if (!groups[cap.category]) groups[cap.category] = []
+    groups[cap.category].push(cap)
+  }
+  return groups
+})
+
+// 快捷指令面板（"+"按钮唤起）
+const showQuickPanel = ref(false)
+function toggleQuickPanel() {
+  showQuickPanel.value = !showQuickPanel.value
+}
+
+function handleCapabilityClick(cap: AgentCapability) {
+  showQuickPanel.value = false
+  if (!chatStore.useAgentMode) chatStore.toggleAgentMode(true)
+
+  // 知识类无 prompt：让用户自由输入
+  if (cap.id === 'general_knowledge') {
+    return
+  }
+  // 需要附件的（如成长记录）：提示用户先上传图片
+  if (cap.needsAttachment) {
+    ElMessage.info('在输入框点击 📷 上传照片，再加上一句描述即可')
+    // 仍发送一个温和的引导文案，让 Agent 知道用户想记录
+    handleSend(cap.prompt)
+    return
+  }
+  handleSend(cap.prompt)
+}
+
 // 把抽屉配置拼成自然语言 prompt，复用 Agent 流式管线触发 RECOMMEND_play
 function buildPlayPrompt(): string {
   const name = currentCat.value?.name || '猫咪'
@@ -436,8 +575,36 @@ const contextualSuggestions = computed(() => {
             <p class="empty-description">我是 {{ currentCat?.name || '小猫咪' }} 的专属健康 & 陪玩助手</p>
           </div>
 
+          <!-- Agent 能力引导：分组展示所有可用工具 -->
+          <div class="capability-board">
+            <div
+              v-for="(caps, cat) in groupedCapabilities"
+              :key="cat"
+              class="capability-group"
+            >
+              <div class="capability-group-title">
+                <span class="group-emoji">{{ CATEGORY_META[cat as keyof typeof CATEGORY_META].emoji }}</span>
+                <span class="group-label">{{ CATEGORY_META[cat as keyof typeof CATEGORY_META].label }}</span>
+              </div>
+              <div class="capability-grid">
+                <button
+                  v-for="cap in caps"
+                  :key="cap.id"
+                  class="capability-card"
+                  @click="handleCapabilityClick(cap)"
+                >
+                  <span class="capability-icon">{{ cap.icon }}</span>
+                  <span class="capability-text">
+                    <span class="capability-title">{{ cap.title }}</span>
+                    <span class="capability-desc">{{ cap.desc }}</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 快速入口问题 -->
-          <div class="quick-questions">
+          <div v-if="suggestedQuestions.length > 0" class="quick-questions">
             <div class="section-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
@@ -498,7 +665,7 @@ const contextualSuggestions = computed(() => {
 
       <!-- 输入区域 -->
       <div class="input-area">
-        <!-- 模式切换：问诊 / 陪玩 -->
+        <!-- 模式切换：问诊 / 陪玩 + 快捷指令 -->
         <div class="mode-switch">
           <button :class="['mode-btn', mode === 'chat' ? 'active' : '']" @click="switchMode('chat')">
             💬 问诊
@@ -506,6 +673,38 @@ const contextualSuggestions = computed(() => {
           <button :class="['mode-btn', mode === 'play' ? 'active' : '']" @click="switchMode('play')">
             🎾 陪玩
           </button>
+          <button
+            :class="['mode-btn', 'mode-btn-more', showQuickPanel ? 'active' : '']"
+            @click="toggleQuickPanel"
+            title="更多功能"
+          >
+            {{ showQuickPanel ? '✕ 收起' : '✨ 更多' }}
+          </button>
+        </div>
+
+        <!-- 快捷指令面板：随时唤起所有 Agent 能力 -->
+        <div v-if="showQuickPanel" class="quick-panel">
+          <div
+            v-for="(caps, cat) in groupedCapabilities"
+            :key="cat"
+            class="quick-panel-group"
+          >
+            <div class="quick-panel-title">
+              {{ CATEGORY_META[cat as keyof typeof CATEGORY_META].emoji }}
+              {{ CATEGORY_META[cat as keyof typeof CATEGORY_META].label }}
+            </div>
+            <div class="quick-panel-chips">
+              <button
+                v-for="cap in caps"
+                :key="cap.id"
+                class="quick-chip"
+                @click="handleCapabilityClick(cap)"
+              >
+                <span>{{ cap.icon }}</span>
+                <span>{{ cap.title }}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 陪玩抽屉：时长 / 精力 / 类别 -->
@@ -1593,6 +1792,181 @@ const contextualSuggestions = computed(() => {
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.22);
 }
 
+/* "更多"按钮：稍微突出，提示用户还有更多能力 */
+.mode-btn-more {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #FFF0D9 0%, #FFE5B4 100%);
+  border-color: #FFE5B4;
+}
+
+.mode-btn-more.active {
+  background: linear-gradient(135deg, #F4A261 0%, #E76F51 100%);
+  border-color: #E76F51;
+  color: #fff;
+}
+
+/* ===== Agent 能力面板 ===== */
+.capability-board {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-2xl);
+  animation: quickQuestionsSlide 0.5s ease-out 0.15s both;
+}
+
+.capability-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.capability-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #BC8F6F;
+  padding-left: 2px;
+}
+
+.group-emoji {
+  font-size: 16px;
+}
+
+.group-label {
+  letter-spacing: 0.4px;
+}
+
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm);
+}
+
+.capability-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  border: 1.5px solid #FFF5DC;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.capability-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FFE5B4 0%, #FFF0DB 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.capability-card:hover {
+  transform: translateY(-2px);
+  border-color: #FFE5B4;
+  background: linear-gradient(135deg, #FFFBF0 0%, #FFF5DC 100%);
+  box-shadow: 0 6px 18px rgba(255, 236, 179, 0.18);
+}
+
+.capability-card:hover::before {
+  transform: scaleX(1);
+}
+
+.capability-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(255, 236, 179, 0.2));
+}
+
+.capability-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.capability-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5D4E37;
+  line-height: 1.2;
+}
+
+.capability-desc {
+  font-size: 11.5px;
+  color: #BC8F6F;
+  line-height: 1.3;
+}
+
+/* ===== 快捷指令面板（"+"按钮唤起）===== */
+.quick-panel {
+  background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  box-shadow: 0 2px 10px rgba(255, 236, 179, 0.12);
+  animation: drawerSlide 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.quick-panel-group {
+  margin-bottom: var(--space-sm);
+}
+
+.quick-panel-group:last-child {
+  margin-bottom: 0;
+}
+
+.quick-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #BC8F6F;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+
+.quick-panel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid #FFF5DC;
+  border-radius: var(--radius-full);
+  background: #fff;
+  color: #8B7355;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-chip:hover {
+  background: linear-gradient(135deg, #FFE5B4 0%, #FFDAB9 100%);
+  border-color: #F4A261;
+  color: #5D4E37;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(244, 162, 97, 0.18);
+}
+
 /* ===== 陪玩抽屉 ===== */
 .play-drawer {
   background: linear-gradient(135deg, #FFFEF8 0%, #FFFBF0 100%);
@@ -1807,6 +2181,51 @@ const contextualSuggestions = computed(() => {
   .doctor-avatar-large {
     max-width: 100px;
     max-height: 100px;
+  }
+
+  /* 能力卡片移动端：单列堆叠，紧凑内边距 */
+  .capability-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .capability-card {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .capability-icon {
+    font-size: 20px;
+  }
+
+  .capability-title {
+    font-size: 13px;
+  }
+
+  .capability-desc {
+    font-size: 11px;
+  }
+
+  .capability-board {
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  /* 快捷面板移动端：限高，可滚动 */
+  .quick-panel {
+    max-height: 50vh;
+    padding: var(--space-sm);
+  }
+
+  .quick-chip {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* "更多"按钮在小屏上文案更短 */
+  .mode-btn-more {
+    padding: 8px 10px;
+    font-size: 12px;
   }
 }
 </style>
