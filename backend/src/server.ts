@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit'
 import apiRoutes from './routes/index'
 import { errorHandler, notFoundHandler } from './middlewares/error'
 import { startReminderScheduler } from './jobs/reminderChecker'
+import { getIntentRecaller } from './agent/core/IntentRecaller'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -100,5 +101,15 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 
     // 启动定时任务（注意：在 Serverless 环境下 node-cron 可能不会如预期运行）
     startReminderScheduler()
+
+    // 预热 IntentRecaller(异步,不阻塞启动) — 用于意图召回 fast-path
+    const apiKey = process.env.ZHIPUAI_API_KEY
+    if (apiKey) {
+      getIntentRecaller().initialize(apiKey).catch((err) => {
+        console.warn('[server] IntentRecaller 预热失败,fast-path 将自动降级到 LLM 路由:', err.message)
+      })
+    } else {
+      console.warn('[server] 未配置 ZHIPUAI_API_KEY,IntentRecaller 不会启用')
+    }
   })
 }
