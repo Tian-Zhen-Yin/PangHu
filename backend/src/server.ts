@@ -90,6 +90,22 @@ app.use('/uploads', express.static('uploads'))
 app.use(notFoundHandler)
 app.use(errorHandler)
 
+// Vercel 环境：冷启动时自动执行数据库迁移
+if (process.env.VERCEL && process.env.DATABASE_URL) {
+  const { execSync } = require('child_process')
+  const path = require('path')
+  try {
+    execSync('npx prisma migrate deploy', {
+      cwd: path.join(__dirname, '..', 'backend'),
+      stdio: 'pipe',
+      timeout: 30000,
+    })
+    console.log('[Migration] Deployed successfully')
+  } catch (e: any) {
+    console.error('[Migration] Failed:', e.stderr?.toString() || e.message)
+  }
+}
+
 // 导出 app 供 Vercel Serverless Functions 使用
 export default app
 
