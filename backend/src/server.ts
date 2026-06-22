@@ -69,6 +69,33 @@ app.use('/api/chat', chatLimiter)
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true, limit: '1mb' }))
 
+// Vercel 环境：首次请求时补齐缺失的数据库列
+// （陪玩档案字段 personality / energyBaseline / healthTags 的 migration
+//  生成后未实际触达 DB，此处用轻量 SQL 修补，避免 Prisma 查询报错）
+let schemaPatched = false
+app.use('/api', async (req, res, next) => {
+  if (!schemaPatched && process.env.VERCEL) {
+    try {
+      const prisma = (await import('./config/database')).default
+      for (const sql of [
+        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "personality" TEXT;',
+        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "energyBaseline" INTEGER;',
+        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "healthTags" TEXT;',
+      ]) {
+        await prisma.$executeRawUnsafe(sql)
+      }
+      schemaPatched = true
+      console.log('[Schema] Missing columns patched')
+    } catch (e: any) {
+      if (!e.message?.includes('already exists')) {
+        console.error('[Schema] Patch failed:', e.message)
+      }
+      schemaPatched = true // 不管成败，不再重试
+    }
+  }
+  next()
+})
+
 // API路由
 app.use('/api', apiRoutes)
 
@@ -89,31 +116,6 @@ app.use('/uploads', express.static('uploads'))
 // 错误处理
 app.use(notFoundHandler)
 app.use(errorHandler)
-
-// Vercel 环境：冷启动时自动补齐缺失的数据库列
-// （避免因 CLAUDE.md 禁止直接改 schema.prisma，走迁移流程耗时较长，
-//  改用轻量 SQL 修补，等 schema 稳定后再走正式 migrate）
-if (process.env.VERCEL && process.env.DATABASE_URL) {
-  ;(async () => {
-    const { PrismaClient } = require('@prisma/client')
-    const p = new PrismaClient()
-    try {
-      // 检查并添加陪玩档案字段（migration 生成后未触达 DB 的遗留列）
-      for (const col of [
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "personality" TEXT;',
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "energyBaseline" INTEGER;',
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "healthTags" TEXT;',
-      ]) {
-        await p.$executeRawUnsafe(col)
-      }
-      console.log('[Schema] Missing columns patched')
-    } catch (e: any) {
-      console.error('[Schema] Patch failed:', e.message)
-    } finally {
-      await p.$disconnect()
-    }
-  })()
-}
 
 // 导出 app 供 Vercel Serverless Functions 使用
 export default app
