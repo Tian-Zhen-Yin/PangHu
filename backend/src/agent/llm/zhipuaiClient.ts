@@ -5,7 +5,7 @@ import type { LLMClient, LLMStreamEvent, ToolDefinition } from './LLMClient'
 import type { ChatMessage } from '../types/agent'
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false })
-const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4-flash'
+const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4.5-flash'
 
 /**
  * 解析单行 SSE 数据,返回 0..N 个 LLMStreamEvent。
@@ -24,6 +24,9 @@ export function parseSseLine(line: string): LLMStreamEvent[] {
 
   const events: LLMStreamEvent[] = []
   const delta = choice.delta || {}
+
+  // 思考型模型(glm-4.5/4.6)可能输出 reasoning_content,这是内部思考过程,不应推给用户
+  // 即便 thinking=disabled,某些模型仍可能返回,这里统一丢弃
 
   if (typeof delta.content === 'string' && delta.content.length > 0) {
     events.push({ type: 'content', delta: delta.content })
@@ -81,6 +84,8 @@ export class ZhipuaiClient implements LLMClient {
       temperature: 0.7,
       top_p: 0.9,
       stream: true,
+      // glm-4.5/4.6 系列默认开启思考模式会大幅增加延迟,工具调用场景关闭它
+      thinking: { type: 'disabled' },
     }
     if (opts.tools && opts.tools.length > 0) {
       body.tools = opts.tools

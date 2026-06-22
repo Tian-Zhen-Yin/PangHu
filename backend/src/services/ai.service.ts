@@ -11,7 +11,7 @@ const httpsAgent = new https.Agent({
 })
 
 // 默认使用的模型
-const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4-flash'
+const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4.5-flash'
 
 export type MessageRole = 'user' | 'assistant' | 'system'
 

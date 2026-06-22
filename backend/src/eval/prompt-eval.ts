@@ -123,7 +123,7 @@ async function callLLM(userContent) {
     },
     agent: httpsAgent,
     body: JSON.stringify({
-      model: process.env.ZHIPUAI_MODEL || 'glm-4-flash',
+      model: process.env.ZHIPUAI_MODEL || 'glm-4.5-flash',
       messages,
       temperature: 0.7,
       top_p: 0.9,

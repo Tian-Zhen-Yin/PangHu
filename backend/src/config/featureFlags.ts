@@ -96,9 +96,9 @@ export const featureFlags: Record<string, FeatureFlag> = {
       environment: {
         development: true,
         staging: true,
-        production: false,
+        production: true,
       },
-      userSegment: 'internal',
+      userSegment: 'all',
       percentage: 100,
     },
     dependencies: ['AGENT_MODE'],

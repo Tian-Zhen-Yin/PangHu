@@ -22,7 +22,10 @@ interface VaccineCheckOutput {
 
 export const VaccineCheckTool: Tool<z.infer<typeof vaccineCheckSchema>, VaccineCheckOutput> = {
   name: 'check_vaccine',
-  description: '检查猫咪的疫苗接种状态和下次到期时间。当用户询问疫苗、驱虫、免疫、打针时间时使用。返回已接种记录、下次接种提醒、以及需要关注的项目。',
+  description: '【查询】检查猫咪的疫苗接种状态和下次到期时间(只读)。\n' +
+    '【何时调用】用户询问"下次该打什么疫苗/疫苗到期没/什么时候打/距离上次打了多久/疫苗本"等查询类问题。\n' +
+    '【不要调用】用户告知"刚打了/今天接种了"等录入意图(用 ADD_vaccine_record)。\n' +
+    '返回已接种记录、下次接种提醒、需要关注的项目。',
   schema: z.object({
     catName: z.string().optional().describe('猫咪名字。留空则选择默认猫咪。'),
   }),

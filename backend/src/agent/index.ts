@@ -79,26 +79,15 @@ export interface StreamCallbacks {
 
 export class CatAgent {
   /**
-   * V3.0 LLM tool-calling loop 协调器。
-   * 仅暴露 5 个 readonly 工具,V2.0 写入工具(allergy/health-report)flag 开启时降级到旧链路。
+   * V3.1 LLM tool-calling loop 协调器（开放全部工具,含 write）。
+   * write 工具仍由 confirmationToken 机制守门:LLM 选中后 → AgentLoop 中断 → SSE 推 pending_confirmation。
    */
-  private readonly agentLoop = new AgentLoop(zhipuaiClient, this.getReadOnlyTools(), { maxIterations: 5 })
+  private readonly agentLoop = new AgentLoop(zhipuaiClient, listTools(), { maxIterations: 5 })
 
   /**
-   * 仅返回本次迁移涵盖的 5 个 readonly 工具。
-   * V2.0 新工具(allergy/health-report)flag 开启时走旧链路。
+   * 构造写入确认引导文案(在 pending_confirmation 之后推送给用户)。
    */
-  private getReadOnlyTools() {
-    const allowed = new Set(['get_cat_info', 'get_weight_trend', 'check_health', 'check_vaccine', 'rag_search', 'RECOMMEND_play'])
-    return listTools().filter((t) => allowed.has(t.name))
-  }
-
-  /**
-   * 探测用户消息是否属于 V2.0 新工具的意图领域。
-   * 命中 → 即便 flag 开启也降级到旧链路(用户无感)。
-   */
-  private buildConfirmGuideText(plan: { toolName: string }[]): string {
-    const toolName = plan.find((p) => p.toolName.startsWith('ADD_'))?.toolName
+  private buildConfirmGuideText(toolName: string): string {
     switch (toolName) {
       case 'ADD_growth_record':
         return '收到～我整理好了下面这条成长记录，请确认后我就帮你保存 🐾'
@@ -106,13 +95,11 @@ export class CatAgent {
         return '收到～请确认下面的疫苗接种信息，确认后我会登记到健康档案 💉'
       case 'ADD_weight_record':
         return '收到～请确认下面的体重数据，确认后我会记录到体重曲线 ⚖️'
+      case 'ADD_allergy_record':
+        return '收到～请确认下面的过敏信息，确认后我会写入过敏档案 ⚠️'
       default:
         return '收到～请确认下面的信息后我再保存 🐾'
     }
-  }
-
-  private isV2ToolIntent(message: string): boolean {
-    return /过敏|allergy|周报|健康报告|health[_ ]?report|记录一下|记一笔|记一下|成长记录|成长日记|写日记|记录体重|称重|记录疫苗|打了疫苗|登记疫苗|添加记录|新增记录/i.test(message)
   }
 
   /**
@@ -227,11 +214,11 @@ export class CatAgent {
     userSegment: UserSegment = 'all',
     attachments: string[] = []
   ): Promise<AgentStreamResult> {
-    // V3.0 flag 路由:LLM tool-calling loop
+    // V3.1 flag 路由:LLM tool-calling loop 主导意图理解
     const flagCtx = getDefaultContext(userId, userSegment)
     const useNewLoop = isFeatureEnabled('LLM_TOOL_CALLING_LOOP', flagCtx)
-    // 携带图片附件或命中写操作意图 → 必须走 V2 旧链路（含确认机制）
-    if (useNewLoop && !this.isV2ToolIntent(userMessage) && attachments.length === 0) {
+    // 仅图片附件保留 V2 旧链路(图片→成长记录是硬规则,LLM 看不到图片)
+    if (useNewLoop && attachments.length === 0) {
       return this.handleStreamingViaLoop(userMessage, userId, sessionId, res, selectedCatId, history)
     }
 
@@ -391,7 +378,8 @@ export class CatAgent {
 
       // 写入工具待确认：已推送 pending_confirmation，跳过后续报告，等待用户确认
       if (confirmationPending) {
-        const guideText = this.buildConfirmGuideText(plan)
+        const writeToolName = plan.find((p) => p.toolName.startsWith('ADD_'))?.toolName || ''
+        const guideText = this.buildConfirmGuideText(writeToolName)
         if (guideText) {
           this.writeSse(res, 'content', { text: guideText })
         }
@@ -584,6 +572,23 @@ export class CatAgent {
             output: r.output,
           })
         },
+        onPendingConfirmation: (pending) => {
+          // LLM 选了 write 工具且未确认 → 推送 pending_confirmation,前端弹卡片
+          const confirmationId = createConfirmation(
+            ctx.userId,
+            ctx.selectedCatId || '',
+            pending.toolName,
+            { userMessage, ...pending.parameters },
+          )
+          this.writeSse(res, 'pending_confirmation', {
+            confirmationId,
+            toolName: pending.toolName,
+            draft: { userMessage, ...pending.parameters },
+            message: '该操作需要您确认后方可执行',
+            expiresAt: Date.now() + 5 * 60 * 1000,
+          })
+          recordSseEvent({ eventType: 'pending_confirmation', environment: process.env.NODE_ENV || 'development' })
+        },
       })
 
       resultContent = result.content
@@ -591,6 +596,24 @@ export class CatAgent {
         .filter((r) => r.toolName === 'rag_search' && r.output?.guideTitles)
         .flatMap((r) => r.output.guideTitles as string[])
         .slice(0, 5)
+
+      // write 工具触发 → 推引导文案,关闭流,等待用户确认
+      if (result.pendingConfirmation) {
+        const guideText = this.buildConfirmGuideText(result.pendingConfirmation.toolName)
+        if (guideText) {
+          this.writeSse(res, 'content', { text: guideText })
+        }
+        this.writeSse(res, 'done', { traceId: ctx.traceId })
+        recordSseEvent({ eventType: 'done', environment: process.env.NODE_ENV || 'development' })
+        res.end()
+        return {
+          content: guideText,
+          citations: [],
+          traceId: ctx.traceId,
+          toolNames: toolNamesSeen,
+          toolResults: result.toolResults,
+        }
+      }
 
       // maxIterations 超限 → RAG fallback
       if (result.maxIterationsExceeded) {

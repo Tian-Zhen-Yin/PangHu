@@ -35,7 +35,12 @@ export const vaccineRecordSchema = z.object({
 export const VaccineRecordTool: Tool<z.infer<typeof vaccineRecordSchema>, VaccineRecordOutput> = {
   name: 'ADD_vaccine_record',
   description:
-    '为猫咪登记一条疫苗接种记录。当用户说"记录疫苗/打了疫苗/登记接种/添加疫苗记录"时使用。需要用户确认后方可执行（写入操作）。',
+    '为猫咪登记一条疫苗接种或驱虫记录,写入健康档案并自动计算下次到期时间。\n' +
+    '【何时调用】用户陈述"刚完成/已经完成/今天打/已经做了"接种或驱虫,如"打了妙三多"、"刚做了体内驱虫"、"今天打的狂犬"、"昨天接种了猫三联"。\n' +
+    '【严禁调用】用户询问"下次什么时候打/疫苗到期没/该打什么疫苗了/距离上次打了多久"——这是查询意图,必须用 check_vaccine,绝不可走本工具!\n' +
+    '判断要点:含"下次/什么时候/到期/该打/还要多久"等未来时间副词的属于查询;含"今天/刚才/昨天/已经/刚刚"等过去时副词的才是录入。\n' +
+    '【数据要求】vaccineName 应包含具体疫苗名(妙三多/猫三联/狂犬/驱虫等);date 缺省时默认今天。\n' +
+    '【写入操作】需要用户在弹出的卡片上点击确认后才会真正保存。',
   schema: vaccineRecordSchema,
   permissions: ['write'],
   call: async (input, ctx: AgentContext) => {

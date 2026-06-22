@@ -10,12 +10,19 @@ export interface AgentLoopOptions {
   model?: string
 }
 
+export interface PendingConfirmation {
+  toolName: string
+  parameters: Record<string, unknown>
+}
+
 export interface AgentLoopRunInput {
   userMessage: string
   history: ChatMessage[]
   ctx: AgentContext
   onContent: (text: string) => void
   onToolResult: (result: ToolResult) => void
+  /** 写工具被 LLM 选中且未确认时回调,返回 true 表示已外部接管(中断 loop) */
+  onPendingConfirmation?: (pending: PendingConfirmation) => boolean | void
 }
 
 export interface AgentLoopResult {
@@ -25,6 +32,8 @@ export interface AgentLoopResult {
   iterations: number
   maxIterationsExceeded: boolean
   aborted: boolean
+  /** 因写工具待确认而中断 */
+  pendingConfirmation?: PendingConfirmation
 }
 
 interface ChatMessageWithTools extends ChatMessage {
@@ -49,7 +58,7 @@ export class AgentLoop {
   }
 
   async run(input: AgentLoopRunInput): Promise<AgentLoopResult> {
-    const { userMessage, history, ctx, onContent, onToolResult } = input
+    const { userMessage, history, ctx, onContent, onToolResult, onPendingConfirmation } = input
 
     const messages: ChatMessageWithTools[] = [
       { role: 'system', content: AGENT_SYSTEM_PROMPT },
@@ -65,6 +74,7 @@ export class AgentLoop {
     let iteration = 0
     let maxIterationsExceeded = false
     let aborted = false
+    let pendingConfirmation: PendingConfirmation | undefined
 
     while (iteration < this.maxIterations) {
       iteration += 1
@@ -114,6 +124,19 @@ export class AgentLoop {
       const callsInOrder = Array.from(pendingCalls.entries())
         .map(([id, v]) => ({ id, name: v.name, args: v.args }))
 
+      // 优先扫描写工具:若 LLM 选了 write 工具且未确认,推送 pending_confirmation 并中断 loop
+      const writePending = callsInOrder.find((c) => {
+        const t = this.toolMap.get(c.name)
+        return t?.permissions?.includes('write') && !ctx.confirmationToken?.verified
+      })
+      if (writePending) {
+        const args = this.parseToolArgs(writePending.args)
+        pendingConfirmation = { toolName: writePending.name, parameters: args }
+        ctx.logger.log(`[AgentLoop] write tool ${writePending.name} requires confirmation, breaking loop`)
+        onPendingConfirmation?.(pendingConfirmation)
+        break
+      }
+
       messages.push({
         role: 'assistant',
         content: '',
@@ -156,6 +179,7 @@ export class AgentLoop {
       iterations: iteration,
       maxIterationsExceeded,
       aborted,
+      pendingConfirmation,
     }
   }
 
