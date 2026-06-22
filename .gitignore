@@ -90,3 +90,4 @@ api/index.js
 .env*.local
 # Added by code-review-graph
 .code-review-graph/
+*.env.prod

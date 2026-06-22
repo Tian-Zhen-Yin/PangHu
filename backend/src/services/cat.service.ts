@@ -2,16 +2,6 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// Cat 模型中确认已存在于数据库的列（排除未迁移的字段）
-const CAT_DB_COLUMNS = {
-  id: true, userId: true, name: true, avatar: true, avatarData: true,
-  breed: true, gender: true, birthDate: true, birthDateEstimated: true,
-  adoptDate: true, adoptStatus: true, weight: true, isNeutered: true,
-  neuteredDate: true, color: true, features: true, allergies: true,
-  diseases: true, weightGoalTarget: true, weightGoalDate: true,
-  isActive: true, createdAt: true, updatedAt: true,
-} as const
-
 /**
  * 领养状态类型
  */
@@ -70,8 +60,7 @@ export function getTimelineTitle(adoptStatus: CatAdoptStatus): string {
 export async function getCatsByUser(userId: string) {
   const cats = await prisma.cat.findMany({
     where: { userId, isActive: true },
-    select: {
-      ...CAT_DB_COLUMNS,
+    include: {
       vaccines: {
         orderBy: { vaccinatedAt: 'desc' },
         take: 1
@@ -104,8 +93,7 @@ export async function getCatsByUser(userId: string) {
 export async function getCatById(catId: string, userId: string) {
   const cat = await prisma.cat.findFirst({
     where: { id: catId, userId, isActive: true },
-    select: {
-      ...CAT_DB_COLUMNS,
+    include: {
       vaccines: {
         orderBy: { vaccinatedAt: 'desc' }
       },
@@ -222,7 +210,7 @@ export async function updateCat(catId: string, userId: string, data: {
 }
 
 export async function deleteCat(catId: string, userId: string) {
-  const cat = await prisma.cat.findFirst({ where: { id: catId, userId }, select: CAT_DB_COLUMNS })
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId } })
   if (!cat) return null
 
   return prisma.cat.update({
@@ -234,8 +222,7 @@ export async function deleteCat(catId: string, userId: string) {
 export async function getCatContext(catId: string, userId: string) {
   const cat = await prisma.cat.findFirst({
     where: { id: catId, userId, isActive: true },
-    select: {
-      ...CAT_DB_COLUMNS,
+    include: {
       vaccines: {
         orderBy: { vaccinatedAt: 'desc' },
         take: 3
@@ -279,8 +266,7 @@ export async function getCatContext(catId: string, userId: string) {
 export async function getCatWeightHistory(catId: string, userId: string) {
   console.log('[getCatWeightHistory] Called with catId:', catId, 'userId:', userId)
   const cat = await prisma.cat.findFirst({
-    where: { id: catId, userId, isActive: true },
-    select: CAT_DB_COLUMNS,
+    where: { id: catId, userId, isActive: true }
   })
 
   if (!cat) {
@@ -323,7 +309,7 @@ export async function getCatWeightHistory(catId: string, userId: string) {
 }
 
 export async function setWeightGoal(catId: string, userId: string, targetWeight: number, targetDate: string) {
-  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true }, select: CAT_DB_COLUMNS })
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
   if (!cat) return null
   return prisma.cat.update({
     where: { id: catId },
@@ -332,7 +318,7 @@ export async function setWeightGoal(catId: string, userId: string, targetWeight:
 }
 
 export async function updateCatAvatar(catId: string, userId: string, avatarUrl: string) {
-  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true }, select: CAT_DB_COLUMNS })
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
   if (!cat) return null
   return prisma.cat.update({
     where: { id: catId },
@@ -344,7 +330,7 @@ export async function updateCatAvatar(catId: string, userId: string, avatarUrl: 
  * 更新猫咪头像（base64 格式）
  */
 export async function updateCatAvatarData(catId: string, userId: string, avatarData: string) {
-  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true }, select: CAT_DB_COLUMNS })
+  const cat = await prisma.cat.findFirst({ where: { id: catId, userId, isActive: true } })
   if (!cat) return null
   return prisma.cat.update({
     where: { id: catId },
