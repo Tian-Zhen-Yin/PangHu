@@ -69,33 +69,6 @@ app.use('/api/chat', chatLimiter)
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: true, limit: '1mb' }))
 
-// Vercel 环境：首次请求时补齐缺失的数据库列
-// （陪玩档案字段 personality / energyBaseline / healthTags 的 migration
-//  生成后未实际触达 DB，此处用轻量 SQL 修补，避免 Prisma 查询报错）
-let schemaPatched = false
-app.use('/api', async (req, res, next) => {
-  if (!schemaPatched && process.env.VERCEL) {
-    try {
-      const prisma = (await import('./config/database')).default
-      for (const sql of [
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "personality" TEXT;',
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "energyBaseline" INTEGER;',
-        'ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "healthTags" TEXT;',
-      ]) {
-        await prisma.$executeRawUnsafe(sql)
-      }
-      schemaPatched = true
-      console.log('[Schema] Missing columns patched')
-    } catch (e: any) {
-      if (!e.message?.includes('already exists')) {
-        console.error('[Schema] Patch failed:', e.message)
-      }
-      schemaPatched = true // 不管成败，不再重试
-    }
-  }
-  next()
-})
-
 // API路由
 app.use('/api', apiRoutes)
 
@@ -116,6 +89,30 @@ app.use('/uploads', express.static('uploads'))
 // 错误处理
 app.use(notFoundHandler)
 app.use(errorHandler)
+
+// Vercel 环境：同步补齐缺失的数据库列（阻塞模块导出，确保首次请求前完成）
+if (process.env.VERCEL && process.env.DATABASE_URL) {
+  const { execSync } = require('child_process')
+  try {
+    execSync('node', {
+      input: `
+        const { PrismaClient } = require('@prisma/client');
+        const p = new PrismaClient();
+        (async () => {
+          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "personality" TEXT;');
+          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "energyBaseline" INTEGER;');
+          await p.$executeRawUnsafe('ALTER TABLE "Cat" ADD COLUMN IF NOT EXISTS "healthTags" TEXT;');
+          await p.$disconnect();
+        })().catch(e => { console.error(e.message); process.exit(1); });
+      `,
+      timeout: 15000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    console.log('[Schema] Missing columns patched')
+  } catch (e) {
+    console.error('[Schema] Patch failed (non-fatal):', (e.stderr || '').toString().trim().slice(0, 120))
+  }
+}
 
 // 导出 app 供 Vercel Serverless Functions 使用
 export default app
