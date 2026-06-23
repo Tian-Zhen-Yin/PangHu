@@ -127,7 +127,8 @@ export default defineConfig({
   },
   server: {
     allowedHosts: [
-      '.trycloudflare.com'
+      '.trycloudflare.com',
+      '.989048.xyz'
     ],
     proxy: {
       '/cats': {
