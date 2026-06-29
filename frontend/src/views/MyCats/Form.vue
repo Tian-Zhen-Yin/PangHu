@@ -146,6 +146,7 @@ import { toast } from '../../composables/useToast.js'
 import type { CatFormData } from '../../types/cat.js'
 import { ADOPT_STATUS_CONFIG } from '../../types/cat.js'
 import { getAvatarUrl } from '../../utils/format.js'
+import { cropAvatarToCircle } from '../../utils/imageCompress.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -201,9 +202,9 @@ async function handleAvatarChange(event: Event) {
     return
   }
 
-  // 验证文件大小 (5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error('图片大小不能超过5MB')
+  // 源文件上限 20MB（避免 canvas 内存爆掉）；实际输出由 cropAvatarToCircle 压到 <300KB
+  if (file.size > 20 * 1024 * 1024) {
+    toast.error('图片过大，请选择小于 20MB 的图片')
     return
   }
 
@@ -231,48 +232,6 @@ async function handleAvatarChange(event: Event) {
     uploadingAvatar.value = false
     target.value = ''
   }
-}
-
-// 将图片裁剪为圆形并返回新的File对象
-function cropAvatarToCircle(file: File): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return reject(new Error('无法创建canvas'))
-
-      // 设置正方形画布，大小为图片较短边的80%
-      const size = Math.min(img.width, img.height) * 0.8
-      canvas.width = size
-      canvas.height = size
-
-      // 绘制圆形裁剪区域
-      ctx.beginPath()
-      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
-      ctx.closePath()
-      ctx.clip()
-
-      // 计算居中裁剪位置
-      const scale = size / Math.min(img.width, img.height)
-      const x = (size - img.width * scale) / 2
-      const y = (size - img.height * scale) / 2
-
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
-
-      // 转换为Blob并创建File对象
-      canvas.toBlob((blob) => {
-        if (!blob) return reject(new Error('图片处理失败'))
-        const croppedFile = new File([blob], file.name, {
-          type: 'image/jpeg',
-          lastModified: Date.now()
-        })
-        resolve(croppedFile)
-      }, 'image/jpeg', 0.95)
-    }
-    img.onerror = () => reject(new Error('图片加载失败'))
-    img.src = URL.createObjectURL(file)
-  })
 }
 
 onMounted(async () => {

@@ -152,6 +152,7 @@ import AIHealthAdvice from '../../components/cat/AIHealthAdvice.vue'
 import { getMyCatById, uploadCatAvatar } from '../../api/myCat.js'
 import { toast } from '../../composables/useToast.js'
 import { formatWeight, getAvatarUrl } from '../../utils/format.js'
+import { cropAvatarToCircle } from '../../utils/imageCompress.js'
 import type { Cat } from '../../types/cat.js'
 
 const route = useRoute()
@@ -187,8 +188,8 @@ async function handleAvatarChange(event: Event) {
     return
   }
 
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error('图片大小不能超过5MB')
+  if (file.size > 20 * 1024 * 1024) {
+    toast.error('图片过大，请选择小于 20MB 的图片')
     return
   }
 
@@ -214,43 +215,6 @@ async function handleAvatarChange(event: Event) {
     uploadingAvatar.value = false
     target.value = ''
   }
-}
-
-function cropAvatarToCircle(file: File): Promise<File> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return reject(new Error('无法创建canvas'))
-
-      const size = Math.min(img.width, img.height) * 0.8
-      canvas.width = size
-      canvas.height = size
-
-      ctx.beginPath()
-      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
-      ctx.closePath()
-      ctx.clip()
-
-      const scale = size / Math.min(img.width, img.height)
-      const x = (size - img.width * scale) / 2
-      const y = (size - img.height * scale) / 2
-
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale)
-
-      canvas.toBlob((blob) => {
-        if (!blob) return reject(new Error('图片处理失败'))
-        const croppedFile = new File([blob], file.name, {
-          type: 'image/jpeg',
-          lastModified: Date.now()
-        })
-        resolve(croppedFile)
-      }, 'image/jpeg', 0.95)
-    }
-    img.onerror = () => reject(new Error('图片加载失败'))
-    img.src = URL.createObjectURL(file)
-  })
 }
 
 async function fetchCatDetail() {

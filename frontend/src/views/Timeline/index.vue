@@ -13,6 +13,7 @@ import HorizontalStageTimeline from '../../components/growth/HorizontalStageTime
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import type { Stage, Task, Vaccine } from '../../types/cat.js'
 import { getImageUrl } from '../../utils/format.js'
+import { compressImage } from '../../utils/imageCompress.js'
 import type { CreatePetRecordParams } from '../../api/pet.js'
 
 // 区块标题图标 SVG
@@ -367,15 +368,24 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-function handlePhotoSelect(event: Event) {
+async function handlePhotoSelect(event: Event) {
   const target = event.target as HTMLInputElement
-  const files = Array.from(target.files || []).slice(0, 9 - recordPhotoPreviews.value.length)
-  recordPhotoFiles.value = [...recordPhotoFiles.value, ...files]
-  files.forEach(file => {
-    const reader = new FileReader()
-    reader.onload = (e) => recordPhotoPreviews.value.push(e.target?.result as string)
-    reader.readAsDataURL(file)
-  })
+  const selected = Array.from(target.files || []).slice(0, 9 - recordPhotoPreviews.value.length)
+  target.value = ''
+  if (selected.length === 0) return
+
+  try {
+    // 并行压缩，保持选中顺序（与 preview 下标一一对应，removePhoto 才不会错位）
+    const compressed = await Promise.all(selected.map((f) => compressImage(f)))
+    compressed.forEach((file) => {
+      recordPhotoFiles.value.push(file)
+      const reader = new FileReader()
+      reader.onload = (e) => recordPhotoPreviews.value.push(e.target?.result as string)
+      reader.readAsDataURL(file)
+    })
+  } catch (err: any) {
+    toast.error(err.message || '图片处理失败，请重试')
+  }
 }
 
 function removePhoto(index: number) {

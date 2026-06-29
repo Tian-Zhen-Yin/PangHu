@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { uploadChatImages } from '../../api/chat.js'
 import { getImageUrl } from '../../utils/format.js'
+import { compressImage } from '../../utils/imageCompress.js'
 
 interface Props {
   disabled?: boolean
@@ -70,7 +71,9 @@ async function handleFileChange(event: Event) {
   images.value.push(...placeholders)
 
   try {
-    const res = await uploadChatImages(toUpload)
+    // 先压缩再上传，避免手机原图（3~10MB+）触发后端 10MB 上限导致上传失败
+    const compressed = await Promise.all(toUpload.map((f) => compressImage(f)))
+    const res = await uploadChatImages(compressed)
     const urls = res.data?.urls || []
     placeholders.forEach((p, i) => {
       if (urls[i]) {
