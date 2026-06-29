@@ -193,6 +193,8 @@ export class IntentRecaller {
 
       // 1) 总是构建本地 TF-IDF 索引（零成本）
       this.tfidf = new TfidfMatcher(flatAnchors)
+      // TF-IDF 已就绪，立即可用（避免 embedding API 异步调用期间 isReady() 返回 false，导致冷启动窗口期 fast-path 失效）
+      this.initialized = true
 
       // 2) 尝试 embedding API（可能余额不足）
       try {

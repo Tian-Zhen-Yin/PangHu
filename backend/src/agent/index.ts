@@ -221,7 +221,7 @@ export class CatAgent {
         return '疫苗状态查到啦 💉'
       case 'GET_allergy_records':
         return '过敏档案在这里 ⚠️'
-      case 'GET_health_report':
+      case 'GENERATE_health_report':
         return '健康周报已生成 📋'
       case 'RECOMMEND_play':
         return '为猫咪挑了几个好玩的 🎾'
@@ -774,6 +774,43 @@ export class CatAgent {
     } catch (err: any) {
       ctx.logger.log(`[AgentLoop] error: ${err.message}, falling back to RAG`)
       llmFailed = true
+    }
+
+    // ★ V2 规则降级：LLM 未调任何工具时，用 classifyIntent + buildPlan 做规则兜底，
+    //   避免 glm-4.5-flash 偶发不触发 tool_call 时 tools=[] 直接走 RAG（丢失结构化卡片）。
+    if (!llmFailed && toolNamesSeen.length === 0 && !abortController.signal.aborted && !res.writableEnded) {
+      ctx.logger.log('[AgentLoop] LLM returned no tool calls, trying V2 rule-based fallback')
+      const v2State: AgentState = {
+        userId,
+        sessionId: ctx.sessionId,
+        userMessage,
+        selectedCatId: ctx.selectedCatId,
+        history,
+        plan: [],
+        toolResults: [],
+        traceId: ctx.traceId,
+      }
+      const v2Intent = classifyIntent(v2State)
+      if (!['unknown', 'greeting', 'general_knowledge'].includes(v2Intent.intent)) {
+        const { plan: v2Plan } = buildPlan(v2State, v2Intent)
+        if (v2Plan.length > 0) {
+          ctx.logger.log(`[AgentLoop] V2 fallback executing: ${v2Plan.map((p) => p.toolName).join(', ')}`)
+          const v2Results = await executePlan(v2Plan, ctx, (r) => {
+            toolNamesSeen.push(r.toolName)
+            this.writeSse(res, 'tool', {
+              toolName: r.toolName,
+              status: r.success ? 'success' : 'error',
+              output: r.output,
+            })
+          })
+          v2State.toolResults = v2Results
+          const report = generateReport(v2State, v2Results)
+          if (report && report.trim().length > 0) {
+            this.writeSse(res, 'content', { text: report })
+            resultContent = report
+          }
+        }
+      }
     }
 
     if (llmFailed && !abortController.signal.aborted && !res.writableEnded) {
