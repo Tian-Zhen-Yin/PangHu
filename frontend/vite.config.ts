@@ -63,6 +63,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,svg,woff,woff2,webp}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB (default is 2 MB)
+        // 强制新版 SW 立即接管,避免用户访问旧缓存(本次紧急修复必需)
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\//i,
@@ -80,6 +84,23 @@ export default defineConfig({
             }
           },
           {
+            // 用户上传的图片（猫咪头像、宠物照片）— 走网络优先，避免 CacheFirst 把错误响应缓存
+            urlPattern: /\/uploads\//i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'user-uploads-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          },
+          {
+            // 静态资源图片（应用内置 icon、cats 预置头像等）继续走 CacheFirst
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: 'CacheFirst',
             options: {
@@ -87,6 +108,9 @@ export default defineConfig({
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [200]
               }
             }
           },

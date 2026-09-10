@@ -24,11 +24,18 @@ export function formatWeightValue(weight: number | null | undefined): string {
 
 /**
  * 构建猫咪头像URL，使用相对路径以通过Vite代理（避免CORP跨域问题）
+ *
+ * 协议白名单（原样返回，不前置斜杠）：
+ *  - http(s):  CDN/绝对 URL
+ *  - blob:     新建模式本地预览（URL.createObjectURL）
+ *  - data:     base64 嵌入（旧数据兼容）
  */
 export function getAvatarUrl(cat: { avatarData?: string | null; avatar?: string | null }): string {
   if (cat.avatarData) return cat.avatarData
   if (!cat.avatar) return ''
   if (cat.avatar.startsWith('http')) return cat.avatar
+  if (cat.avatar.startsWith('blob:')) return cat.avatar
+  if (cat.avatar.startsWith('data:')) return cat.avatar
   if (cat.avatar.startsWith('/')) return cat.avatar
   return `/${cat.avatar}`
 }

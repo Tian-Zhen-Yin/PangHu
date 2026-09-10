@@ -136,14 +136,13 @@ async function checkWeightReminders() {
     for (const cat of cats) {
       // 获取最近30天的体重记录
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      // 注：petRecord.weight 在 schema 中是 Float（非空），不需要 not:null 过滤；
+      // 旧代码用 `not: null as any` 会被 Prisma 6 运行时拒绝（"Argument `not` must not be null"）
       const recentRecords = await prisma.petRecord.findMany({
         where: {
           catId: cat.id,
           recordDate: {
             gte: thirtyDaysAgo,
-          },
-          weight: {
-            not: null as any,
           },
         },
         orderBy: {

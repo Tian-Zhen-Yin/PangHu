@@ -1,5 +1,24 @@
 import api from './index.js'
 import type { ApiResponse } from '../types/common.js'
+import { compressImage } from '../utils/imageCompress.js'
+
+// 后端成长记录单张图片上限 10MB,前端兜底:超过 8MB 就压缩到 1.5MB 以内
+const PET_PHOTO_MAX_SIZE = 8 * 1024 * 1024
+
+// 批量兜底压缩:逐张判断,只压超大的,不动小图（避免重复编码损耗画质）
+async function compressIfNeeded(files: File[]): Promise<File[]> {
+  return Promise.all(
+    files.map(async (f) => {
+      if (f.size <= PET_PHOTO_MAX_SIZE) return f
+      try {
+        return await compressImage(f, { maxDimension: 1920, targetSize: 1.5 * 1024 * 1024 })
+      } catch (err) {
+        console.warn('[pet.ts] 图片兜底压缩失败,使用原文件:', err)
+        return f
+      }
+    })
+  )
+}
 
 export interface PetRecord {
   id: string
@@ -42,9 +61,12 @@ export function getPetRecordById(id: string): Promise<ApiResponse<PetRecord>> {
   return api.get(`/pets/records/${id}`)
 }
 
-export function createPetRecord(params: CreatePetRecordParams, files?: File[]): Promise<ApiResponse<PetRecord>> {
+export async function createPetRecord(params: CreatePetRecordParams, files?: File[]): Promise<ApiResponse<PetRecord>> {
   const formData = new FormData()
-  if (files?.length) files.forEach(f => formData.append('photos', f))
+  if (files?.length) {
+    const compressed = await compressIfNeeded(files)
+    compressed.forEach(f => formData.append('photos', f))
+  }
   if (params.petName) formData.append('petName', params.petName)
   formData.append('ageWeeks', params.ageWeeks.toString())
   if (params.ageMonths) formData.append('ageMonths', params.ageMonths.toString())
@@ -58,9 +80,12 @@ export function createPetRecord(params: CreatePetRecordParams, files?: File[]): 
   return api.post('/pets/records', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
-export function updatePetRecord(id: string, params: Partial<CreatePetRecordParams>, files?: File[]): Promise<ApiResponse<PetRecord>> {
+export async function updatePetRecord(id: string, params: Partial<CreatePetRecordParams>, files?: File[]): Promise<ApiResponse<PetRecord>> {
   const formData = new FormData()
-  if (files?.length) files.forEach(f => formData.append('photos', f))
+  if (files?.length) {
+    const compressed = await compressIfNeeded(files)
+    compressed.forEach(f => formData.append('photos', f))
+  }
   if (params.petName) formData.append('petName', params.petName)
   if (params.ageWeeks !== undefined) formData.append('ageWeeks', params.ageWeeks.toString())
   if (params.ageMonths !== undefined) formData.append('ageMonths', params.ageMonths.toString())

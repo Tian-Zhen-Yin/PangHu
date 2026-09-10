@@ -10,7 +10,7 @@ const tabItems = computed(() => [
   { name: '记录', path: '/timeline', key: 'record' },
   { name: '喵喵', path: '/ai-chat', key: 'agent', highlight: true },
   { name: '指南', path: '/guides', key: 'guide' },
-  { name: '我的', path: '/my-cats', key: 'me' }
+  { name: '我的', path: '/profile', key: 'me' }
 ])
 
 function isActive(path: string): boolean {

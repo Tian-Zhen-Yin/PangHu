@@ -27,7 +27,7 @@
             <input
               ref="avatarInputRef"
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               @change="handleAvatarChange"
               style="display: none"
             />
@@ -183,13 +183,16 @@ async function handleAvatarChange(event: Event) {
   const file = target.files?.[0]
   if (!file || !cat.value) return
 
-  if (!file.type.startsWith('image/')) {
+  // 验证文件类型(iOS Safari 偶尔 file.type 为空,放宽到只校验扩展名,后续 loadImage 会通过 magic bytes 二次校验)
+  const isImageByName = /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(file.name)
+  const isImageByMime = file.type.startsWith('image/')
+  if (!isImageByMime && !isImageByName) {
     toast.error('请选择图片文件')
     return
   }
 
-  if (file.size > 20 * 1024 * 1024) {
-    toast.error('图片过大，请选择小于 20MB 的图片')
+  if (file.size > 30 * 1024 * 1024) {
+    toast.error('图片过大，请选择小于 30MB 的图片')
     return
   }
 

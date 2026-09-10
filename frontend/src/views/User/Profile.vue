@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '../../stores/auth.js'
 import { usePlanStore } from '../../stores/plan.js'
 import type { UserPlan } from '../../api/plan.js'
@@ -8,6 +9,7 @@ import type { UserPlan } from '../../api/plan.js'
 const router = useRouter()
 const authStore = useAuthStore()
 const planStore = usePlanStore()
+const isLoggingOut = ref(false)
 
 // 当前标签页
 const currentTab = ref<'overview' | 'plans'>('overview')
@@ -48,8 +50,25 @@ function formatDate(dateString: string): string {
 
 // 退出登录
 async function handleLogout() {
-  await authStore.logoutAction()
-  router.push('/login')
+  try {
+    await ElMessageBox.confirm(
+      '确定要退出登录吗？',
+      '退出确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    isLoggingOut.value = true
+    await authStore.logoutAction()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } catch {
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 
 // 获取计划进度
@@ -144,9 +163,12 @@ onMounted(async () => {
     <div class="profile-container">
       <!-- 页面头部 -->
       <div class="profile-header">
-        <h1 class="page-title">👤 个人中心</h1>
-        <button @click="handleLogout" class="logout-btn">
-          退出登录
+        <h1 class="page-title">
+          <span class="title-emoji" aria-hidden="true">👤</span>
+          <span>个人中心</span>
+        </h1>
+        <button @click="handleLogout" class="logout-btn" :disabled="isLoggingOut">
+          {{ isLoggingOut ? '退出中...' : '退出登录' }}
         </button>
       </div>
 
@@ -232,19 +254,25 @@ onMounted(async () => {
           <h3 class="section-title">快捷功能</h3>
           <div class="features-grid">
             <button class="feature-card" @click="router.push('/templates')">
-              <span class="feature-icon">📚</span>
-              <span class="feature-name">浏览模板</span>
-              <span class="feature-desc">发现更多养成计划</span>
+              <span class="feature-icon" aria-hidden="true">📚</span>
+              <span class="feature-text">
+                <span class="feature-name">浏览模板</span>
+                <span class="feature-desc">发现更多养成计划</span>
+              </span>
             </button>
             <button class="feature-card" @click="currentTab = 'plans'">
-              <span class="feature-icon">📋</span>
-              <span class="feature-name">我的计划</span>
-              <span class="feature-desc">查看所有保存的计划</span>
+              <span class="feature-icon" aria-hidden="true">📋</span>
+              <span class="feature-text">
+                <span class="feature-name">我的计划</span>
+                <span class="feature-desc">查看所有保存的计划</span>
+              </span>
             </button>
             <button class="feature-card" @click="router.push('/timeline')">
-              <span class="feature-icon">📅</span>
-              <span class="feature-name">时间线</span>
-              <span class="feature-desc">查看养成时间线</span>
+              <span class="feature-icon" aria-hidden="true">📅</span>
+              <span class="feature-text">
+                <span class="feature-name">时间线</span>
+                <span class="feature-desc">查看养成时间线</span>
+              </span>
             </button>
           </div>
         </div>
@@ -394,44 +422,72 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* ============================================================
+ * 页面级容器：使用 token 化的间距与背景
+ * ============================================================ */
 .profile-page {
   background: var(--color-bg-page);
-  padding: 2rem 1rem 100px;
+  padding: var(--space-2xl) var(--space-lg) 96px;
 }
 
 @media (min-width: 768px) {
   .profile-page {
-    padding: 2rem 1rem 80px;
+    padding: var(--space-2xl) var(--space-xl) var(--space-2xl);
   }
 }
 
 .profile-container {
-  max-width: 900px;
+  max-width: 760px;
   margin: 0 auto;
 }
 
+/* ============================================================
+ * 页面头部
+ * ============================================================ */
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-xl);
 }
 
 .page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
   color: var(--color-text-primary);
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.title-emoji {
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.page-title :deep(.emoji),
+.page-title {
+  /* emoji 不再抢主导，控制其行内呈现 */
 }
 
 .logout-btn {
-  padding: 0.625rem 1.25rem;
-  background: white;
-  border: 2px solid var(--color-border-light);
-  border-radius: 0.5rem;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
   color: var(--color-text-regular);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -441,32 +497,39 @@ onMounted(async () => {
   color: var(--color-danger);
 }
 
-/* 标签页导航 */
+.logout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+ * 标签页导航 —— 1 档阴影 (subtle)
+ * ============================================================ */
 .tabs {
   display: flex;
-  gap: 0.5rem;
-  background: white;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  gap: var(--space-xs);
+  background: var(--color-bg-card);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xl);
+  box-shadow: var(--shadow-xs);
 }
 
 .tab {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: var(--space-md) var(--space-lg);
   background: transparent;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-xs);
   color: var(--color-text-regular);
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .tab:hover {
@@ -474,15 +537,17 @@ onMounted(async () => {
 }
 
 .tab.active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  color: white;
+  background: var(--color-primary-gradient);
+  color: var(--color-text-white);
 }
 
 .badge {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.28);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  line-height: 1.4;
 }
 
 .tab-content {
@@ -490,205 +555,244 @@ onMounted(async () => {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 用户信息卡片 */
+/* ============================================================
+ * Section 容器 —— 大圆角 + soft shadow（与 list-item 区分层级）
+ * 列表项 (plan-card) 改用 border + 小圆角
+ * ============================================================ */
+.user-card,
+.stats-section,
+.features-section {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card-normal);
+  margin-bottom: var(--space-xl);
+}
+
+/* ============================================================
+ * 用户信息卡片 —— 头像 72px、字号收敛
+ * ============================================================ */
 .user-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  gap: 2rem;
+  gap: var(--space-xl);
   align-items: center;
-  margin-bottom: 1.5rem;
 }
 
 .user-avatar {
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  border-radius: 50%;
+  width: 72px;
+  height: 72px;
+  background: var(--color-primary-gradient);
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-white);
   flex-shrink: 0;
 }
 
 .user-info {
   flex: 1;
-}
-
-.user-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
+  min-width: 0;
 }
 
 .user-name-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.user-name {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .edit-btn {
-  padding: 0.375rem 0.75rem;
-  background: var(--color-bg-page);
-  border: 1px solid var(--color-border-light);
-  border-radius: 0.5rem;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-bg-block);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
   color: var(--color-text-regular);
-  font-size: 0.875rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .edit-btn:hover {
-  background: var(--color-bg-block-hover);
-  border-color: var(--color-border-light);
-  color: var(--color-text-regular);
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-sm);
 }
 
 .detail-item {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-md);
+  align-items: baseline;
 }
 
 .detail-label {
-  color: var(--color-text-regular);
-  font-size: 0.875rem;
-  min-width: 80px;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  min-width: 64px;
 }
 
 .detail-value {
   color: var(--color-text-primary);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
-/* 统计卡片 */
-.stats-section {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
-}
-
+/* ============================================================
+ * Section 标题
+ * ============================================================ */
 .section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
   color: var(--color-text-primary);
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--space-lg) 0;
 }
 
+/* ============================================================
+ * 统计卡片 —— 数字主角、图标克制
+ * 纵横比 ≈ 1.6:1，固定 min-height
+ * ============================================================ */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-md);
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: var(--color-bg-page);
-  border-radius: 0.75rem;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  min-height: 80px;
+  background: var(--color-bg-block);
+  border-radius: var(--radius-xs);
 }
 
 .stat-icon {
-  font-size: 1.75rem;
+  font-size: var(--text-xl);
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .stat-content {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   color: var(--color-text-primary);
-  line-height: 1;
+  line-height: var(--leading-tight);
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  color: var(--color-text-regular);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
 }
 
-/* 功能卡片 */
-.features-section {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
+/* ============================================================
+ * 功能卡片 —— 横向布局，避免"竖条感"
+ * ============================================================ */
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
 }
 
 .feature-card {
-  background: var(--color-bg-page);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--color-bg-block);
   border: none;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  text-align: center;
+  border-radius: var(--radius-xs);
+  padding: var(--space-md) var(--space-lg);
+  min-height: 80px;
+  text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .feature-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: var(--color-bg-cream);
+  box-shadow: var(--shadow-card-hover);
+  background: var(--color-primary-light);
 }
 
 .feature-icon {
-  font-size: 2.5rem;
-  display: block;
-  margin-bottom: 0.5rem;
+  font-size: 24px;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .feature-name {
   display: block;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin-bottom: 0.25rem;
 }
 
 .feature-desc {
-  font-size: 0.875rem;
-  color: var(--color-text-placeholder);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
 }
 
-/* 计划列表 */
+/* ============================================================
+ * 计划列表 —— 摘要 + 列表项
+ * 列表项使用 border + 小圆角，与 section 形成层级
+ * ============================================================ */
 .plans-summary {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  background: white;
-  padding: 1rem;
-  border-radius: 0.75rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  background: var(--color-bg-card);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card-normal);
 }
 
 .summary-item {
@@ -698,307 +802,336 @@ onMounted(async () => {
 
 .summary-label {
   display: block;
-  font-size: 0.75rem;
-  color: var(--color-text-regular);
-  margin-bottom: 0.25rem;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+  font-weight: var(--font-medium);
 }
 
 .summary-value {
   display: block;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   color: var(--color-primary);
+  line-height: var(--leading-tight);
 }
 
 .empty-state {
-  background: white;
-  border-radius: 1rem;
-  padding: 4rem 2rem;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-3xl) var(--space-xl);
   text-align: center;
+  box-shadow: var(--shadow-card-normal);
 }
 
 .empty-icon {
-  font-size: 4rem;
+  font-size: 48px;
+  line-height: 1;
   display: block;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-md);
 }
 
 .empty-title {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 var(--space-sm) 0;
 }
 
 .empty-desc {
-  color: var(--color-text-regular);
-  margin: 0 0 1.5rem 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-xl) 0;
+  line-height: var(--leading-normal);
 }
 
 .btn-primary {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  padding: var(--space-md) var(--space-xl);
+  background: var(--color-primary-gradient);
   border: none;
-  border-radius: 0.5rem;
-  color: white;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-white);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .loading-state {
   text-align: center;
-  padding: 3rem;
+  padding: var(--space-2xl);
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 3px solid var(--color-border-light);
   border-top-color: var(--color-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
+  margin: 0 auto var(--space-md);
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* 计划卡片 */
+/* 计划卡片 —— 列表项层级（无 shadow、border 描边） */
 .plan-card {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan-card:hover {
+  border-color: var(--color-border-normal);
+  box-shadow: var(--shadow-card-normal);
 }
 
 .plan-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
 .plan-info {
   flex: 1;
+  min-width: 0;
 }
 
 .plan-name {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 var(--space-xs) 0;
+  line-height: var(--leading-tight);
 }
 
 .plan-date {
-  font-size: 0.8125rem;
-  color: var(--color-text-placeholder);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
 }
 
 .plan-badge {
-  padding: 0.25rem 0.75rem;
-  background: var(--color-bg-block-hover);
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  color: var(--color-text-regular);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-bg-block);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .plan-badge.active {
-  background: var(--color-bg-cream);
+  background: var(--color-primary-light);
   color: var(--color-primary-dark);
 }
 
 /* 进度条 */
 .plan-progress {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-lg);
 }
 
 .progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-sm);
 }
 
 .progress-label {
-  font-size: 0.875rem;
-  color: var(--color-text-regular);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-medium);
 }
 
 .progress-value {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
 }
 
 .progress-bar-bg {
-  height: 8px;
-  background: var(--color-bg-block-hover);
-  border-radius: 9999px;
+  height: 6px;
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
+  border-radius: var(--radius-full);
   transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 /* 操作按钮 */
 .plan-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
 .btn-action {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--color-border-light);
-  border-radius: 0.5rem;
-  background: white;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-bg-card);
   color: var(--color-text-regular);
-  font-size: 0.8125rem;
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-action:hover {
-  background: var(--color-bg-page);
+  background: var(--color-bg-block);
 }
 
 .btn-activate:hover {
-  background: var(--color-bg-cream);
+  background: var(--color-primary-light);
   border-color: var(--color-primary);
   color: var(--color-primary-dark);
 }
 
 .btn-view:hover {
-  background: #f0fdf4;
+  background: var(--color-success-bg);
   border-color: var(--color-success);
   color: var(--color-success);
 }
 
 .btn-delete:hover {
-  background: #fef2f2;
+  background: var(--color-danger-bg);
   border-color: var(--color-danger);
   color: var(--color-danger);
 }
 
-/* 弹窗 */
+/* ============================================================
+ * 弹窗
+ * ============================================================ */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(45, 41, 38, 0.48);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: var(--space-lg);
 }
 
 .modal {
-  background: white;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  max-width: 400px;
-  width: 90%;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow-md);
   animation: modalIn 0.2s ease;
 }
 
 @keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 var(--space-md) 0;
 }
 
 .modal-content {
+  font-size: var(--text-sm);
   color: var(--color-text-regular);
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 var(--space-xl) 0;
+  line-height: var(--leading-normal);
 }
 
 .modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-md);
   justify-content: flex-end;
 }
 
 .btn-secondary {
-  padding: 0.625rem 1.25rem;
-  background: white;
-  border: 1px solid var(--color-border-light);
-  border-radius: 0.5rem;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
   color: var(--color-text-regular);
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: var(--color-bg-page);
+  background: var(--color-bg-block);
+  border-color: var(--color-border-normal);
 }
 
 .btn-danger {
-  padding: 0.625rem 1.25rem;
+  padding: var(--space-sm) var(--space-lg);
   background: var(--color-danger);
   border: none;
-  border-radius: 0.5rem;
-  color: white;
-  font-weight: 500;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-white);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
 .btn-danger:hover {
-  background: var(--color-danger);
+  opacity: 0.9;
 }
 
 /* 编辑表单 */
 .edit-form {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-xl);
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .form-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--color-text-regular);
 }
 
 .form-input {
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--color-border-light);
-  border-radius: 0.5rem;
-  font-size: 1rem;
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-base);
+  background: var(--color-bg-card);
   transition: all 0.2s ease;
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .form-input.error {
@@ -1006,19 +1139,31 @@ onMounted(async () => {
 }
 
 .input-hint {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--color-text-placeholder);
 }
 
 .error-hint {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--color-danger);
 }
 
-@media (max-width: 600px) {
+/* ============================================================
+ * 响应式：与设计系统对齐到 768px
+ * ============================================================ */
+@media (max-width: 768px) {
   .user-card {
     flex-direction: column;
     text-align: center;
+    gap: var(--space-md);
+  }
+
+  .user-name-row {
+    justify-content: center;
+  }
+
+  .user-details {
+    align-items: center;
   }
 
   .detail-item {
@@ -1029,9 +1174,18 @@ onMounted(async () => {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
   .plan-header {
     flex-direction: column;
-    gap: 0.75rem;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+
+  .plan-badge {
+    align-self: flex-start;
   }
 
   .plan-actions {

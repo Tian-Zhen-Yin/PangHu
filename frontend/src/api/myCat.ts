@@ -1,6 +1,10 @@
 import api from './index.js'
 import type { ApiResponse } from '../types/common.js'
 import type { Cat, CatFormData, WeightHistoryRecord } from '../types/cat.js'
+import { compressImage } from '../utils/imageCompress.js'
+
+// 后端头像上限 5MB，前端再压一道作为兜底（即便调用方忘记压缩也不会触发 413）
+const AVATAR_MAX_SIZE = 4.5 * 1024 * 1024
 
 export function getMyCats(): Promise<ApiResponse<Cat[]>> {
   return api.get('/my-cats')
@@ -37,10 +41,18 @@ export function setWeightGoal(catId: string, targetWeight: number, targetDate: s
   return api.put(`/my-cats/${catId}/weight-goal`, { targetWeight, targetDate })
 }
 
-// 上传猫咪头像
-export function uploadCatAvatar(catId: string, file: File): Promise<ApiResponse<{ avatar: string }>> {
+// 上传猫咪头像（自动兜底压缩：超过 4.5MB 时先压到 1MB 以内，规避后端 5MB 上限）
+export async function uploadCatAvatar(catId: string, file: File): Promise<ApiResponse<{ avatar: string }>> {
+  let payload = file
+  if (file.size > AVATAR_MAX_SIZE) {
+    try {
+      payload = await compressImage(file, { maxDimension: 1024, targetSize: 1 * 1024 * 1024 })
+    } catch (err) {
+      console.warn('[uploadCatAvatar] 兜底压缩失败,继续上传原文件:', err)
+    }
+  }
   const formData = new FormData()
-  formData.append('avatar', file)
+  formData.append('avatar', payload)
   return api.post(`/my-cats/${catId}/avatar`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })

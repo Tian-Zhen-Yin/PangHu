@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '../../stores/auth.js'
 
 const authStore = useAuthStore()
@@ -9,6 +10,7 @@ const router = useRouter()
 const showSearch = ref(false)
 const searchQuery = ref('')
 const showUserMenu = ref(false)
+const isLoggingOut = ref(false)
 
 const navigation = [
   { name: '首页', path: '/' },
@@ -37,6 +39,29 @@ function performSearch() {
 function quickSearch(query: string) {
   searchQuery.value = query
   performSearch()
+}
+
+async function handleLogout() {
+  showUserMenu.value = false
+  try {
+    await ElMessageBox.confirm(
+      '确定要退出登录吗？',
+      '退出确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    isLoggingOut.value = true
+    await authStore.logoutAction()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } catch {
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 
@@ -90,9 +115,9 @@ function quickSearch(query: string) {
                 关于
               </RouterLink>
               <div class="dropdown-divider"></div>
-              <a @click.prevent="authStore.logoutAction()" class="dropdown-item dropdown-logout">
+              <a @click.prevent="handleLogout" class="dropdown-item dropdown-logout" :class="{ 'dropdown-item--disabled': isLoggingOut }">
                 <span class="dropdown-icon">🚪</span>
-                退出登录
+                {{ isLoggingOut ? '退出中...' : '退出登录' }}
               </a>
             </div>
           </div>
@@ -338,6 +363,12 @@ function quickSearch(query: string) {
 .dropdown-logout:hover {
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+.dropdown-item--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ========== 搜索弹窗 ========== */

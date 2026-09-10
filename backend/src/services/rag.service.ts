@@ -68,10 +68,32 @@ export async function ingestGuide(
     const texts = chunks.map(c => c.content)
     const embeddings = await getEmbeddings(texts, apiKey)
 
+    // 5.1 检测零向量：getEmbeddings 在批次失败时会返回全零向量（见 embedding.service.ts:130-136）
+    //     若大量失败则中止入库，避免污染向量数据库（污染后只能整库重建）
+    const validCount = embeddings.filter(v => v.some(x => x !== 0)).length
+    if (validCount < embeddings.length) {
+      const failed = embeddings.length - validCount
+      console.warn(`[ingestGuide] ${guideId}: ${failed}/${embeddings.length} 个 chunk 向量化失败`)
+      // 阈值：超过 20% 失败则整体放弃，避免写入坏数据
+      if (validCount < embeddings.length * 0.8) {
+        return {
+          chunks: 0,
+          error: `向量化失败率过高 (${failed}/${embeddings.length})，已中止入库以保护数据完整性`
+        }
+      }
+    }
+
     // 6. 存储到数据库（使用原始 SQL 插入向量）
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       const embedding = embeddings[i]
+
+      // 5.2 跳过零向量条目，宁可少存也不存坏数据
+      if (!embedding.some(x => x !== 0)) {
+        console.warn(`[ingestGuide] 跳过 chunk #${i}（零向量）: "${chunk.content.slice(0, 30)}..."`)
+        continue
+      }
+
       const vectorString = `[${embedding.join(',')}]`
 
       await prisma.$queryRaw`
@@ -159,6 +181,18 @@ export async function retrieveKnowledge(
   try {
     const queryEmbedding = await getEmbeddings([query], apiKey)
     const queryVector = queryEmbedding[0]
+
+    // 检测查询向量是否为零向量（getEmbeddings 失败 fallback）
+    // 零向量做 cosine 排序结果毫无意义，直接走空结果而不是返回噪声
+    if (!queryVector || !queryVector.some(x => x !== 0)) {
+      console.warn('[retrieveKnowledge] 查询向量化失败（返回零向量），跳过检索')
+      return {
+        chunks: [],
+        citations: [],
+        error: '查询向量化失败，知识检索暂不可用'
+      }
+    }
+
     const vectorString = `[${queryVector.join(',')}]`
 
     // ✅ 条件过滤：用 Prisma.sql 拼接，安全且灵活

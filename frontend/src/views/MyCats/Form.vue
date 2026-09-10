@@ -22,13 +22,13 @@
           <input
             ref="avatarInputRef"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             @change="handleAvatarChange"
             style="display: none"
           />
           <div class="avatar-info">
             <p class="avatar-title">猫咪头像</p>
-            <p class="avatar-hint">支持 JPG、PNG 格式，建议正方形图片，会自动裁剪为圆形</p>
+            <p class="avatar-hint">支持 JPG、PNG 格式，建议正方形图片，会自动裁剪为圆形并压缩</p>
           </div>
         </div>
 
@@ -196,15 +196,17 @@ async function handleAvatarChange(event: Event) {
   const file = target.files?.[0]
   if (!file) return
 
-  // 验证文件类型
-  if (!file.type.startsWith('image/')) {
+  // 验证文件类型(iOS Safari 偶尔 file.type 为空,放宽到只校验扩展名,后续 loadImage 会通过 magic bytes 二次校验)
+  const isImageByName = /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(file.name)
+  const isImageByMime = file.type.startsWith('image/')
+  if (!isImageByMime && !isImageByName) {
     toast.error('请选择图片文件')
     return
   }
 
-  // 源文件上限 20MB（避免 canvas 内存爆掉）；实际输出由 cropAvatarToCircle 压到 <300KB
-  if (file.size > 20 * 1024 * 1024) {
-    toast.error('图片过大，请选择小于 20MB 的图片')
+  // 源文件上限 30MB（避免 canvas 内存爆掉）；正常手机原图 3~10MB 都会自动压到 <300KB
+  if (file.size > 30 * 1024 * 1024) {
+    toast.error('图片过大，请选择小于 30MB 的图片')
     return
   }
 
@@ -222,6 +224,10 @@ async function handleAvatarChange(event: Event) {
     } else {
       // 新建模式，保存文件并在提交时上传
       avatarFile.value = croppedFile
+      // 释放上一次的 blob URL,防止反复换图时内存累积
+      if (form.value.avatar?.startsWith('blob:')) {
+        URL.revokeObjectURL(form.value.avatar)
+      }
       // 显示预览
       form.value.avatar = URL.createObjectURL(croppedFile)
     }
@@ -286,7 +292,14 @@ async function handleSubmit() {
     if (avatarFile.value && catId) {
       try {
         uploadingAvatar.value = true
-        await uploadCatAvatar(catId, avatarFile.value)
+        const uploadRes = await uploadCatAvatar(catId, avatarFile.value)
+        // 同步更新 store 中对应猫咪的 avatar 字段，确保列表/详情立即看到新头像
+        const newAvatar = uploadRes.data.avatar
+        const idx = catStore.cats.findIndex(c => c.id === catId)
+        if (idx !== -1) catStore.cats[idx] = { ...catStore.cats[idx], avatar: newAvatar } as any
+        if (catStore.currentCat?.id === catId) {
+          catStore.currentCat = { ...catStore.currentCat, avatar: newAvatar } as any
+        }
         toast.success('猫咪档案和头像保存成功')
       } catch (err: any) {
         console.error('头像上传失败:', err)
@@ -296,6 +309,8 @@ async function handleSubmit() {
       toast.success(isEdit.value ? '猫咪档案更新成功' : '猫咪档案创建成功')
     }
 
+    // 跳转前重新拉取一次，保证数据来源权威（避免本地状态遗漏字段）
+    await catStore.fetchCats()
     router.push('/my-cats')
   } finally {
     submitting.value = false

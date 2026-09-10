@@ -118,11 +118,24 @@ export async function updateWeightGoal(req: Request, res: Response) {
 
 export async function uploadCatAvatarHandler(req: Request, res: Response) {
   try {
-    const userId = (req as any).user.userId
+    const userId = (req as any).user?.userId
     const id = req.params.id as string
     const file = req.file as Express.Multer.File
 
+    // 详细日志:用于排查"加载失败"问题
+    console.log('[uploadCatAvatar] 请求到达', {
+      userId,
+      catId: id,
+      hasFile: !!file,
+      fileSize: file?.size,
+      fileMime: file?.mimetype,
+      fileOriginalName: file?.originalname,
+      fileSavedAs: file?.filename,
+      contentLength: req.headers['content-length'],
+    })
+
     if (!file) {
+      console.warn('[uploadCatAvatar] 缺少 file 字段')
       return res.status(400).json(errorResponse('请选择要上传的头像'))
     }
 
@@ -131,11 +144,14 @@ export async function uploadCatAvatarHandler(req: Request, res: Response) {
     const cat = await updateCatAvatar(id, userId, avatarUrl)
 
     if (!cat) {
+      console.warn('[uploadCatAvatar] 猫咪不存在', { userId, catId: id })
       return res.status(404).json(errorResponse('猫咪不存在'))
     }
 
+    console.log('[uploadCatAvatar] 成功', { catId: id, avatarUrl })
     res.json(successResponse({ avatar: avatarUrl }, '头像上传成功'))
   } catch (error: any) {
+    console.error('[uploadCatAvatar] 异常:', error?.message, error?.stack)
     res.status(500).json(errorResponse(error.message || '头像上传失败'))
   }
 }

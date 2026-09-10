@@ -30,6 +30,24 @@
       </div>
     </div>
 
+    <!-- 用户信息卡片 -->
+    <div v-if="authStore.user" class="user-info-card" @click="router.push('/profile')">
+      <div class="user-info-left">
+        <div class="user-avatar-small">
+          {{ authStore.user?.username?.charAt(0).toUpperCase() || '?' }}
+        </div>
+        <div class="user-info-text">
+          <div class="user-name">{{ authStore.user.username }}</div>
+          <div class="user-email">{{ authStore.user.email }}</div>
+        </div>
+      </div>
+      <div class="user-info-right">
+        <button class="logout-btn-small" @click.stop="handleLogout" :disabled="isLoggingOut">
+          {{ isLoggingOut ? '退出中...' : '退出登录' }}
+        </button>
+      </div>
+    </div>
+
     <div v-if="loading" class="loading-state">
       <MascotCharacter
         expression="yawning"
@@ -105,17 +123,23 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useMyCatStore } from '../../stores/myCat.js'
+import { useAuthStore } from '../../stores/auth.js'
 import EmptyState from '../../components/common/EmptyState.vue'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import { formatWeight, getAvatarUrl } from '../../utils/format.js'
 import type { Cat } from '../../types/cat.js'
 
+const router = useRouter()
 const catStore = useMyCatStore()
+const authStore = useAuthStore()
 const { cats, currentCat, loading } = storeToRefs(catStore)
 
 const failedAvatars = ref<Set<string>>(new Set())
+const isLoggingOut = ref(false)
 
 onMounted(() => catStore.fetchCats())
 
@@ -135,6 +159,29 @@ function onAvatarError(cat: Cat) {
 async function handleDelete(cat: Cat) {
   if (!confirm(`确定要删除 ${cat.name} 的档案吗？此操作不可恢复。`)) return
   await catStore.deleteCat(cat.id)
+}
+
+// 退出登录
+async function handleLogout() {
+  try {
+    await ElMessageBox.confirm(
+      '确定要退出登录吗？',
+      '退出确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    isLoggingOut.value = true
+    await authStore.logoutAction()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } catch {
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
 
@@ -191,6 +238,94 @@ async function handleDelete(cat: Cat) {
 .header-actions {
   display: flex;
   gap: 12px;
+}
+
+/* 用户信息卡片 */
+.user-info-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--color-bg-warm) 100%);
+  border-radius: 20px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.user-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(244, 162, 97, 0.12);
+  border-color: var(--color-primary-medium);
+}
+
+.user-info-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar-small {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-info-text .user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.user-info-text .user-email {
+  font-size: 12px;
+  color: var(--color-text-placeholder);
+}
+
+.user-info-right {
+  display: flex;
+  align-items: center;
+}
+
+.logout-btn-small {
+  padding: 6px 14px;
+  background: white;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: 100px;
+  color: var(--color-text-regular);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.logout-btn-small:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.logout-btn-small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* 按钮样式 */
@@ -441,6 +576,30 @@ async function handleDelete(cat: Cat) {
     gap: 16px;
     top: 0;
     padding: 8px 0 12px 0;
+  }
+
+  .user-info-card {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+  }
+
+  .user-avatar-small {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .user-info-text .user-name {
+    font-size: 14px;
+  }
+
+  .user-info-text .user-email {
+    font-size: 11px;
+  }
+
+  .logout-btn-small {
+    padding: 5px 12px;
+    font-size: 11px;
   }
 
   .header-actions {
