@@ -1,4 +1,4 @@
-import prisma from '../config/database'
+import prisma from '../../src/config/database'
 
 async function fixVectorDimensions() {
   console.log('🔧 修复向量维度...')

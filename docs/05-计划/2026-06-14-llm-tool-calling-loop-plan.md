@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript / Express / Zod v4 / Vitest / 智谱 AI GLM-4 (OpenAI-compatible function calling) / `featureFlags.ts`
 
-**关联 Spec:** `docs/superpowers/specs/2026-06-14-llm-tool-calling-loop-design.md`
+**关联 Spec:** `../06-规范/2026-06-14-llm-tool-calling-loop-design.md`
 
 ---
 

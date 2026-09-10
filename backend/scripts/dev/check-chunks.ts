@@ -1,4 +1,4 @@
-import prisma from '../config/database'
+import prisma from '../../src/config/database'
 
 async function checkChunks() {
   try {

@@ -4,7 +4,7 @@
  */
 
 import 'dotenv/config'
-import { cosineSimilarity } from '../services/embedding.service'
+import { cosineSimilarity } from '../../src/services/embedding.service'
 
 const DIM = 2048
 const N = 200_000

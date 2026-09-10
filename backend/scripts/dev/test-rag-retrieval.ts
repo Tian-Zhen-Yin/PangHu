@@ -1,4 +1,4 @@
-import { retrieveKnowledge } from '../services/rag.service'
+import { retrieveKnowledge } from '../../src/services/rag.service'
 
 async function testRAGRetrieval() {
   try {

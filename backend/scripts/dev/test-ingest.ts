@@ -1,4 +1,4 @@
-import { ingestAllGuides } from '../services/rag.service'
+import { ingestAllGuides } from '../../src/services/rag.service'
 
 async function test() {
   try {

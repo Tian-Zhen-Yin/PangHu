@@ -1988,7 +1988,7 @@ const debouncedSearch = useDebounce(handleSearch, 500)
 
 - [UI设计规范](../03-设计/UI设计规范.md) - C端设计规范
 - [品牌视觉语言手册](../03-设计/品牌视觉语言手册.md)
-- [后台管理系统设计方案](../04-架构/后台管理系统设计方案.md)
+- [后台管理系统设计方案](后台管理系统设计方案.md)
 - [Element Plus 组件库](https://element-plus.org/)
 
 ---

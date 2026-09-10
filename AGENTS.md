@@ -14,10 +14,12 @@
   - `src/agent/`     : LLM Agent（Planner / Loop / Tools）
   - `src/services/`  : 业务服务层
   - `src/controllers/` + `src/routes/` : HTTP 入口
+  - `scripts/dev/`   : 本地调试/冒烟脚本（在 backend/scripts/ 下，不进 src 类型检查范围）
   - `prisma/`        : schema + migrations
   - `src/__tests__/` : vitest 测试（按层分目录：api / services / agent / middlewares / utils）
 - `frontend/` : Vue 3 + Vite + Element Plus + Pinia
-- `docs/`     : `01-产品/` `02-开发/` `03-设计/` `04-复盘/`
+- `docs/`     : `01-产品/` `02-开发/` `03-设计/` `04-复盘/` `05-计划/` `06-规范/` `07-记录/` `08-其他/`
+- `scripts/`  : `mac-mini/`（自部署套件）+ `vercel-postinstall.js`；历史归档在 `docs/08-其他/archive/`
 
 ## 启动 / 测试 / 校验（Windows PowerShell）
 
@@ -105,14 +107,12 @@ tools/api 合并完后由 backend 一次性产出 TS 类型快照供 frontend �
 
 > **读 ≠ 写**：每个分支允许**只读引用**任何路径（包括禁区，用于理解类型/契约）；上面列的是**允许编辑**的路径。
 
-## Windows 平台注意（给 Codex 看）
+## 平台注意（给 AI 看）
 
-- 平台：**Windows + PowerShell**（不是 bash / zsh）
-- 命令分隔统一用 `;`（PS 5.1 / 7 都支持）
-- `&&` / `||` 是 PS 7.0+ 才引入的管道链运算符；为兼容 PS 5.1，**约定不用**
-- 文件路径在脚本里用正斜杠或 `path.join`
-- 跑 `npm` 命令前先 `cd backend` 或 `cd frontend`
-- 路径里有空格要加引号（PowerShell 比 bash 更挑剔）
+- 平台：**macOS + zsh**（2026-09 起主力机为 Mac Mini；历史 Windows 时代的说明已过时）
+- 命令分隔用 `&&` / `;` 均可
+- 跑 `npm` 命令前先 `cd backend` 或 `cd frontend`；根目录脚本（`test:unit` 等）在根执行
+- 注意本机 Python 可能被 TRAE 的 PYTHONHOME 污染，解析 JSON 用 `node -e` 而不是 python3
 
 ## LLM 工作约定
 

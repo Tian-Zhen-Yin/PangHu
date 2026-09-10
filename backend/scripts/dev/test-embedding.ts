@@ -14,7 +14,7 @@ import {
   cosineSimilarity,
   euclideanDistance,
   findMostSimilar
-} from '../services/embedding.service'
+} from '../../src/services/embedding.service'
 
 const EXPECTED_DIM = 2048
 const apiKey = process.env.ZHIPUAI_API_KEY
