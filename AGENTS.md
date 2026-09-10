@@ -60,13 +60,23 @@ cd backend ; npm run db:migrate
 - `backend/src/agent/index.ts`          # Agent 总入口
 - `backend/src/config/featureFlags.ts`  # 特性开关
 - `vitest.*.config.ts`                  # 测试配置（项目根）
-- `.Codex/**`                          # Hook 配置归 master 管
 - `frontend/auto-imports.d.ts`          # 自动生成
 - `frontend/components.d.ts`            # 自动生成
 
 ## Branch Contracts（当前 sprint）
 
-> **当前无活跃 sprint**——`feature/agent-framework` mega-branch 处于收尾阶段，按"接受现状 → 整体合 master"路线处理（详见设计文档 §11 附录 B.1）。
+> **当前活跃分支：`refactor/project-cleanup`**（2026-09-11 起，全仓重构，方案已经 supervisor 批准）。
+
+- refactor/project-cleanup : 编辑 backend/src/**（含 agent/**）、frontend/src/**、scripts/**、docs/**、
+                              根目录配置（.gitignore / package.json / vitest.*.config.ts / CLAUDE.md）
+                            **显式豁免禁区**：`backend/src/agent/index.ts`（三链路收敛）、
+                              根 `vitest.*.config.ts`（测试 include 修复）
+                            仍禁止：`backend/prisma/schema.prisma`、`backend/prisma/migrations/**`、
+                              `backend/src/routes/index.ts`、`backend/src/config/featureFlags.ts`、
+                              `frontend/auto-imports.d.ts`、`frontend/components.d.ts`
+                            约束：不新增 npm 依赖；API 路由路径保持兼容不变
+
+> `feature/agent-framework` mega-branch 已按"接受现状 → 整体合 master"路线处理完毕（详见设计文档 §11 附录 B.1）。
 >
 > **下一个 feature 启动前**，在本节追加该 feature 的 Branch Contracts，格式参考下方注释模板。
 

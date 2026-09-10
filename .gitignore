@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# lockfile 需要被追踪（可复现构建），不要忽略 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -17,6 +17,7 @@ prisma/*.db
 
 # Build outputs
 dist/
+dev-dist/
 build/
 *.tsbuildinfo
 
@@ -91,3 +92,8 @@ api/index.js
 # Added by code-review-graph
 .code-review-graph/
 *.env.prod
+
+# AI 会话状态与本地工具
+.zcode/
+.superpowers/
+.codex/
