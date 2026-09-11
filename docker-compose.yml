@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: panghu
+      POSTGRES_PASSWORD: panghu
+      POSTGRES_DB: panghu
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U panghu -d panghu"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://panghu:panghu@db:5432/panghu
+      ZHIPUAI_API_KEY: ${ZHIPUAI_API_KEY:?请在 .env 文件或环境变量中设置 ZHIPUAI_API_KEY}
+      ZHIPUAI_MODEL: ${ZHIPUAI_MODEL:-glm-4.5-flash}
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      SEED_ON_START: ${SEED_ON_START:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    volumes:
+      - uploads:/app/backend/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  uploads:

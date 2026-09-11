@@ -1,0 +1,17 @@
+.git
+node_modules
+**/node_modules
+frontend/dist
+frontend/dev-dist
+frontend/test-results
+api
+*.log
+logs
+uploads
+backend/.env
+.env
+.env.local
+.env.prod
+docs
+k8s
+.DS_Store
