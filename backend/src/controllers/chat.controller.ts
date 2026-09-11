@@ -10,6 +10,7 @@ import { getKnowledgeContext } from '../services/knowledge.service'
 import { isSSERequest } from '../utils/stream'
 import { getCatContext } from '../services/cat.service'
 import { catAgent } from '../agent'
+import { createExpressSseSink } from '../agent/core/sseSink'
 import { resolveUserSegment } from '../config/featureFlags'
 import { consumeConfirmation, cancelConfirmation } from '../services/confirmation.service'
 import { executeConfirmedWrite } from '../agent/confirmationDispatcher'
@@ -204,11 +205,12 @@ async function handleAgentStreamingMessage(
 
   // 委托给 CatAgent 流式方法,其内部处理 Router → Planner → Executor → LLM 逐 token
   // userSegment 由白名单解析,驱动 V3.0 LLM_TOOL_CALLING_LOOP 灰度
+  const sink = createExpressSseSink(res)
   const result = await catAgent.handleStreaming(
     content,
     userId,
     conversationId || 'adhoc',
-    res,
+    sink,
     catId || conversation.catId || undefined,
     chatHistory,
     resolveUserSegment(userId),

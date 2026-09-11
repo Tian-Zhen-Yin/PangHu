@@ -602,7 +602,7 @@ export function recordAgentPhase(params: {
  * 对应 Agent 设计文档 SSE 协议（meta/tool/content/done/error）
  */
 export function recordSseEvent(params: {
-  eventType: 'meta' | 'tool' | 'content' | 'done' | 'error'
+  eventType: 'meta' | 'tool' | 'content' | 'done' | 'error' | 'trace' | 'pending_confirmation'
   environment: string
   errorType?: string
 }) {

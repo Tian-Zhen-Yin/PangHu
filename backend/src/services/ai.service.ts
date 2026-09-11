@@ -7,7 +7,7 @@ import { retrieveKnowledge, type Citation } from './rag.service'
 // 默认使用的模型
 const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4.5-flash'
 
-export type MessageRole = 'user' | 'assistant' | 'system'
+export type MessageRole = 'user' | 'assistant' | 'system' | 'tool'
 
 export interface ServiceChatMessage {
   role: MessageRole

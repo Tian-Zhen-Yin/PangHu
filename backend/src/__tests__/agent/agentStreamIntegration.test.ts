@@ -32,6 +32,7 @@ vi.mock('../../services/ai.service', () => ({
 
 // 顶层 import(在 mock 之后)
 import { CatAgent } from '../../agent'
+import { createExpressSseSink } from '../../agent/core/sseSink'
 import { AgentLoop } from '../../agent/core/AgentLoop'
 import { FakeLLMClient } from '../../agent/llm/FakeLLMClient'
 import type { Tool } from '../../agent/types/agent'
@@ -125,7 +126,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const agent = makeAgentWithLoop(llm)
     const res = makeMockRes()
 
-    const result = await agent.handleStreaming('你好', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    const result = await agent.handleStreaming('你好', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     const events = parseSseEvents(res.chunks)
     const types = events.map((e) => e.type)
@@ -162,7 +163,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const agent = makeAgentWithLoop(llm)
     const res = makeMockRes()
 
-    const result = await agent.handleStreaming('小白多大了', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    const result = await agent.handleStreaming('小白多大了', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     const events = parseSseEvents(res.chunks)
     const types = events.map((e) => e.type)
@@ -197,7 +198,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const res = makeMockRes()
 
     // 调用含 "过敏" 的消息,即便注入 userSegment='internal'(flag 开启)也应降级到 V2
-    await agent.handleStreaming('我家猫咪过敏了怎么办', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    await agent.handleStreaming('我家猫咪过敏了怎么办', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     const events = parseSseEvents(res.chunks)
 
@@ -233,7 +234,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const agent = makeAgentWithLoop(llm)
     const res = makeMockRes()
 
-    const result = await agent.handleStreaming('q', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    const result = await agent.handleStreaming('q', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     // RAG fallback 必须被触发
     expect(sendMessageStreamMock).toHaveBeenCalledTimes(1)
@@ -260,7 +261,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     ;(agent as unknown as { agentLoop: unknown }).agentLoop = fakeLoop
 
     const res = makeMockRes()
-    await agent.handleStreaming('q', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    await agent.handleStreaming('q', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     // 抛错后应触发 RAG fallback
     expect(sendMessageStreamMock).toHaveBeenCalledTimes(1)
@@ -280,7 +281,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const agent = makeAgentWithLoop(llm)
     const res = makeMockRes()
 
-    const result = await agent.handleStreaming('如何喂养', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    const result = await agent.handleStreaming('如何喂养', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     const events = parseSseEvents(res.chunks)
     const doneEvent = events.find((e) => e.type === 'done')
@@ -299,7 +300,7 @@ describe('CatAgent.handleStreaming V3.0 integration', () => {
     const agent = makeAgentWithLoop(llm)
     const res = makeMockRes()
 
-    await agent.handleStreaming('hi', 'u1', 's1', res as unknown as Response, undefined, [], 'internal')
+    await agent.handleStreaming('hi', 'u1', 's1', createExpressSseSink(res as unknown as Response), undefined, [], 'internal')
 
     expect(res.writableEnded).toBe(true)
   })

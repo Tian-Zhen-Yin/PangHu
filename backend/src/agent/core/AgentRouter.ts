@@ -1,6 +1,6 @@
 import type { AgentState, IntentResult } from '../types/agent'
 
-const GREETING_PATTERNS = [
+export const GREETING_PATTERNS = [
   '你好', '您好', 'hi', 'hello', '嗨', '哈喽',
   '在吗', '有人吗', '早上好', '晚上好', '下午好',
   '嗨嗨', '你好啊', '您好啊',
