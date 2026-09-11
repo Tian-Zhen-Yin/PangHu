@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { WarningFilled } from '@element-plus/icons-vue'
-import { monitorOnlineStatus } from '../utils/pwa'
+import { monitorOnlineStatus } from '../../utils/pwa'
 import { ElNotification } from 'element-plus'
 
 // State

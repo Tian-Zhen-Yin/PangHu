@@ -1,6 +1,10 @@
 import type { Cat } from '../../../types/cat'
 
-export function formatWeight(value?: number | string): string {
+/**
+ * 输出无单位的紧凑体重值(“3.5”),区别于 utils/format.ts 的 formatWeight(“3.50kg” 带单位)。
+ * 供时间线数字+外部补 kg 单位的场景使用。
+ */
+export function formatWeightShort(value?: number | string): string {
   if (value === undefined || value === null) return ''
   const num = typeof value === 'string' ? parseFloat(value) : value
   if (isNaN(num)) return String(value)
@@ -9,13 +13,13 @@ export function formatWeight(value?: number | string): string {
 
 export function getWeightValue(record: { weight?: number; title: string }): string {
   if (record.weight !== undefined && record.weight !== null) {
-    return formatWeight(record.weight)
+    return formatWeightShort(record.weight)
   }
   if (record.title.includes(':')) {
     const parts = record.title.split(':')
     if (parts.length > 1) {
       const value = parts[1]!.trim().replace('kg', '').trim()
-      return formatWeight(value)
+      return formatWeightShort(value)
     }
   }
   return record.title

@@ -1,51 +1,48 @@
 // frontend/src/__tests__/composables/useLoading.test.ts
+// 2026-09 对齐实现:useLoading 暴露 loading/loadingText/setLoading/wrap
 import { describe, it, expect, vi } from 'vitest'
 import { useLoading } from '../../composables/useLoading'
 
 describe('useLoading', () => {
-  it('should initialize with default state', () => {
-    const { isLoading } = useLoading()
-    
-    expect(isLoading.value).toBe(false)
+  it('默认 loading 为 false,文案为"加载中..."', () => {
+    const { loading, loadingText } = useLoading()
+
+    expect(loading.value).toBe(false)
+    expect(loadingText.value).toBe('加载中...')
   })
 
-  it('should initialize with true', () => {
-    const { isLoading } = useLoading(true)
-    
-    expect(isLoading.value).toBe(true)
+  it('setLoading(true) 打开并可自定义文案', () => {
+    const { loading, loadingText, setLoading } = useLoading()
+
+    setLoading(true, '上传中...')
+    expect(loading.value).toBe(true)
+    expect(loadingText.value).toBe('上传中...')
+
+    setLoading(false)
+    expect(loading.value).toBe(false)
   })
 
-  it('should toggle loading state', () => {
-    const { isLoading, start, stop } = useLoading()
-    
-    expect(isLoading.value).toBe(false)
-    start()
-    expect(isLoading.value).toBe(true)
-    stop()
-    expect(isLoading.value).toBe(false)
-  })
+  it('wrap 执行期间 loading 为 true,结束后为 false', async () => {
+    const { loading, wrap } = useLoading()
+    let resolveFn!: (v: string) => void
+    const mockFn = vi.fn(() => new Promise<string>((r) => { resolveFn = r }))
 
-  it('should wrap async function', async () => {
-    const { isLoading, wrap } = useLoading()
-    const mockFn = vi.fn().mockResolvedValue('result')
-    
-    expect(isLoading.value).toBe(false)
-    
-    const result = await wrap(mockFn)
-    
-    expect(isLoading.value).toBe(false)
+    const p = wrap(mockFn)
+    expect(loading.value).toBe(true)
+    resolveFn('result')
+    const result = await p
+
+    expect(loading.value).toBe(false)
     expect(mockFn).toHaveBeenCalled()
     expect(result).toBe('result')
   })
 
-  it('should handle errors in wrapped function', async () => {
-    const { isLoading, wrap } = useLoading()
+  it('wrap 内抛错时同样关闭 loading 并透传异常', async () => {
+    const { loading, wrap } = useLoading()
     const mockFn = vi.fn().mockRejectedValue(new Error('test error'))
-    
-    expect(isLoading.value).toBe(false)
-    
+
     await expect(wrap(mockFn)).rejects.toThrow('test error')
-    
-    expect(isLoading.value).toBe(false)
+
+    expect(loading.value).toBe(false)
   })
 })

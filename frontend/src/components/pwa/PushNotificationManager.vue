@@ -90,7 +90,7 @@ import {
   requestNotificationPermission,
   subscribeToPushNotifications,
   getPushSubscriptionStatus
-} from '../utils/pwa'
+} from '../../utils/pwa'
 
 interface Props {
   showBanner?: boolean

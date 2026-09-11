@@ -7,7 +7,7 @@ import { getGuideById } from '../../api/guide.js'
 import type { Guide } from '../../types/guide.js'
 import MascotCharacter from '../../components/mascot/MascotCharacter.vue'
 import CategoryIcons, { type CategoryIconType } from '../../components/guide/CategoryIcons.vue'
-import GuideOverview from '../../components/guides/GuideOverview.vue'
+import GuideOverview from '../../components/guide/GuideOverview.vue'
 import Breadcrumb from '../../components/common/Breadcrumb.vue'
 import { removeFirstH1, extractFirstH1Title } from '../../utils/markdown'
 

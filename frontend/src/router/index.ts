@@ -13,7 +13,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Dashboard',
-    component: () => import(/* webpackChunkName: "dashboard" */ '../modules/dashboard/pages/DashboardPage.vue'),
+    component: () => import(/* webpackChunkName: "dashboard" */ '../views/Dashboard/pages/DashboardPage.vue'),
     meta: { title: '首页 - 哈吉咪养成计划', preload: true }
   },
   {

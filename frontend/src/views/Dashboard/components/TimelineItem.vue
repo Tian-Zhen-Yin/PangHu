@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DashboardRecentRecord } from '../types/index.js'
 import { getRecordIcon, getRecordTypeLabel } from '../utils/recordHelpers.js'
-import { formatWeight, getWeightValue } from '../utils/formatters.js'
+import { formatWeightShort, getWeightValue } from '../utils/formatters.js'
 
 defineProps<{
   record: DashboardRecentRecord
@@ -43,7 +43,7 @@ const emit = defineEmits<{
             <path v-if="record.weightChange.direction === 'up'" d="M12 19V5M5 12l7-7 7 7" />
             <path v-else d="M12 5v14M5 12l7 7 7-7" />
           </svg>
-          {{ formatWeight(record.weightChange.value) }}kg
+          {{ formatWeightShort(record.weightChange.value) }}kg
         </span>
 
         <div v-if="record.photos && record.photos.length > 0" class="photo-strip">

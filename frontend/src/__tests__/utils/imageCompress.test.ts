@@ -20,6 +20,15 @@ describe('imageCompress - magic bytes 嗅探 + 解码兼容性', () => {
   let originalImage: typeof Image
   let mockImg: any
 
+/** 实现 loadImage 是异步 sniff 后才挂 onerror;轮询等赋值完成再触发,避免固定延时竞态 */
+  async function triggerImgError() {
+    for (let i = 0; i < 100 && !mockImg.onerror; i++) {
+      await new Promise((r) => setTimeout(r, 5))
+    }
+    mockImg.onerror?.()
+  }
+
+  
   beforeEach(() => {
     createObjectURLSpy = vi.fn(() => 'blob:mock-url')
     revokeObjectURLSpy = vi.fn()
@@ -67,7 +76,7 @@ describe('imageCompress - magic bytes 嗅探 + 解码兼容性', () => {
     const { compressImage } = await import('../../utils/imageCompress')
     const file = makeFile(JPEG_HEADER, 'a.jpg', 'image/jpeg')
     // 模拟 Image 加载失败,但应该是"解码失败"而非"HEIC"或"为空"
-    setTimeout(() => mockImg.onerror?.(), 0)
+    triggerImgError()
     await expect(compressImage(file)).rejects.toThrow(/解码失败|损坏/)
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:mock-url')
   })
@@ -114,7 +123,7 @@ describe('imageCompress - magic bytes 嗅探 + 解码兼容性', () => {
     const file = makeFile(JPEG_HEADER, 'a.jpg', 'image/jpeg')
 
     // Image 也失败 → 抛出最终错误
-    setTimeout(() => mockImg.onerror?.(), 0)
+    triggerImgError()
 
     await expect(cropAvatarToCircle(file)).rejects.toThrow(/解码失败|损坏/)
     expect(createImageBitmapSpy).toHaveBeenCalled()
