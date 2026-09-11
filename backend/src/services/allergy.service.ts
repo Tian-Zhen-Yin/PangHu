@@ -1,6 +1,6 @@
-import { PrismaClient, AllergySeverity } from '@prisma/client'
+import prisma from '../config/database'
+import { AllergySeverity } from '@prisma/client'
 
-const prisma = new PrismaClient()
 
 /**
  * 过敏记录查询结果

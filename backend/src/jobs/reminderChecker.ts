@@ -10,12 +10,15 @@
 import cron from 'node-cron'
 import prisma from '../config/database'
 import { sendNotification, type NotificationData } from '../services/notification.service'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('reminderChecker')
 
 /**
  * 检查并发送疫苗到期提醒
  */
 async function checkVaccineReminders() {
-  console.log('[Reminder Checker] Checking vaccine reminders...')
+  log.info('Checking vaccine reminders...')
 
   try {
     // 获取所有用户的疫苗记录
@@ -108,9 +111,9 @@ async function checkVaccineReminders() {
       if (sent) sentCount++
     }
 
-    console.log(`[Reminder Checker] Vaccine reminders sent: ${sentCount}/${remindersToCreate.length}`)
+    log.info(`[Reminder Checker] Vaccine reminders sent: ${sentCount}/${remindersToCreate.length}`)
   } catch (error) {
-    console.error('[Reminder Checker] Error checking vaccine reminders:', error)
+    log.error('Error checking vaccine reminders:', error)
   }
 }
 
@@ -118,7 +121,7 @@ async function checkVaccineReminders() {
  * 检查体重异常提醒
  */
 async function checkWeightReminders() {
-  console.log('[Reminder Checker] Checking weight reminders...')
+  log.info('Checking weight reminders...')
 
   try {
     // 获取所有有体重记录的猫咪
@@ -219,9 +222,9 @@ async function checkWeightReminders() {
       }
     }
 
-    console.log('[Reminder Checker] Weight reminders checked')
+    log.info('Weight reminders checked')
   } catch (error) {
-    console.error('[Reminder Checker] Error checking weight reminders:', error)
+    log.error('Error checking weight reminders:', error)
   }
 }
 
@@ -229,12 +232,12 @@ async function checkWeightReminders() {
  * 执行所有提醒检查
  */
 export async function checkAndSendReminders() {
-  console.log('[Reminder Checker] Running reminder check at:', new Date().toISOString())
+  log.info('Running reminder check at:', new Date().toISOString())
 
   await checkVaccineReminders()
   await checkWeightReminders()
 
-  console.log('[Reminder Checker] Reminder check completed')
+  log.info('Reminder check completed')
 }
 
 /**
@@ -246,22 +249,22 @@ export function startReminderScheduler() {
     try {
       await checkAndSendReminders()
     } catch (error) {
-      console.error('[Reminder Scheduler] Error:', error)
+      log.error('Error:', error)
     }
   })
 
-  console.log('[Reminder Scheduler] Started - runs every hour')
+  log.info('Started - runs every hour')
 }
 
 // 如果直接运行此文件，执行一次检查
 if (require.main === module) {
   checkAndSendReminders()
     .then(() => {
-      console.log('[Reminder Checker] Completed')
+      log.info('Completed')
       process.exit(0)
     })
     .catch((error) => {
-      console.error('[Reminder Checker] Error:', error)
+      log.error('Error:', error)
       process.exit(1)
     })
 }

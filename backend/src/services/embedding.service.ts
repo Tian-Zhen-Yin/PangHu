@@ -3,15 +3,8 @@
  * 使用智谱 AI 的 Embedding API 将文本转化为向量
  */
 
-import axios from 'axios'
-import https from 'https'
+import { postZhipuai } from '../agent/llm/zhipuaiHttp'
 
-// 创建忽略证书验证的 https agent（仅用于开发环境）
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false
-})
-
-const EMBEDDING_API_URL = 'https://open.bigmodel.cn/api/paas/v4/embeddings'
 const EMBEDDING_MODEL = 'embedding-3'
 
 export interface EmbeddingResponse {
@@ -29,57 +22,15 @@ export interface EmbeddingResponse {
 }
 
 /**
- * 生成 JWT Token 用于智谱 AI API 认证
- */
-function generateToken(apiKey: string): string {
-  const [id, secret] = apiKey.split('.')
-
-  const now = Date.now()
-  const payload = {
-    api_key: id,
-    exp: now + 3600000,
-    timestamp: now
-  }
-
-  // 简单的 Base64 编码实现
-  const header = {
-    alg: 'HS256',
-    sign_type: 'SIGN'
-  }
-
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url')
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url')
-
-  const signatureInput = `${encodedHeader}.${encodedPayload}`
-  const hmac = require('crypto').createHmac('sha256', secret)
-  hmac.update(signatureInput)
-  const signature = hmac.digest('base64url')
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`
-}
-
-/**
  * 获取单个文本的向量
  */
 export async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
   try {
-    const token = generateToken(apiKey)
-
-    const response = await axios.post<EmbeddingResponse>(
-      EMBEDDING_API_URL,
-      {
-        model: EMBEDDING_MODEL,
-        input: text,
-        encoding_format: 'float'
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        httpsAgent
-      }
-    )
+    const response = await postZhipuai('/embeddings', {
+      model: EMBEDDING_MODEL,
+      input: text,
+      encoding_format: 'float'
+    }, { apiKey })
 
     return response.data.data[0].embedding
   } catch (error: any) {
@@ -103,26 +54,14 @@ export async function getEmbeddings(
     const batch = texts.slice(i, i + batchSize)
 
     try {
-      const token = generateToken(apiKey)
-
-      const response = await axios.post<EmbeddingResponse>(
-        EMBEDDING_API_URL,
-        {
-          model: EMBEDDING_MODEL,
-          input: batch,
-          encoding_format: 'float'
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          httpsAgent
-        }
-      )
+      const response = await postZhipuai('/embeddings', {
+        model: EMBEDDING_MODEL,
+        input: batch,
+        encoding_format: 'float'
+      }, { apiKey })
 
       // 按索引排序确保顺序正确
-      const sorted = response.data.data
+      const sorted = (response.data.data as EmbeddingResponse['data'])
         .sort((a, b) => a.index - b.index)
         .map(item => item.embedding)
 

@@ -1,10 +1,8 @@
-import axios from 'axios'
-import https from 'https'
-import { generateToken } from '../../services/ai.service'
+import { postZhipuaiChat, generateZhipuaiToken } from './zhipuaiHttp'
 import type { LLMClient, LLMStreamEvent, ToolDefinition } from './LLMClient'
 import type { ChatMessage } from '../types/agent'
+import { logger } from '../../utils/logger'
 
-const httpsAgent = new https.Agent({ rejectUnauthorized: false })
 const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4.5-flash'
 
 /**
@@ -74,8 +72,7 @@ export class ZhipuaiClient implements LLMClient {
       yield { type: 'finish', reason: 'error', error: 'ZHIPUAI_API_KEY not set' }
       return
     }
-    const token = generateToken(apiKey)
-    const baseUrl = 'https://open.bigmodel.cn/api/paas/v4'
+    const token = generateZhipuaiToken(apiKey)
     const model = opts.model || DEFAULT_MODEL
 
     const body: Record<string, unknown> = {
@@ -94,12 +91,7 @@ export class ZhipuaiClient implements LLMClient {
 
     let response: any
     try {
-      response = await axios.post(`${baseUrl}/chat/completions`, body, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        responseType: 'stream',
-        httpsAgent,
-        signal: opts.signal as any,
-      })
+      response = await postZhipuaiChat(body, { stream: true, signal: opts.signal })
     } catch (error: any) {
       // 把 400 错误的实际 body 读出来,方便定位问题
       let detail = ''
@@ -110,7 +102,7 @@ export class ZhipuaiClient implements LLMClient {
           detail = Buffer.concat(chunks).toString('utf-8').substring(0, 500)
         } catch { /* ignore */ }
       }
-      console.error('[ZhipuClient] LLM 请求失败:', error.message, 'status=', error.response?.status, 'body=', detail)
+      logger.error('zhipuaiClient', 'LLM 请求失败:', error.message, 'status=', error.response?.status, 'body=', detail)
       yield { type: 'finish', reason: 'error', error: `${error.message}${detail ? ' | ' + detail : ''}` }
       return
     }

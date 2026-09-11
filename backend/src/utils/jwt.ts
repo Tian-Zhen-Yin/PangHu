@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken'
+import { requireJwtSecret } from './jwtSecret'
 
-if (!process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.')
-  process.exit(1)
-}
-const JWT_SECRET: string = process.env.JWT_SECRET
+const JWT_SECRET: string = requireJwtSecret()
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 
 export interface JwtPayload {

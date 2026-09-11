@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../config/database'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
 
 // 测试用户数据
 const testUsers = [

@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import prisma from '../config/database'
 
-const prisma = new PrismaClient()
 
 export async function getVaccinesByCat(catId: string, userId: string) {
   // 验证猫咪归属

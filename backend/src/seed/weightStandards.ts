@@ -11,10 +11,9 @@
  * - neutered 为 false 表示未绝育，true 表示已绝育
  */
 
-import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
 
+import prisma from '../config/database'
 export interface WeightStandardData {
   breed: string
   ageMonth: number

@@ -1,9 +1,7 @@
 // @ts-nocheck
 import { Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
 import { AdminRequest } from '../../middlewares/adminAuth'
 
-const prisma = new PrismaClient()
 
 // 获取指南列表（管理员）
 export async function getGuides(req: AdminRequest, res: Response) {

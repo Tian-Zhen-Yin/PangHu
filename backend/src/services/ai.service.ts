@@ -1,14 +1,8 @@
 // @ts-nocheck
 import { SSEStream } from '../utils/stream'
 import { Response } from 'express'
-import axios from 'axios'
-import https from 'https'
+import { postZhipuaiChat, generateZhipuaiToken, ZHIPUAI_BASE_URL } from '../agent/llm/zhipuaiHttp'
 import { retrieveKnowledge, type Citation } from './rag.service'
-
-// 创建忽略证书验证的 https agent（仅用于开发环境）
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: false
-})
 
 // 默认使用的模型
 const DEFAULT_MODEL = process.env.ZHIPUAI_MODEL || 'glm-4.5-flash'
@@ -44,7 +38,7 @@ export interface CatContext {
   lastRecord?: { date: string; weight?: number | null; notes?: string | null } | null
 }
 
-const SYSTEM_PROMPT = `你是"喵喵医生"，一位专业的猫咪医疗顾问和养护专家。
+export const SYSTEM_PROMPT = `你是"喵喵医生"，一位专业的猫咪医疗顾问和养护专家。
 
 ## ⚠️ 核心原则：按顺序判断，匹配即停止
 
@@ -117,25 +111,7 @@ export function buildCatContextPrompt(catContext: CatContext): string {
 **请根据以上猫咪的具体情况提供个性化建议。**`
 }
 
-function generateToken(apiKey: string): string {
-  const [id, secret] = apiKey.split('.')
-  if (!id || !secret) throw new Error('Invalid API key format')
-
-  const header = { alg: 'HS256', sign_type: 'SIGN' }
-  const now = Date.now()
-  const payload = { api_key: id, exp: now + 3600000, timestamp: now }
-
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64')
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
-
-  const crypto = require('crypto')
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest('base64url')
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`
-}
+// generateToken 的智谱签名实现已收敛到 agent/llm/zhipuaiHttp.ts(全项目唯一)
 
 export async function buildMessages(
   history: ServiceChatMessage[],
@@ -214,11 +190,11 @@ export async function buildMessages(
 
 export function getApiConfig() {
   const apiKey = process.env.ZHIPUAI_API_KEY || ''
-  const token = generateToken(apiKey)
-  return { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', token, apiKey }
+  const token = generateZhipuaiToken(apiKey)
+  return { baseUrl: ZHIPUAI_BASE_URL, token, apiKey }
 }
 
-export { generateToken }
+export { generateZhipuaiToken as generateToken }
 
 export async function sendMessage(
   userMessage: string,
@@ -238,14 +214,11 @@ export async function sendMessage(
       catContext
     )
 
-    const response = await axios.post(`${baseUrl}/chat/completions`, {
+    const response = await postZhipuaiChat({
       model: DEFAULT_MODEL,
       messages,
       temperature: 0.7,
       top_p: 0.9
-    }, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      httpsAgent
     })
 
     const content = response.data.choices?.[0]?.message?.content || ''
@@ -296,17 +269,13 @@ export async function sendMessageStream(
 
     console.log('[AI Service] 发送请求到智谱AI，模型:', DEFAULT_MODEL)
 
-    const response = await axios.post(`${baseUrl}/chat/completions`, {
+    const response = await postZhipuaiChat({
       model: DEFAULT_MODEL,
       messages,
       temperature: 0.7,
       top_p: 0.9,
       stream: true
-    }, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      responseType: 'stream',
-      httpsAgent
-    })
+    }, { stream: true })
 
     console.log('[AI Service] 收到ZhipuAI响应，状态:', response.status)
 
@@ -406,8 +375,6 @@ export async function generateProactiveAdvice(
   userId: string,
   types: ('weight' | 'vaccine' | 'age' | 'general')[] = ['weight', 'vaccine', 'age', 'general']
 ): Promise<ProactiveAdviceResponse> {
-  const { PrismaClient } = require('@prisma/client')
-  const prisma = new PrismaClient()
   const { analyzeWeight } = require('./weightStandard.service')
 
   // 获取猫咪档案

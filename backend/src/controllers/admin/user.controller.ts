@@ -1,10 +1,8 @@
 // @ts-nocheck
 import { Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { AdminRequest } from '../../middlewares/adminAuth'
 
-const prisma = new PrismaClient()
 
 // 获取用户列表（管理员）
 export async function getUsers(req: AdminRequest, res: Response) {

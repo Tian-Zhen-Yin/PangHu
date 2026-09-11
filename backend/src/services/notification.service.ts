@@ -4,6 +4,9 @@
  * 提供消息通知的创建、查询、标记已读等功能
  */
 
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('notification')
 import prisma from '../config/database'
 
 /**
@@ -40,7 +43,7 @@ export async function createNotification(data: NotificationData) {
     },
   })
 
-  console.log('[Notification] Created:', notification.id, 'type:', data.type, 'user:', data.userId)
+  log.info('Created:', notification.id, 'type:', data.type, 'user:', data.userId)
   return notification
 }
 
@@ -52,7 +55,7 @@ export async function createBulkNotifications(notifications: NotificationData[])
     data: notifications as any,
   })
 
-  console.log('[Notification] Bulk created:', results.count, 'notifications')
+  log.info('Bulk created:', results.count, 'notifications')
   return results
 }
 
@@ -109,7 +112,7 @@ export async function markNotificationAsRead(notificationId: string, userId: str
     data: { isRead: true },
   })
 
-  console.log('[Notification] Marked as read:', notificationId)
+  log.info('Marked as read:', notificationId)
   return true
 }
 
@@ -122,7 +125,7 @@ export async function markAllAsRead(userId: string): Promise<number> {
     data: { isRead: true },
   })
 
-  console.log('[Notification] Marked all as read for user:', userId, 'count:', result.count)
+  log.info('Marked all as read for user:', userId, 'count:', result.count)
   return result.count
 }
 
@@ -134,7 +137,7 @@ export async function clearAllNotifications(userId: string): Promise<number> {
     where: { userId },
   })
 
-  console.log('[Notification] Cleared all for user:', userId, 'count:', result.count)
+  log.info('Cleared all for user:', userId, 'count:', result.count)
   return result.count
 }
 
@@ -189,7 +192,7 @@ export async function updateUserNotificationPreferences(
     data,
   })
 
-  console.log('[Notification] Updated preferences for user:', userId)
+  log.info('Updated preferences for user:', userId)
   return preferences
 }
 
@@ -262,17 +265,17 @@ export async function shouldSendNotification(userId: string, type: NotificationT
   const preferences = await getUserNotificationPreferences(userId)
 
   if (!isNotificationTypeEnabled(preferences, type)) {
-    console.log('[Notification] Type disabled:', type, 'for user:', userId)
+    log.info('Type disabled:', type, 'for user:', userId)
     return false
   }
 
   if (isInQuietHours(preferences)) {
-    console.log('[Notification] In quiet hours for user:', userId)
+    log.info('In quiet hours for user:', userId)
     return false
   }
 
   if (!isWithinAllowedHours(preferences)) {
-    console.log('[Notification] Outside allowed hours for user:', userId)
+    log.info('Outside allowed hours for user:', userId)
     return false
   }
 

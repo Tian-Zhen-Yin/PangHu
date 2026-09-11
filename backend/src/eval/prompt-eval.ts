@@ -1,137 +1,22 @@
 // @ts-nocheck
-// 独立的 Prompt Eval —— 不依赖 ai.service.ts，避免 axios 缺失问题
+// Prompt Eval —— 直接调用生产 SYSTEM_PROMPT 与共享智谱 HTTP 层,评估问诊 prompt 的实际表现
+// 用法: cd backend && npm run eval:prompt (需配置 ZHIPUAI_API_KEY)
 import 'dotenv/config'
-import crypto from 'crypto'
-import https from 'https'
-
-const httpsAgent = new https.Agent({ rejectUnauthorized: false })
-
-// ===== 从 ai.service.ts 复制的内部逻辑 =====
-
-const SYSTEM_PROMPT = `你是"喵喵医生"，一位专业的猫咪医疗顾问和养护专家。
-
-## ⚠️ 核心原则：按顺序判断，匹配即停止
-
-### 步骤1：判断信息是否完整
-**如果用户提到症状但未说明持续时间/严重程度，必须追问！**
-
-⚠️ 重要：先检查用户是否已经提供了时间信息
-时间关键词包括：超过、持续、已经、X小时、X天、从X开始、一直等
-
-问诊触发条件（症状关键词 + 无时间信息）：
-- 不吃东西/不喝水 + 无时间 → 追问"持续多久了？"
-- 呕吐/拉稀 + 无时间 → 追问"几次了？持续多久？"
-- 没精神/精神差 + 无时间 → 追问"从什么时候开始？"
-- 咳嗽/喘气 + 无时间 → 追问"持续多久了？"
-
-问诊格式：
-<ask>单个问题</ask>
-
-示例：
-- 用户："我的猫不吃东西" → 你：<ask>这种情况持续多久了？</ask> ❌追问
-- 用户："我的猫持续呕吐超过24小时" → 直接进入步骤2 ✅不追问
-- 用户："它呕吐了" → 你：<ask>呕吐几次了？持续多久？</ask> ❌追问
-
-**严禁：在追问时给诊断、建议或判断是否紧急**
-
-### 步骤2：判断是否紧急
-用户明确说了以下【已持续】的症状：
-- "呼吸困难" + 持续进行中
-- "无法排尿" / 憋尿
-- "呕吐/腹泻" + "超过24小时" / "一天多" / "两天了"
-- "不食/不吃" + "超过24小时" / "一天多" / "两天了"
-- 出血 / 骨折 / 抽搐 / 昏迷
-
-→ 第一句必须是"**请立即就医！**"
-
-### 步骤3：正常回答
-症状清晰、信息完整、非紧急情况
-
-→ 基于知识库片段回答
-→ 片段不足时说："我的知识库暂时没有这方面的记录，建议咨询专业兽医"
-
-## 知识库使用规则
-每次对话中，我会提供标注了编号的【知识库参考片段】：
-1. 优先且只基于这些片段回答，不允许凭空推断
-2. 回答末尾用"参考来源：[片段编号]"注明出处
-3. 片段为空或不相关时，声明"知识库无记录"
-
-## 输出格式
-- Markdown，300字以内
-- 重要警告加粗
-- 末尾必须有"参考来源：[编号]"或"知识库无记录"声明`
-
-function buildCatContextPrompt(catContext) {
-  const genderText = catContext.gender === 'male' ? '公猫' : catContext.gender === 'female' ? '母猫' : '未知性别'
-  const vaccineText = catContext.recentVaccines.length > 0
-    ? catContext.recentVaccines.map(v => `${v.name}(${v.date})`).join('、')
-    : '暂无记录'
-
-  return `
-## 当前咨询的猫咪档案
-- 名字：${catContext.name}
-- 品种：${catContext.breed || '未知'}
-- 性别：${genderText}
-- 年龄：${catContext.ageFormatted}
-- 体重：${catContext.weight ? `${catContext.weight}kg` : '未记录'}
-- 绝育状态：${catContext.isNeutered ? '已绝育' : '未绝育'}${catContext.allergies ? `\n- 过敏信息：${catContext.allergies}` : ''}${catContext.diseases ? `\n- 既往病史：${catContext.diseases}` : ''}
-- 近期疫苗：${vaccineText}
-
-**请根据以上猫咪的具体情况提供个性化建议。**`
-}
-
-function generateToken(apiKey) {
-  const [id, secret] = apiKey.split('.')
-  if (!id || !secret) throw new Error('Invalid API key format')
-
-  const header = { alg: 'HS256', sign_type: 'SIGN' }
-  const now = Date.now()
-  const payload = { api_key: id, exp: now + 3600000, timestamp: now }
-
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64')
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64')
-
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest('base64url')
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`
-}
-
-function getApiConfig() {
-  const apiKey = process.env.ZHIPUAI_API_KEY || ''
-  const token = generateToken(apiKey)
-  return { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', token, apiKey }
-}
-
-// ===== callLLM =====
+import { postZhipuaiChat } from '../agent/llm/zhipuaiHttp'
+import { SYSTEM_PROMPT, buildCatContextPrompt } from '../services/ai.service'
 
 async function callLLM(userContent) {
-  const { baseUrl, token } = getApiConfig()
-
-  const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userContent },
-  ]
-
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    agent: httpsAgent,
-    body: JSON.stringify({
-      model: process.env.ZHIPUAI_MODEL || 'glm-4.5-flash',
-      messages,
-      temperature: 0.7,
-      top_p: 0.9,
-    }),
+  const response = await postZhipuaiChat({
+    model: process.env.ZHIPUAI_MODEL || 'glm-4.5-flash',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userContent },
+    ],
+    temperature: 0.7,
+    top_p: 0.9,
   })
 
-  const data = await response.json()
-  return data.choices?.[0]?.message?.content || ''
+  return response.data.choices?.[0]?.message?.content || ''
 }
 
 // ===== 测试用例 =====

@@ -1,7 +1,10 @@
+/**
+ * Chat controller —— 只做参数校验、SSE header 设置与 HTTP 响应组装。
+ * 会话/消息持久化在 services/chat.service,确认后的工具分发在 agent/confirmationDispatcher。
+ */
 import { Request, Response } from 'express'
 import prisma from '../config/database'
 import { successResponse } from '../utils/response'
-// @ts-ignore
 import { sendMessageStream, sendMessage, type ChatMessage } from '../services/ai.service'
 import { getKnowledgeContext } from '../services/knowledge.service'
 import { isSSERequest } from '../utils/stream'
@@ -9,12 +12,17 @@ import { getCatContext } from '../services/cat.service'
 import { catAgent } from '../agent'
 import { resolveUserSegment } from '../config/featureFlags'
 import { consumeConfirmation, cancelConfirmation } from '../services/confirmation.service'
-import { AllergyRecordTool } from '../agent/tools/allergyRecord.tool'
-import { GrowthRecordTool } from '../agent/tools/growthRecord.tool'
-import { VaccineRecordTool } from '../agent/tools/vaccineRecord.tool'
-import { WeightRecordTool } from '../agent/tools/weightRecord.tool'
-import type { AgentContext } from '../agent/types/agent'
+import { executeConfirmedWrite } from '../agent/confirmationDispatcher'
+import {
+  resolveConversation,
+  saveUserMessage,
+  loadChatHistory,
+  persistAssistantMessage,
+} from '../services/chat.service'
 import { getTodoStatus, setTodoCompleted } from '../services/todo.service'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('chat')
 
 /**
  * 获取用户的所有对话
@@ -170,10 +178,7 @@ export async function sendMessageHandler(req: Request, res: Response) {
  * Agent 驱动的流式消息处理
  *
  * 流程：Router → Planner → Executor (SSE 实时推送) → LLM 流式输出 (逐 token)
- * 客户端断开自动取消 pipeline
- *
- * P0 #1: 真正拉取历史并传入 catAgent.handleStreaming，恢复上下文记忆。
- * P0 #2: 流式结束后累积文本入库，保证刷新页面不丢失 AI 回复。
+ * 客户端断开自动取消 pipeline;流式结束后累积文本入库,保证刷新页面不丢失 AI 回复。
  */
 async function handleAgentStreamingMessage(
   conversationId: string | undefined,
@@ -183,103 +188,37 @@ async function handleAgentStreamingMessage(
   res: Response,
   attachments: string[] = []
 ) {
-  let conversation: any
-
-  if (!conversationId) {
-    const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
-    conversation = await prisma.conversation.create({
-      data: { userId, title, catId: catId || null }
-    })
-  } else {
-    conversation = await prisma.conversation.findFirst({
-      where: { id: conversationId, userId }
-    })
-    if (!conversation) {
-      return res.status(404).json(successResponse(null, '对话不存在'))
-    }
-    if (catId && !conversation.catId) {
-      await prisma.conversation.update({ where: { id: conversation.id }, data: { catId } })
-    }
+  const conversation = await resolveConversation(conversationId, userId, content, catId)
+  if (!conversation) {
+    return res.status(404).json(successResponse(null, '对话不存在'))
   }
 
   // 保存用户消息（在拉取历史之前，确保历史不含当前消息）
-  const userMessage = await prisma.message.create({
-    data: {
-      conversationId: conversation.id,
-      role: 'user',
-      content,
-      metadata: attachments.length > 0 ? JSON.stringify({ attachments }) : null,
-    }
-  })
-
-  // P0 #1: 拉取对话历史（最多 20 条），传入 Agent
-  const historyRows = await prisma.message.findMany({
-    where: { conversationId: conversation.id, id: { not: userMessage.id } },
-    orderBy: { createdAt: 'asc' },
-    take: 20
-  })
-  const chatHistory: ChatMessage[] = historyRows
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({ role: m.role as ChatMessage['role'], content: m.content }))
-
-  const effectiveCatId = catId || conversation.catId
+  const userMessage = await saveUserMessage(conversation.id, content, attachments)
+  const chatHistory = await loadChatHistory(conversation.id, userMessage.id)
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
   res.setHeader('X-Accel-Buffering', 'no')
 
-  // 委托给 CatAgent 流式方法，其内部处理：
-  // - Router → Planner → Executor（每步 SSE 实时推送）→ LLM 逐 token 输出
-  // - 客户端断开自动 abort
-  // - 返回累积的回复文本以供持久化
-  // userSegment 由 INTERNAL_USER_IDS / BETA_USER_IDS 白名单解析,驱动 V3.0 LLM_TOOL_CALLING_LOOP 灰度
+  // 委托给 CatAgent 流式方法,其内部处理 Router → Planner → Executor → LLM 逐 token
+  // userSegment 由白名单解析,驱动 V3.0 LLM_TOOL_CALLING_LOOP 灰度
   const result = await catAgent.handleStreaming(
     content,
     userId,
     conversationId || 'adhoc',
     res,
-    effectiveCatId,
+    catId || conversation.catId || undefined,
     chatHistory,
     resolveUserSegment(userId),
     attachments,
   )
 
-  // P0 #2: 持久化 assistant 回复，避免刷新页面丢失
-  // 即使 content 为空（仅卡片），只要有工具结果也持久化，否则二次进入会话会丢失卡片
-  const hasContent = result.content && result.content.trim().length > 0
-  const hasToolResults = result.toolResults && result.toolResults.length > 0
-  if (hasContent || hasToolResults) {
-    try {
-      // 把工具调用结果序列化进 metadata，供前端二次加载会话时还原卡片
-      const toolCallsForPersist = (result.toolResults || []).map((r) => ({
-        name: r.toolName,
-        status: r.success ? 'done' : 'error',
-        output: r.output,
-      }))
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          role: 'assistant',
-          content: result.content || '',
-          markdownContent: result.content || '',
-          referencedGuides: JSON.stringify(result.citations),
-          metadata: JSON.stringify({
-            traceId: result.traceId,
-            tools: result.toolNames,
-            agentMode: true,
-            toolCalls: toolCallsForPersist,
-            citations: result.citations,
-          })
-        }
-      })
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { updatedAt: new Date() }
-      })
-    } catch (err: any) {
-      console.error('[Chat] Failed to persist agent assistant message:', err.message)
-    }
+  try {
+    await persistAssistantMessage(conversation.id, result)
+  } catch (err: any) {
+    log.error('持久化 agent 回复失败:', err.message)
   }
 }
 
@@ -294,45 +233,19 @@ async function handleStreamingMessage(
   _req: Request,
   res: Response
 ) {
-  let conversation: any
-
-  if (!conversationId) {
-    const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
-    conversation = await prisma.conversation.create({
-      data: { userId, title, catId: catId || null }
-    })
-  } else {
-    conversation = await prisma.conversation.findFirst({
-      where: { id: conversationId, userId }
-    })
-    if (!conversation) {
-      return res.status(404).json(successResponse(null, '对话不存在'))
-    }
-    if (catId && !conversation.catId) {
-      await prisma.conversation.update({ where: { id: conversation.id }, data: { catId } })
-    }
+  const conversation = await resolveConversation(conversationId, userId, content, catId)
+  if (!conversation) {
+    return res.status(404).json(successResponse(null, '对话不存在'))
   }
 
-  const userMessage = await prisma.message.create({
-    data: { conversationId: conversation.id, role: 'user', content }
-  })
-
-  const history = await prisma.message.findMany({
-    where: { conversationId: conversation.id, id: { not: userMessage.id } },
-    orderBy: { createdAt: 'asc' },
-    take: 20
-  })
-
-  const chatHistory: ChatMessage[] = history
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({ role: m.role as ChatMessage['role'], content: m.content }))
+  const userMessage = await saveUserMessage(conversation.id, content)
+  const chatHistory: ChatMessage[] = await loadChatHistory(conversation.id, userMessage.id)
 
   const knowledgeContext = await getKnowledgeContext(content)
-
   const effectiveCatId = catId || conversation.catId
   const catContext = effectiveCatId ? await getCatContext(effectiveCatId, userId) : undefined
 
-  res.on('close', () => { console.log('SSE connection closed') })
+  res.on('close', () => { log.debug('SSE connection closed') })
 
   sendMessageStream(content, chatHistory, knowledgeContext.context, res, catContext || undefined)
 }
@@ -347,36 +260,13 @@ async function handleNormalMessage(
   catId: string | undefined,
   res: Response
 ) {
-  let conversation: any
-
-  if (!conversationId) {
-    const title = content.substring(0, 20) + (content.length > 20 ? '...' : '')
-    conversation = await prisma.conversation.create({
-      data: { userId, title, catId: catId || null }
-    })
-  } else {
-    conversation = await prisma.conversation.findFirst({
-      where: { id: conversationId, userId }
-    })
-    if (!conversation) {
-      return res.status(404).json(successResponse(null, '对话不存在'))
-    }
+  const conversation = await resolveConversation(conversationId, userId, content, catId)
+  if (!conversation) {
+    return res.status(404).json(successResponse(null, '对话不存在'))
   }
 
-  await prisma.message.create({
-    data: { conversationId: conversation.id, role: 'user', content }
-  })
-
-  const history = await prisma.message.findMany({
-    where: { conversationId: conversation.id, role: { not: 'system' } },
-    orderBy: { createdAt: 'asc' },
-    take: 20
-  })
-
-  const chatHistory: ChatMessage[] = history.map(m => ({
-    role: m.role as ChatMessage['role'],
-    content: m.content
-  }))
+  await saveUserMessage(conversation.id, content)
+  const chatHistory: ChatMessage[] = await loadChatHistory(conversation.id)
 
   const knowledgeContext = await getKnowledgeContext(content)
 
@@ -455,100 +345,18 @@ export async function confirmActionHandler(req: Request, res: Response) {
     return res.json(successResponse({ cancelled: true }, '操作已取消'))
   }
 
-  // 确认操作
+  // 确认操作:取出挂起会话,交由 agent 层分发执行
   if (action === 'confirm') {
     const session = consumeConfirmation(confirmationId, userId)
     if (!session) {
       return res.status(410).json(successResponse(null, '确认请求不存在或已过期'))
     }
 
-    // 构造带确认令牌的 AgentContext
-    const ctx: AgentContext = {
-      userId,
-      sessionId: 'confirm-' + confirmationId,
-      selectedCatId: session.catId,
-      traceId: 'confirm-' + Date.now(),
-      logger: console,
-      cache: new Map(),
-      confirmationToken: {
-        verified: true,
-        confirmedAt: new Date(),
-        confirmationId,
-      },
+    const outcome = await executeConfirmedWrite(session, userId, edits || {})
+    if (!outcome.ok) {
+      return res.status(400).json(successResponse(null, outcome.message))
     }
-
-    // 合并草稿数据与用户编辑（edits 优先覆盖）
-    const draft = (session.draft || {}) as Record<string, any>
-    const merged = { ...draft, ...(edits || {}) }
-
-    let result
-    switch (session.toolName) {
-      case 'ADD_growth_record': {
-        const input = {
-          catId: session.catId || undefined,
-          type: merged.type,
-          notes: merged.notes || '',
-          photos: Array.isArray(merged.photos) ? merged.photos : [],
-          weight: merged.weight,
-          isAdoptionDay: merged.isAdoptionDay,
-          recordDate: merged.recordDate,
-        }
-        if (!input.notes && input.photos.length === 0) {
-          return res.status(400).json(successResponse(null, '成长记录内容不能为空'))
-        }
-        result = await GrowthRecordTool.call(input, ctx)
-        break
-      }
-      case 'ADD_vaccine_record': {
-        const input = {
-          catId: session.catId || undefined,
-          vaccineName: merged.vaccineName || '',
-          vaccineType: merged.vaccineType,
-          vaccinatedAt: merged.vaccinatedAt,
-          nextDueDate: merged.nextDueDate,
-          manufacturer: merged.manufacturer,
-          veterinarian: merged.veterinarian,
-          clinic: merged.clinic,
-          notes: merged.notes,
-        }
-        if (!input.vaccineName) {
-          return res.status(400).json(successResponse(null, '疫苗名称不能为空'))
-        }
-        result = await VaccineRecordTool.call(input, ctx)
-        break
-      }
-      case 'ADD_weight_record': {
-        const input = {
-          catId: session.catId || undefined,
-          weight: typeof merged.weight === 'number' ? merged.weight : parseFloat(merged.weight),
-          notes: merged.notes,
-          recordDate: merged.recordDate,
-        }
-        if (!input.weight || Number.isNaN(input.weight)) {
-          return res.status(400).json(successResponse(null, '体重数值不能为空'))
-        }
-        result = await WeightRecordTool.call(input, ctx)
-        break
-      }
-      case 'ADD_allergy_record':
-      default: {
-        const input = {
-          catId: session.catId,
-          allergen: merged.allergen || '',
-          symptoms: merged.symptoms || '',
-          severity: merged.severity || 'moderate',
-          occurrenceDate: merged.occurrenceDate,
-          treatment: merged.treatment,
-          notes: merged.notes,
-        }
-        if (!input.allergen) {
-          return res.status(400).json(successResponse(null, '过敏原不能为空'))
-        }
-        result = await AllergyRecordTool.call(input, ctx)
-      }
-    }
-
-    return res.json(successResponse(result, result.message))
+    return res.json(successResponse(outcome.result, outcome.result.message))
   }
 
   return res.status(400).json(successResponse(null, '未知的 action 类型'))
@@ -592,12 +400,12 @@ export async function todoToggleHandler(req: Request, res: Response) {
     return res.status(400).json(successResponse(null, '缺少 todoId 或 completed 字段'))
   }
 
-  // 持久化到数据库（使用 raw SQL / todo service）
+  // 持久化到数据库（todo service）
   try {
     await setTodoCompleted(userId, todoId, completed)
     return res.json(successResponse({ todoId, completed }, completed ? '待办已标记完成' : '待办已取消'))
   } catch (error: any) {
-    console.error('[TodoToggle] Error:', error.message)
+    log.error('todoToggle 失败:', error.message)
     return res.status(500).json(successResponse(null, '操作失败'))
   }
 }
@@ -622,7 +430,7 @@ export async function todoStatusHandler(req: Request, res: Response) {
     const statusMap = await getTodoStatus(userId, todoIds)
     return res.json(successResponse(statusMap))
   } catch (error: any) {
-    console.error('[TodoStatus] Error:', error.message)
+    log.error('todoStatus 失败:', error.message)
     return res.status(500).json(successResponse(null, '获取失败'))
   }
 }

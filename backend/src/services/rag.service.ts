@@ -3,12 +3,12 @@
  * 负责知识库的构建、索引和检索
  */
 
-import { PrismaClient, Prisma } from '@prisma/client'
+import prisma from '../config/database'
+import { Prisma } from '@prisma/client'
 import { chunkMarkdown, extractGuideMetadata, type Chunk } from './chunker.service'
 import { getEmbeddings, findMostSimilar, deserializeVector, serializeVector, cosineSimilarity } from './embedding.service'
 import crypto from 'crypto'
 
-const prisma = new PrismaClient()
 
 export interface RetrievedChunk {
   id: string
