@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PangHu 全仓重构进度报告</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c2330;
+    --border: #2d333b; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --blue: #58a6ff; --purple: #bc8cff;
+    --orange: #f0883e; --red: #f85149; --yellow: #d29922;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    line-height: 1.6; padding-bottom: 60px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #10151f 0%, #16202f 60%, #14213a 100%);
+    border-bottom: 1px solid var(--border); padding: 44px 0 36px; margin-bottom: 32px;
+  }
+  .title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: .5px; }
+  h1 .cat { font-size: 32px; }
+  .branch {
+    font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+    background: var(--panel2); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px; color: var(--purple);
+  }
+  .subtitle { color: var(--muted); margin-top: 8px; font-size: 15px; }
+  .status-banner {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 18px;
+    background: rgba(63,185,80,.12); border: 1px solid rgba(63,185,80,.4);
+    color: var(--green); padding: 6px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+         box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 36px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; position: relative; overflow: hidden;
+  }
+  .card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c, var(--blue)); }
+  .card .num { font-size: 30px; font-weight: 700; font-family: ui-monospace, Menlo, monospace; color: var(--c, var(--blue)); }
+  .card .label { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .sub b { color: var(--text); }
+
+  /* Sections */
+  section { margin-bottom: 44px; }
+  h2 {
+    font-size: 19px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px;
+  }
+  h2 .tag { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+  /* Timeline */
+  .phase { display: flex; gap: 16px; margin-bottom: 4px; position: relative; }
+  .phase .rail { display: flex; flex-direction: column; align-items: center; width: 34px; flex-shrink: 0; }
+  .phase .node {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; z-index: 1;
+    background: var(--green); color: #0d1117;
+  }
+  .phase .line { width: 2px; flex: 1; background: var(--border); margin: 4px 0; }
+  .phase:last-child .line { display: none; }
+  .phase .body {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 14px; flex: 1;
+  }
+  .phase .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .phase .name { font-weight: 700; font-size: 15px; }
+  .phase .commit {
+    font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--blue);
+    background: var(--panel2); padding: 1px 8px; border-radius: 5px;
+  }
+  .phase .desc { color: var(--muted); font-size: 13.5px; margin-top: 6px; }
+  .phase .metrics { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    font-size: 12px; padding: 2px 10px; border-radius: 12px;
+    background: var(--panel2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .chip.hl { color: var(--green); border-color: rgba(63,185,80,.4); }
+  .chip.warn { color: var(--orange); border-color: rgba(240,136,62,.4); }
+
+  /* Comparison bars */
+  .cmp { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+  .cmp-row { margin-bottom: 18px; }
+  .cmp-row:last-child { margin-bottom: 0; }
+  .cmp-label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .cmp-label .delta { font-family: ui-monospace, Menlo, monospace; font-weight: 700; }
+  .down { color: var(--green); } .up { color: var(--green); } .same { color: var(--muted); }
+  .bar-bg { height: 10px; background: var(--panel2); border-radius: 5px; overflow: hidden; display: flex; }
+  .bar { height: 100%; border-radius: 5px; }
+  .bar.before { background: #4a5568; }
+  .bar.after { background: linear-gradient(90deg, var(--blue), var(--green)); }
+  .cmp-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Commits */
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  th { text-align: left; padding: 12px 16px; font-size: 12.5px; color: var(--muted); background: var(--panel2); font-weight: 600; }
+  td { padding: 11px 16px; font-size: 13.5px; border-top: 1px solid var(--border); }
+  td.hash { font-family: ui-monospace, Menlo, monospace; color: var(--blue); font-size: 12.5px; white-space: nowrap; }
+  td.type { white-space: nowrap; }
+  .t-chore { color: var(--muted); } .t-refactor { color: var(--purple); } .t-feat { color: var(--green); } .t-docs { color: var(--yellow); }
+  .del-count { color: var(--red); font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .add-count { color: var(--green); font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+
+  /* Todos */
+  .todo { display: flex; align-items: flex-start; gap: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+  .todo .box { width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--muted); flex-shrink: 0; margin-top: 3px; position: relative; }
+  .todo.done .box { background: var(--green); border-color: var(--green); }
+  .todo.done .box::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #0d1117; font-size: 12px; font-weight: 800; }
+  .todo.urgent .box { border-color: var(--red); }
+  .todo .txt { font-size: 14px; }
+  .todo .txt .who { font-size: 12px; color: var(--orange); background: rgba(240,136,62,.1); padding: 1px 8px; border-radius: 10px; margin-left: 8px; }
+  .todo.done .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(139,148,158,.5); }
+
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 50px; }
+  footer code { color: var(--purple); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="title-row">
+      <h1><span class="cat">🐱</span> PangHu 全仓重构进度报告</h1>
+      <span class="branch">refactor/project-cleanup</span>
+    </div>
+    <div class="subtitle">哈吉咪养成计划 · Express + Prisma + Vue 3 + LLM Agent · 基线 master@b94189a</div>
+    <div class="status-banner"><span class="dot"></span> 8 个阶段全部完成 · 等待合并 master</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 统计卡 -->
+  <div class="stats">
+    <div class="card" style="--c: var(--red)">
+      <div class="num">-15,889</div>
+      <div class="label">净删除行数（含新增 +4,113）</div>
+      <div class="sub">195 个文件变更 · 死代码约 <b>8,600</b> 行</div>
+    </div>
+    <div class="card" style="--c: var(--purple)">
+      <div class="num">856 → 300</div>
+      <div class="label">agent/index.ts 行数</div>
+      <div class="sub">三链路收敛 · <b>解除 express 耦合</b></div>
+    </div>
+    <div class="card" style="--c: var(--blue)">
+      <div class="num">39 → 28</div>
+      <div class="label">后端 tsc 类型错误（前端 59 → 50）</div>
+      <div class="sub">全部改动文件 <b>零新增错误</b></div>
+    </div>
+    <div class="card" style="--c: var(--green)">
+      <div class="num">45 / 45</div>
+      <div class="label">前端测试全绿（原 9 个文件仅 1 个被执行）</div>
+      <div class="sub">后端 262 pass / 11 fail（<b>与基线逐字一致</b>）</div>
+    </div>
+  </div>
+
+  <!-- 阶段时间线 -->
+  <section>
+    <h2>🗓️ 阶段时间线 <span class="tag">每阶段独立提交 + 验证门禁</span></h2>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 0+1 · 安全网 + 安全与 git 卫生</span><span class="commit">39d6647 → 00e391e</span></div>
+        <div class="desc">WIP 快照保住 27 个未提交改动；删除 2 个泄露密钥文件；/api/debug 加生产门禁；untrack 构建产物（dev-dist / dev.db / .env）；.gitignore 修正；CLAUDE.md 缩为指针。</div>
+        <div class="metrics"><span class="chip hl">密钥文件删除</span><span class="chip warn">key 待轮换（用户操作）</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 2 · 死代码清除</span><span class="commit">f4f0339</span></div>
+        <div class="desc">删除净 8,092 行零引用代码：Timeline/index.vue(4237)、React 孤儿 CatConsultation.tsx(598)、views/Play 死副本、无 import 的后端 api/chat.ts 等 30 个文件。全部删前 grep 复核，拦下 1 条误报（SectionHeader）。</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 3 · 目录归位与历史归档</span><span class="commit">2fd309e</span></div>
+        <div class="desc">11 个调试脚本迁至 backend/scripts/dev/；Python 表情包时代 + 弃用 k8s 归档至 docs/08-其他/archive/；消除「04-」编号冲突；重写 docs/README.md；AGENTS.md 平台说明更新为 macOS。</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 4 · 后端低风险收敛</span><span class="commit">af9edb5</span></div>
+        <div class="desc">PrismaClient 10 处实例化 → 1 个单例；智谱签名 token 3 份拷贝 → 唯一 zhipuaiHttp 模块（顺带恢复默认 TLS 校验）；chat.controller(628行) 分层——持久化下沉 chat.service、90 行工具分发 switch 移入 agent 层；新增零依赖 logger + 3 单测；server.ts 拆出 app.ts 应用工厂。</div>
+        <div class="metrics"><span class="chip hl">10 → 1 PrismaClient</span><span class="chip hl">3 → 1 智谱客户端</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 5 · Agent 深度收敛（禁区豁免）</span><span class="commit">51d46b9</span></div>
+        <div class="desc">删除业务无调用的 V2 非流式链路；新增 SseSink 窄接口——CatAgent 不再持有 express Response、不再 monkey-patch res.write；3 处重复确认推送收敛为唯一实现；V2 管线拆至 v2Pipeline.ts、fast-path 独立成模块、greeting 判定单一来源。</div>
+        <div class="metrics"><span class="chip hl">856 → 300 行</span><span class="chip">V3 loop 集成测试 6/7 通过（唯一失败与基线一致）</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 6 · 前端收敛 + 测试基建修复</span><span class="commit">58aa8df</span></div>
+        <div class="desc">测试配置下沉 frontend/vitest.config.ts（原 include 只挂 1/9 文件，其余从未运行）；修复 13 个暴露的漂移断言与时序竞态；modules/dashboard 并入 views/ 消除双范式；guide/guides 合一；PWA 组件归位；formatWeight 同名不同义拆分。</div>
+        <div class="metrics"><span class="chip hl">45/45 全绿</span><span class="chip hl">build 成功</span></div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">✓</div><div class="line"></div></div>
+      <div class="body">
+        <div class="head"><span class="name">Phase 7 · 全量验证 + 复盘</span><span class="commit">f599db2</span></div>
+        <div class="desc">后端 esbuild(Vercel bundle) ✓、mac-mini 脚本 bash -n ✓、前后端构建全过；按 AGENTS.md 节奏写入复盘文档 docs/04-复盘/refactor-project-cleanup-retro.md（含 6 条 Action Items）。</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="rail"><div class="node">＋</div></div>
+      <div class="body">
+        <div class="head"><span class="name">追加 · 开源发布准备</span><span class="commit">0f8d3eb</span></div>
+        <div class="desc">MIT LICENSE、根 README（此前无）、.env.example 第三个泄露 key 替换为占位符、Docker 一键启动五件套（Dockerfile / compose / entrypoint / .env.docker.example / .dockerignore）、小红书发布物料（文案 + 配图清单 + 视频分镜）。</div>
+        <div class="metrics"><span class="chip warn">⚠️ 第 3 个泄露 key 待轮换</span><span class="chip warn">docker daemon 修复中，镜像构建待实测</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 指标对比 -->
+  <section>
+    <h2>📊 关键指标对比 <span class="tag">重构前 → 重构后</span></h2>
+    <div class="cmp">
+      <div class="cmp-row">
+        <div class="cmp-label"><span>agent/index.ts 行数</span><span class="delta down">-65%</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:100%"></div></div>
+        <div class="cmp-note">856 行 → 300 行（拆出 v2Pipeline / fastPath / sseSink / greeting 模块）</div>
+      </div>
+      <div class="cmp-row">
+        <div class="cmp-label"><span>PrismaClient 实例化点</span><span class="delta down">-90%</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:100%"></div></div>
+        <div class="cmp-note">10 处独立 new → 统一 config/database 单例</div>
+      </div>
+      <div class="cmp-row">
+        <div class="cmp-label"><span>智谱 token 签名实现拷贝</span><span class="delta down">-67%</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:100%"></div></div>
+        <div class="cmp-note">ai.service / embedding.service / prompt-eval 三份 → zhipuaiHttp 唯一</div>
+      </div>
+      <div class="cmp-row">
+        <div class="cmp-label"><span>前端测试实际执行文件</span><span class="delta up">+800%</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:11%"></div></div>
+        <div class="cmp-note">1/9 文件（include 配置静默失效）→ 9/9 全量，46 用例 45 过 + 1 移除断头测试</div>
+      </div>
+      <div class="cmp-row">
+        <div class="cmp-label"><span>后端 tsc 错误数</span><span class="delta down">-28%</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:100%"></div></div>
+        <div class="cmp-note">39 → 28（顺手修复 9 个 SSE 事件类型错误与 prompt-eval 语法损坏）</div>
+      </div>
+      <div class="cmp-row">
+        <div class="cmp-label"><span>泄露密钥文件（现存）</span><span class="delta down">3 → 0</span></div>
+        <div class="bar-bg"><div class="bar before" style="width:100%"></div></div>
+        <div class="cmp-note">test.py、ZhipuAI.ini、.env.example 真 key —— 文件已全部清除；<b style="color:var(--red)">历史中的 key 仍需轮换</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 提交列表 -->
+  <section>
+    <h2>📝 提交链 <span class="tag">master..refactor/project-cleanup</span></h2>
+    <table>
+      <tr><th>提交</th><th>类型</th><th>说明</th><th style="text-align:right">变更</th></tr>
+      <tr><td class="hash">0f8d3eb</td><td class="type t-feat">feat</td><td>开源发布准备（LICENSE / README / Docker / 小红书物料）</td><td style="text-align:right"><span class="add-count">+1000</span></td></tr>
+      <tr><td class="hash">f599db2</td><td class="type t-docs">docs</td><td>重构复盘文档</td><td style="text-align:right"><span class="add-count">+90</span></td></tr>
+      <tr><td class="hash">58aa8df</td><td class="type t-refactor">refactor</td><td>前端收敛 + 测试基建修复</td><td style="text-align:right"><span class="add-count">+600</span> <span class="del-count">-1400</span></td></tr>
+      <tr><td class="hash">51d46b9</td><td class="type t-refactor">refactor</td><td>Agent 深度收敛（856→300 行，解除 express 耦合）</td><td style="text-align:right"><span class="add-count">+800</span> <span class="del-count">-700</span></td></tr>
+      <tr><td class="hash">af9edb5</td><td class="type t-refactor">refactor</td><td>后端低风险收敛（单例 Prisma / 统一智谱层 / chat 分层 / logger）</td><td style="text-align:right"><span class="add-count">+700</span> <span class="del-count">-500</span></td></tr>
+      <tr><td class="hash">2fd309e</td><td class="type t-chore">chore</td><td>目录归位与历史归档</td><td style="text-align:right"><span class="del-count">rename/归档</span></td></tr>
+      <tr><td class="hash">f4f0339</td><td class="type t-refactor">refactor</td><td>删除零引用死代码约 7,700 行</td><td style="text-align:right"><span class="del-count">-8,092</span></td></tr>
+      <tr><td class="hash">00e391e</td><td class="type t-chore">chore</td><td>安全与 git 卫生（密钥删除 / untrack / .gitignore）</td><td style="text-align:right"><span class="del-count">-5,839</span></td></tr>
+      <tr><td class="hash">39d6647</td><td class="type t-chore">chore</td><td>重构前 WIP 快照（embedding/RAG 改造 + MyCats 图片压缩）</td><td style="text-align:right"><span class="add-count">+2,789</span></td></tr>
+    </table>
+  </section>
+
+  <!-- 待办 -->
+  <section>
+    <h2>✅ 收尾清单</h2>
+    <div class="todo done"><div class="box"></div><div class="txt">8 个重构阶段全部完成，全量验证通过（构建 / 测试 / 类型检查）</div></div>
+    <div class="todo done"><div class="box"></div><div class="txt">开源物料就位：LICENSE、README、Docker 一键启动、小红书文案</div></div>
+    <div class="todo urgent"><div class="box"></div><div class="txt">轮换 3 个已进 git 历史的 API key（BigModel ×1、智谱 ×2）<span class="who">需要你操作</span></div></div>
+    <div class="todo"><div class="box"></div><div class="txt">Docker Desktop 4.90 已重装修复（GUI 已恢复）——重装 4.90 成功、GUI 已恢复；待在 Docker 面板点「Start」启动引擎后实测 docker compose up --build<span class="who">等你点击</span></div></div>
+    <div class="todo done"><div class="box"></div><div class="txt">/usr/local/bin/docker 断链已由新版 4.90 自动修复（20:18 验证）</div></div>
+    <div class="todo"><div class="box"></div><div class="txt">确认合并 refactor/project-cleanup → master（或先发 PR）<span class="who">等你决定</span></div></div>
+    <div class="todo"><div class="box"></div><div class="txt">干净发布：squash 推公开仓库（不带旧历史），补拍 3 张小红书截图后发帖</div></div>
+  </section>
+
+  <footer>
+    生成于 2026-09-11 · 分支 <code>refactor/project-cleanup</code>（9 commits）· 详细复盘见 <code>docs/04-复盘/refactor-project-cleanup-retro.md</code>
+  </footer>
+
+</div>
+</body>
+</html>
