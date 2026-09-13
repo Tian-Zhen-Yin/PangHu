@@ -255,16 +255,6 @@ export function startReminderScheduler() {
 
   log.info('Started - runs every hour')
 }
-
-// 如果直接运行此文件，执行一次检查
-if (require.main === module) {
-  checkAndSendReminders()
-    .then(() => {
-      log.info('Completed')
-      process.exit(0)
-    })
-    .catch((error) => {
-      log.error('Error:', error)
-      process.exit(1)
-    })
-}
+// 注意:本模块不要加 `require.main === module` 的 CLI 直跑入口——
+// esbuild 打成单文件 bundle 后该 guard 恒为 true,server 一启动就会
+// 执行一次检查并 process.exit(0) 杀掉整个进程(2026-09 容器化实测踩坑)。

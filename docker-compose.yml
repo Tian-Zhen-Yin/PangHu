@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgres:16-alpine
+    # 自带 pgvector 扩展(RAG 知识库的 embedding 列依赖 vector 类型;生产 Supabase 预装)
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: panghu

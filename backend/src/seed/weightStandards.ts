@@ -374,15 +374,5 @@ export async function getWeightStandard(
   return result ? { minWeight: result.minWeight, maxWeight: result.maxWeight } : null
 }
 
-// 如果直接运行此文件，执行种子导入
-if (require.main === module) {
-  seedWeightStandards()
-    .then(() => {
-      console.log('[Seed Weight Standards] 完成')
-      process.exit(0)
-    })
-    .catch((error) => {
-      console.error('[Seed Weight Standards] 错误:', error)
-      process.exit(1)
-    })
-}
+// 注意:不要加 require.main===module 的 CLI 直跑入口——esbuild bundle 中该 guard
+// 恒为 true,会把 server 进程变成种子脚本并 process.exit(2026-09 容器化实测踩坑)

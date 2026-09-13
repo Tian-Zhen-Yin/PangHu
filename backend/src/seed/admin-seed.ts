@@ -36,12 +36,4 @@ export async function seedAdmins() {
   console.log('Admin seed completed')
 }
 
-// Run if called directly
-if (require.main === module) {
-  seedAdmins()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error(error)
-      process.exit(1)
-    })
-}
+// 注意:同 weightStandards——esbuild bundle 中 require.main guard 恒真,禁止加 CLI 直跑入口

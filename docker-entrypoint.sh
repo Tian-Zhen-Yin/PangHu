@@ -13,8 +13,13 @@ if [ -z "$JWT_SECRET" ]; then
 fi
 
 echo "[entrypoint] 同步数据库 schema..."
+# RAG embedding 列依赖 pgvector 扩展(Supabase 预装;本地容器需显式启用)
+echo 'CREATE EXTENSION IF NOT EXISTS vector' | npx prisma db execute --stdin 2>/dev/null \
+  || echo "[entrypoint] pgvector 扩展已存在或不可用,继续"
+# --accept-data-loss: 一键启动面向全新空库,首次建表/约束不会损失数据;
+# 老库升级请勿直接用本容器,应先备份并手动执行迁移
 tries=0
-until npx prisma db push --skip-generate; do
+until npx prisma db push --skip-generate --accept-data-loss; do
   tries=$((tries + 1))
   if [ "$tries" -ge 15 ]; then
     echo "[entrypoint] 数据库连接失败,退出" >&2

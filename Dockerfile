@@ -13,7 +13,9 @@ RUN npm run build
 # ---------- 阶段 2: 后端打包 ----------
 FROM node:20-alpine AS backend-build
 WORKDIR /build/backend
+# schema 先于 npm ci 就位(postinstall 会执行 prisma generate)
 COPY backend/package.json backend/package-lock.json ./
+COPY backend/prisma ./prisma
 RUN npm ci --no-audit --no-fund
 COPY backend/ .
 # prisma generate(生成 client) + esbuild 打包服务(与 vercel-build 一致)
