@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { SSEStream } from '../utils/stream'
 import { Response } from 'express'
+import prisma from '../config/database'
 import { postZhipuaiChat, generateZhipuaiToken, ZHIPUAI_BASE_URL } from '../agent/llm/zhipuaiHttp'
 import { retrieveKnowledge, type Citation } from './rag.service'
 

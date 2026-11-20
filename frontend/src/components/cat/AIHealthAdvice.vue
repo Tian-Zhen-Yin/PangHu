@@ -40,6 +40,7 @@
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <p>{{ error }}</p>
+      <button class="retry-btn" @click="fetchAdvice">重试</button>
     </div>
 
     <div v-else-if="advice" class="advice-content-wrapper">
@@ -154,8 +155,9 @@ async function fetchAdvice() {
 
   try {
     advice.value = await getProactiveAdvice(props.catId, props.types)
-  } catch (err: any) {
-    error.value = err.message || '获取健康建议失败'
+  } catch {
+    // 后端 message 可能是「操作失败」这类泛化文案，对用户改为可行动的提示
+    error.value = '健康洞察暂时不可用，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -547,6 +549,23 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   color: var(--color-text-regular);
+}
+
+.retry-btn {
+  margin-top: 4px;
+  padding: 6px 20px;
+  border: 1px solid var(--color-primary);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: var(--color-primary-light);
 }
 
 .loading p,

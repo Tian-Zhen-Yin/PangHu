@@ -91,6 +91,11 @@ import {
   subscribeToPushNotifications,
   getPushSubscriptionStatus
 } from '../../utils/pwa'
+import {
+  NOTIFICATION_BANNER_DISMISSED_KEY,
+  shouldShowNotificationBanner,
+  readBannerDismissedAt
+} from '../../utils/notificationBanner'
 
 interface Props {
   showBanner?: boolean
@@ -145,6 +150,12 @@ onMounted(async () => {
     const status = await getPushSubscriptionStatus()
     isSubscribed.value = status.isSubscribed
     showBanner.value = !status.isSubscribed
+  } else if (showBanner.value) {
+    // 用户点过「暂不」且仍在冷却期内 → 不再打扰
+    const dismissedAt = readBannerDismissedAt()
+    if (!shouldShowNotificationBanner(dismissedAt)) {
+      showBanner.value = false
+    }
   }
 
   // 从本地存储加载设置
@@ -201,9 +212,14 @@ async function handleEnable() {
   }
 }
 
-// 处理关闭横幅
+// 处理关闭横幅：记录关闭时间，冷却期内不再弹出
 function handleDismiss() {
   showBanner.value = false
+  try {
+    localStorage.setItem(NOTIFICATION_BANNER_DISMISSED_KEY, String(Date.now()))
+  } catch {
+    // localStorage 不可用（隐私模式等）时仅本次隐藏
+  }
   emit('dismissed')
 }
 

@@ -12,13 +12,16 @@ const password = ref('')
 const confirmPassword = ref('')
 const showError = ref(false)
 const passwordError = ref('')
+const emptyError = ref('')
 
 // 验证表单
 function validateForm(): boolean {
   passwordError.value = ''
+  emptyError.value = ''
 
   if (!email.value || !username.value || !password.value || !confirmPassword.value) {
     showError.value = true
+    emptyError.value = '请先填写完整注册信息（邮箱、用户名和密码）'
     return false
   }
 
@@ -117,7 +120,11 @@ function goToLogin() {
           />
         </div>
 
-        <div v-if="passwordError" class="error-message">
+        <div v-if="emptyError" class="error-message">
+          {{ emptyError }}
+        </div>
+
+        <div v-else-if="passwordError" class="error-message">
           {{ passwordError }}
         </div>
 

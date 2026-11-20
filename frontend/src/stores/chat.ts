@@ -31,6 +31,24 @@ function getToolLabel(name: string): { label: string; icon: string } {
 }
 
 /**
+ * 流式结束时决定 AI 消息的最终文本。
+ * - 流式内容非空 → 采用流式内容（正常路径）
+ * - 流式为空但已有内容（如 error 事件写入的 ⚠️ 提示）→ 保留，不被空流覆盖
+ * - 两者皆空且有工具卡片 → 保持空（卡片本身即内容）
+ * - 两者皆空且无卡片 → 兜底提示，避免渲染空气泡
+ */
+export function resolveFinalContent(
+  streamingText: string,
+  existingText: string,
+  hasToolCards: boolean
+): string {
+  if (streamingText.trim().length > 0) return streamingText
+  if (existingText.trim().length > 0) return existingText
+  if (hasToolCards) return ''
+  return '喵喵暂时没有回复，请稍后重试或重新发送'
+}
+
+/**
  * 从持久化的 message.metadata（JSON 字符串）还原 agentMeta，
  * 保证二次进入会话时仍能渲染工具卡片（如健康周报）。
  */
@@ -408,7 +426,11 @@ export const useChatStore = defineStore('chat', () => {
           isStreaming.value = false
           const messageRef = messages.value[aiMessageIndex]
           if (messageRef) {
-            messageRef.content = streamingContent.value
+            messageRef.content = resolveFinalContent(
+              streamingContent.value,
+              messageRef.content,
+              (messageRef.agentMeta?.toolCalls?.length ?? 0) > 0
+            )
             messageRef.isStreaming = false
             if (messageRef.agentMeta) {
               messageRef.agentMeta.totalTimeMs = Date.now() - startAt

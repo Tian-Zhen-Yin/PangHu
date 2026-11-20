@@ -48,9 +48,9 @@ function isActive(path: string): boolean {
 
 <style scoped>
 .sidebar {
-  width: 160px;
+  width: 176px;
   background: transparent;
-  padding: var(--space-xl) var(--space-lg);
+  padding: var(--space-xl) var(--space-md);
   position: sticky;
   top: 56px;
   height: calc(100vh - 56px);
@@ -67,12 +67,14 @@ function isActive(path: string): boolean {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: 12px 20px;
+  padding: 12px 14px;
   border-radius: 100px;
   color: var(--color-text-muted);
   text-decoration: none;
   transition: all 0.3s ease;
   font-size: var(--text-sm);
+  /* 菜单项保持单行：容器宽度有限，换行会破坏垂直节奏 */
+  white-space: nowrap;
 }
 
 /* 悬停态微反馈 */

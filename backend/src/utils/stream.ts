@@ -21,11 +21,14 @@ export class SSEStream {
   constructor(res: Response) {
     this.res = res
 
-    // 设置SSE响应头
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-    res.setHeader('X-Accel-Buffering', 'no') // 禁用Nginx缓冲
+    // 设置SSE响应头（响应已开始时跳过，避免 ERR_HTTP_HEADERS_SENT —— 例如
+    // Agent 流式链路在 controller 已写头后降级复用本类做 RAG 兜底）
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.setHeader('Cache-Control', 'no-cache')
+      res.setHeader('Connection', 'keep-alive')
+      res.setHeader('X-Accel-Buffering', 'no') // 禁用Nginx缓冲
+    }
 
     // 发送初始连接成功消息
     this.send({ event: 'connected', data: 'SSE connected' })

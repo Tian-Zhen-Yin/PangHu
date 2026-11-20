@@ -4,7 +4,7 @@
  */
 import { Request, Response } from 'express'
 import prisma from '../config/database'
-import { successResponse } from '../utils/response'
+import { successResponse, errorResponse } from '../utils/response'
 import { sendMessageStream, sendMessage, type ChatMessage } from '../services/ai.service'
 import { getKnowledgeContext } from '../services/knowledge.service'
 import { isSSERequest } from '../utils/stream'
@@ -299,7 +299,8 @@ async function handleNormalMessage(
       referencedGuides: knowledgeContext.guides
     }))
   } catch (error: any) {
-    res.status(500).json(successResponse(null, error.message || 'AI服务暂时不可用'))
+    // 失败必须用 errorResponse（success:false），避免前端把 data:null 当成功渲染空内容
+    res.status(500).json(errorResponse('AI_SERVICE_ERROR', error.message || 'AI服务暂时不可用'))
   }
 }
 

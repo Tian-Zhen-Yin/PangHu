@@ -135,7 +135,7 @@ async function loadCatData(cat: Cat) {
   }
 }
 
-function addRecord() { router.push('/timeline?action=add') }
+function addRecord() { router.push('/timeline/growth?action=add') }
 function goToAIChat() { router.push('/ai-chat') }
 function viewAllRecords() { router.push('/timeline') }
 function viewRecordDetail(record: DashboardRecentRecord) { router.push(`/timeline?record=${record.id}`) }
@@ -391,6 +391,14 @@ onMounted(async () => {
           </div>
         </section>
       </template>
+
+      <!-- 已登录但还没有猫咪档案：引导创建第一只猫，避免落地空白页 -->
+      <div v-else class="no-cat-state">
+        <MascotCharacter expression="happy" size="large" :animated="true" :float-animation="true" />
+        <h2 class="no-cat-title">欢迎来到哈吉咪养成计划</h2>
+        <p class="no-cat-desc">先为你的喵星人创建一份档案，开始记录体重、疫苗和成长点滴</p>
+        <button class="no-cat-btn" @click="router.push('/my-cats/new')">＋ 添加第一只猫咪</button>
+      </div>
     </div>
   </div>
 </template>
@@ -437,6 +445,50 @@ onMounted(async () => {
   color: var(--color-text-placeholder);
   margin: 0;
   text-align: center;
+}
+
+/* 已登录无猫档案的引导空状态 */
+.no-cat-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--space-xl) var(--space-lg);
+  gap: var(--space-md);
+  text-align: center;
+  flex: 1;
+}
+
+.no-cat-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: var(--space-sm) 0 0 0;
+}
+
+.no-cat-desc {
+  font-size: 0.9375rem;
+  color: var(--color-text-regular);
+  margin: 0 0 var(--space-md) 0;
+  max-width: 320px;
+}
+
+.no-cat-btn {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full, 100px);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.no-cat-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
 }
 
 .guest-content {

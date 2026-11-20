@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePetStore } from '../../stores/pet.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useMyCatStore } from '../../stores/myCat.js'
@@ -15,6 +16,8 @@ import type { CreatePetRecordParams } from '../../api/pet.js'
 const petStore = usePetStore()
 const authStore = useAuthStore()
 const myCatStore = useMyCatStore()
+const route = useRoute()
+const router = useRouter()
 const { currentCat } = storeToRefs(myCatStore)
 
 // Record modal state
@@ -63,7 +66,7 @@ const filterDropdownStyle = computed(() => {
   const shouldPositionAbove = spaceBelow < menuHeight + 16 // 16px safety margin
 
   return {
-    position: 'fixed',
+    position: 'fixed' as const,
     top: shouldPositionAbove ? 'auto' : `${rect.bottom + 8}px`,
     bottom: shouldPositionAbove ? `${window.innerHeight - rect.top + 8}px` : 'auto',
     right: wouldOverflow ? '16px' : `${window.innerWidth - rect.right}px`,
@@ -84,7 +87,7 @@ const dateDropdownStyle = computed(() => {
   const shouldPositionAbove = spaceBelow < menuHeight + 16 // 16px safety margin
 
   return {
-    position: 'fixed',
+    position: 'fixed' as const,
     top: shouldPositionAbove ? 'auto' : `${rect.bottom + 8}px`,
     bottom: shouldPositionAbove ? `${window.innerHeight - rect.top + 8}px` : 'auto',
     right: wouldOverflow ? '16px' : `${window.innerWidth - rect.right}px`,
@@ -104,6 +107,13 @@ function handleEscapeKey(event: KeyboardEvent) {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleEscapeKey)
+
+  // 支持 ?action=add 直达添加记录（Dashboard「记一笔」入口），弹出后清掉
+  // query，避免刷新页面时重复弹出
+  if (route.query.action === 'add') {
+    showAddRecordModal.value = true
+    router.replace({ query: { ...route.query, action: undefined } })
+  }
 })
 
 onUnmounted(() => {
